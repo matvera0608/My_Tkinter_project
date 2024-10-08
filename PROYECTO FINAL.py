@@ -98,7 +98,7 @@ mi_ventana.attributes("-alpha", 1)
 botón_agregar = TK.Button(text="Agregar Dato", command=lambda:insertar_datos('alumno'), width= 10,height= 1)
 botón_agregar.config(fg="black", bg=verde, font=("Arial", 8))
 
-botón_modificar = TK.Button(text="Modificar Dato", width= 10,height= 1)
+botón_modificar = TK.Button(text="Modificar Dato", command=lambda:modificar_datos('alumno'), width= 10,height= 1)
 botón_modificar.config(fg="black", bg="red", font=("Arial", 8))
 
 botón_eliminar = TK.Button(text="Eliminar Dato", width= 10,height= 1)
@@ -175,7 +175,12 @@ def modificar_datos(nombre_de_la_tabla):
 
   else:
     print("No se seleccionó ninguna columna")
-  
+
+def eliminar_datos(nombre_de_la_tabla):
+  Nombre = txBox_Nombre.get()
+  Fecha_de_Nacimiento = txBox_FechaNacimiento.get()
+  Cantidad_de_Notas = txBox_Nota.get()
+
 #Aquí van las etiquetas necesarias como los datos necesarios del alumno
 label_Nombre = TK.Label(mi_ventana, text="Nombre")
 label_Nombre.config(fg="Black",bg=rosado_claro, font=("Arial", 12))

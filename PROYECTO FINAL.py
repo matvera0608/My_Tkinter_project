@@ -160,7 +160,7 @@ def modificar_datos(nombre_de_la_tabla):
         if conexión:
           cursor = conexión.cursor()
           values = (Nombre, Fecha_de_Nacimiento, Cantidad_de_Notas)
-          query = f"UPDATE {nombre_de_la_tabla} 
+          query = "UPDATE {nombre_de_la_tabla} 
                   SET Nombre = %s,
                   Fecha_de_Nacimiento = %s,
                   SET Cantidad_de_Notas = %s
@@ -177,9 +177,23 @@ def modificar_datos(nombre_de_la_tabla):
     print("No se seleccionó ninguna columna")
 
 def eliminar_datos(nombre_de_la_tabla):
-  Nombre = txBox_Nombre.get()
-  Fecha_de_Nacimiento = txBox_FechaNacimiento.get()
-  Cantidad_de_Notas = txBox_Nota.get()
+  columna_seleccionada = listbox.curseselection()
+
+  if columna_seleccionada:
+    ID_Seleccionado = listbox.get(columna_seleccionada)
+    conexión = conectar_base_de_datos()
+    if conexión:
+        cursor = conexión.cursor()
+        values = (ID_Seleccionado,)
+        query = f"DELETE FROM {nombre_de_la_tabla} where ID = %s"
+        cursor.execute(query, values)
+        conexión.commit()
+        print("Una columna ha sido eliminada exitosamente")
+
+    desconectar_base_de_datos()
+  else:
+    print("No seleccionaste la columna a eliminar")
+
 
 #Aquí van las etiquetas necesarias como los datos necesarios del alumno
 label_Nombre = TK.Label(mi_ventana, text="Nombre")

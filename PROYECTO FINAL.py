@@ -111,6 +111,55 @@ botón_modificar.place(x = 20, y = 180)
 
 botón_eliminar.place(x = 20, y = 240)
 
+
+#Aquí van las etiquetas necesarias como los datos necesarios del alumno
+label_Nombre = TK.Label(mi_ventana, text="Nombre")
+label_Nombre.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+label_Nombre.place(x = 300, y = 100)
+
+label_FechaNacimiento = TK.Label(mi_ventana, text="Fecha que nació: Formato YYYY-MM-DD")
+label_FechaNacimiento.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+label_FechaNacimiento.place(x = 300, y = 150)
+
+label_Nota = TK.Label(mi_ventana, text="Cantidad de notas")
+label_Nota.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+label_Nota.place(x = 300, y = 200)
+
+label_Hora = TK.Label(mi_ventana, text=time.strftime("%H:%M:%S"))
+label_Hora.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+label_Hora.pack()
+
+#En esta región crearé un textBox a prueba
+txBox_Nombre = TK.Entry(mi_ventana)
+txBox_Nombre.place(x = 130, y = 100)
+
+txBox_FechaNacimiento = TK.Entry(mi_ventana)
+txBox_FechaNacimiento.place(x = 130, y = 150)
+
+txBox_Nota = TK.Entry(mi_ventana)
+txBox_Nota.place(x = 130, y = 200)
+
+#En esta región tendrá RadioButtons
+opción = TK.IntVar()
+
+Botón_Tabla_de_Alumno = TK.Radiobutton(mi_ventana, text="Alumno", variable=opción, value= 1, command=seleccionar_y_consultar)
+Botón_Tabla_de_Alumno.config(bg=rosado_claro, font=("Arial", 12))
+
+Botón_Tabla_de_Carrera = TK.Radiobutton(mi_ventana, text="Carrera", variable=opción, value= 2, command=seleccionar_y_consultar)
+Botón_Tabla_de_Carrera.config(bg=rosado_claro, font=("Arial", 12))
+
+Botón_Tabla_de_Curso = TK.Radiobutton(mi_ventana, text="Curso", variable=opción, value= 3, command=seleccionar_y_consultar)
+Botón_Tabla_de_Curso.config(bg=rosado_claro, font=("Arial", 12))
+
+Botón_Tabla_de_Alumno.place(x= 60, y = 500)
+Botón_Tabla_de_Carrera.place(x = 180, y = 500)
+Botón_Tabla_de_Curso.place(x = 300, y = 500)
+
+#En esta región habrá una listBox
+Lista_de_datos = TK.Listbox(mi_ventana, width= 60, height= 40)
+Lista_de_datos.config(fg="blue", font=("Arial", 10))
+Lista_de_datos.place(x= 525, y= 0)
+
 #Hice un pequeño desorden dentro de mi proyecto, porque creé la función insertar y modificar datos después de declarar
 #las variables entry, es decir, textbox ya que en caso contrario la función me dirá que el txBox no se encuentra
 def insertar_datos(nombre_de_la_tabla):
@@ -193,56 +242,6 @@ def eliminar_datos(nombre_de_la_tabla):
     desconectar_base_de_datos()
   else:
     print("No seleccionaste la columna a eliminar")
-
-
-#Aquí van las etiquetas necesarias como los datos necesarios del alumno
-label_Nombre = TK.Label(mi_ventana, text="Nombre")
-label_Nombre.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
-label_Nombre.place(x = 300, y = 100)
-
-label_FechaNacimiento = TK.Label(mi_ventana, text="Fecha que nació: Formato YYYY-MM-DD")
-label_FechaNacimiento.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
-label_FechaNacimiento.place(x = 300, y = 150)
-
-label_Nota = TK.Label(mi_ventana, text="Cantidad de notas")
-label_Nota.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
-label_Nota.place(x = 300, y = 200)
-
-label_Hora = TK.Label(mi_ventana, text=time.strftime("%H:%M:%S"))
-label_Hora.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
-label_Hora.pack()
-
-#En esta región crearé un textBox a prueba
-txBox_Nombre = TK.Entry(mi_ventana)
-txBox_Nombre.place(x = 130, y = 100)
-
-txBox_FechaNacimiento = TK.Entry(mi_ventana)
-txBox_FechaNacimiento.place(x = 130, y = 150)
-
-txBox_Nota = TK.Entry(mi_ventana)
-txBox_Nota.place(x = 130, y = 200)
-
-#En esta región tendrá RadioButtons
-opción = TK.IntVar()
-
-Botón_Tabla_de_Alumno = TK.Radiobutton(mi_ventana, text="Alumno", variable=opción, value= 1, command=seleccionar_y_consultar)
-Botón_Tabla_de_Alumno.config(bg=rosado_claro, font=("Arial", 12))
-
-Botón_Tabla_de_Carrera = TK.Radiobutton(mi_ventana, text="Carrera", variable=opción, value= 2, command=seleccionar_y_consultar)
-Botón_Tabla_de_Carrera.config(bg=rosado_claro, font=("Arial", 12))
-
-Botón_Tabla_de_Curso = TK.Radiobutton(mi_ventana, text="Curso", variable=opción, value= 3, command=seleccionar_y_consultar)
-Botón_Tabla_de_Curso.config(bg=rosado_claro, font=("Arial", 12))
-
-Botón_Tabla_de_Alumno.place(x= 60, y = 500)
-Botón_Tabla_de_Carrera.place(x = 180, y = 500)
-Botón_Tabla_de_Curso.place(x = 300, y = 500)
-
-#En esta región habrá una listBox
-Lista_de_datos = TK.Listbox(mi_ventana, width= 60, height= 40)
-Lista_de_datos.config(fg="blue", font=("Arial", 10))
-Lista_de_datos.place(x= 525, y= 0)
-
 
 actualizar_la_hora()
 mi_ventana.mainloop()

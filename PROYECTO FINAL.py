@@ -9,7 +9,7 @@ rosado_claro = "#FFDEDE"
 verde = "#00FF00"
 amarillo_claro = ""
 
-ícono = os.path.join(os.path.dirname(__file__),"escuela.ico"
+ícono = os.path.join(os.path.dirname(__file__),"escuela.ico")
 
 #Esta función se trata de la cadena de conexión con mi base de datos
 def conectar_base_de_datos():
@@ -22,7 +22,6 @@ def conectar_base_de_datos():
     )
     conexión_exitosa = cadena_de_conexión.is_connected()
     if conexión_exitosa:
-      print("QUE GRANDE ÍDOLO, NINGÚN ERROR DE CONEXIÓN")
       return cadena_de_conexión
   except Error as e:
     print(f"Error inesperado al conectar MySql {e}")
@@ -32,7 +31,6 @@ def desconectar_base_de_datos(conexión):
   desconectando_db = conexión.is_connected()
   if desconectando_db:
     conexión.close()
-    print("SE HA CERRADO CON ÉXITO")
 
 #En esta región tendré las funciones de base de datos MySQL como Consultar
 def consultar_tabla(nombre_de_la_tabla):
@@ -43,7 +41,7 @@ def consultar_tabla(nombre_de_la_tabla):
     resultado = cursor.fetchall()
     Lista_de_datos.delete(0, TK.END)
     
-    #Este for muestra toda la tabla completa en la listbox de MySQL
+    #Este for muestra toda la tabla completa en la Lista_de_datos de MySQL
     for fila in resultado:
       filas_formateadas = " | \t".join(map(str, fila))
       Lista_de_datos.insert(TK.END, filas_formateadas)
@@ -101,7 +99,7 @@ botón_agregar.config(fg="black", bg=verde, font=("Arial", 8))
 botón_modificar = TK.Button(text="Modificar Dato", command=lambda:modificar_datos('alumno'), width= 10,height= 1)
 botón_modificar.config(fg="black", bg="red", font=("Arial", 8))
 
-botón_eliminar = TK.Button(text="Eliminar Dato", width= 10,height= 1)
+botón_eliminar = TK.Button(text="Eliminar Dato", command=lambda:eliminar_datos('alumno') , width= 10,height= 1)
 botón_eliminar.config(fg="black", bg="blue", font=("Arial", 8))
 
 
@@ -192,10 +190,10 @@ def insertar_datos(nombre_de_la_tabla):
     print("No tiene todos los datos")
 
 def modificar_datos(nombre_de_la_tabla):
-  columna_seleccionada = listbox.curseselection()
+  columna_seleccionada = Lista_de_datos.curselection()
 
   if columna_seleccionada:
-    ID_Seleccionado = listbox.get(columna_seleccionada)
+    ID_Seleccionado = Lista_de_datos.get(columna_seleccionada)
 
     Nombre = txBox_Nombre.get()
     Fecha_de_Nacimiento = txBox_FechaNacimiento.get()
@@ -209,12 +207,7 @@ def modificar_datos(nombre_de_la_tabla):
         if conexión:
           cursor = conexión.cursor()
           values = (Nombre, Fecha_de_Nacimiento, Cantidad_de_Notas)
-          query = "UPDATE {nombre_de_la_tabla} 
-                  SET Nombre = %s,
-                  Fecha_de_Nacimiento = %s,
-                  SET Cantidad_de_Notas = %s
-                  WHERE ID = %s"
-        
+          query = f"UPDATE {nombre_de_la_tabla} SET Nombre = %s, Fecha_de_Nacimiento = %s, Cantidad_de_Notas = %s"
           cursor.execute(query, values)
           conexión.commit()
       except Error as e:
@@ -226,22 +219,30 @@ def modificar_datos(nombre_de_la_tabla):
     print("No se seleccionó ninguna columna")
 
 def eliminar_datos(nombre_de_la_tabla):
-  columna_seleccionada = listbox.curseselection()
-
+  columna_seleccionada = Lista_de_datos.curselection()
+  
   if columna_seleccionada:
-    ID_Seleccionado = listbox.get(columna_seleccionada)
     conexión = conectar_base_de_datos()
+    
+    
     if conexión:
-        cursor = conexión.cursor()
-        values = (ID_Seleccionado,)
-        query = f"DELETE FROM {nombre_de_la_tabla} where ID = %s"
-        cursor.execute(query, values)
-        conexión.commit()
-        print("Una columna ha sido eliminada exitosamente")
-
-    desconectar_base_de_datos()
-  else:
-    print("No seleccionaste la columna a eliminar")
+        for _ in columna_seleccionada:
+          selección = Lista_de_datos.get(_)
+          try:
+            ID_Seleccionado = int(selección.split('|')[0].strip())
+            cursor = conexión.cursor()
+            values = (ID_Seleccionado,)
+            query = f"DELETE FROM {nombre_de_la_tabla} where ID = %s"
+            cursor.execute(query, values)
+            conexión.commit()
+            print(f"Una columna ha sido eliminada exitosamente con id {ID_Seleccionado}")
+          except ValueError:
+            print("El ID no vale")
+          except Error as e:
+            print(f"ERROR INESPERADO: {e}")
+        desconectar_base_de_datos(conexión)
+    else:
+      print("No seleccionaste la columna a eliminar")
 
 actualizar_la_hora()
 mi_ventana.mainloop()

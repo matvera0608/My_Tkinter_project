@@ -156,12 +156,12 @@ Botón_Tabla_de_Alumno.config(bg=rosado_claro, font=("Arial", 12))
 Botón_Tabla_de_Carrera = TK.Radiobutton(mi_ventana, text="Carrera", variable=opción, value= 2, command=seleccionar_y_consultar)
 Botón_Tabla_de_Carrera.config(bg=rosado_claro, font=("Arial", 12))
 
-Botón_Tabla_de_Curso = TK.Radiobutton(mi_ventana, text="Materia", variable=opción, value= 3, command=seleccionar_y_consultar)
-Botón_Tabla_de_Curso.config(bg=rosado_claro, font=("Arial", 12))
+Botón_Tabla_de_Materia = TK.Radiobutton(mi_ventana, text="Materia", variable=opción, value= 3, command=seleccionar_y_consultar)
+Botón_Tabla_de_Materia.config(bg=rosado_claro, font=("Arial", 12))
 
 Botón_Tabla_de_Alumno.place(x= 60, y = 500)
 Botón_Tabla_de_Carrera.place(x = 180, y = 500)
-Botón_Tabla_de_Curso.place(x = 300, y = 500)
+Botón_Tabla_de_Materia.place(x = 300, y = 500)
 
 #En esta región habrá una listBox
 Lista_de_datos = TK.Listbox(mi_ventana, width= 60, height= 40)
@@ -188,7 +188,7 @@ def insertar_datos(nombre_de_la_tabla):
     try:
       if conexión:
         values = (Nombre, Cantidad_de_notas, Fecha_de_Nacimiento)
-        query = f"INSERT INTO {nombre_de_la_tabla} (Nombre, Cantidad_de_notas, Fecha_de_Nacimiento) VALUES (%s, %s, %s)"
+        query = f"INSERT INTO {nombre_de_la_tabla} (Nombre, Fecha_de_Nacimiento) VALUES (%s, %s, %s)"
         cursor.execute(query, values)
         conexión.commit()
         
@@ -227,7 +227,7 @@ def modificar_datos(nombre_de_la_tabla):
       try:
         if conexión:
           values = (Nombre, Fecha_de_Nacimiento, Cantidad_de_Notas, ID_Seleccionado,)
-          query = f"UPDATE {nombre_de_la_tabla} SET Nombre = %s, Fecha_de_Nacimiento = %s, Cantidad_de_Notas = %s WHERE ID = %s"
+          query = f"UPDATE {nombre_de_la_tabla} SET Nombre = %s, Fecha_de_Nacimiento = %s, WHERE ID_Alumno = %s"
           cursor.execute(query, values)
           conexión.commit()
           print("Se ha modificado correctamente los datos")

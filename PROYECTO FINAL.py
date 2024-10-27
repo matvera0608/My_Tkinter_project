@@ -1,5 +1,6 @@
 import os
 from mysql.connector import Error
+from datetime import datetime
 import mysql.connector as MySql
 import time
 import tkinter as TK
@@ -54,21 +55,37 @@ def consultar_tabla_Alumno():
 def consultar_tabla_Carrera():
   consultar_tabla('carrera')
 
-def consultar_tabla_Curso():
-  consultar_tabla('curso')
+def consultar_tabla_Materia():
+  consultar_tabla('materia')
 
 def seleccionar_y_consultar():
   
   botón_seleccionado = opción.get()
-  match botón_seleccionado:
-    case 1:
-      consultar_tabla_Alumno()
-    case 2:
-      consultar_tabla_Carrera()
-    case 3:
-      consultar_tabla_Curso()
-    case _:
-      print("LA OPCIÓN NO ES VÁLIDA")
+  try:
+    match botón_seleccionado:
+      case 1:
+        consultar_tabla_Alumno()
+      case 2:
+        consultar_tabla_Carrera()
+      case 3:
+        consultar_tabla_Materia()
+      case _:
+        print("LA OPCIÓN NO ES VÁLIDA")
+  except Error as e:
+    print(f"Error al consultar toda la tabla: {e}")
+
+def insertar_todos_los_datos():
+  botón_seleccionado = opción.get()
+  try:
+    match botón_seleccionado:
+      case 1:
+        insertar_datos('alumno')
+      case 2:
+        insertar_datos('carrera')
+      case 3:
+        insertar_datos('materia')
+  except Exception as e:
+    print(f"Error al insertar datos necesarios: {e}")
 
 #Esta función sirve para actualizar la hora
 def actualizar_la_hora():
@@ -77,29 +94,22 @@ def actualizar_la_hora():
 
 #Esta ventana es el comienzo de mi proyecto Tkinter
 mi_ventana = TK.Tk()
-
 mi_ventana.title("ABM de Alumnos")
-
-mi_ventana.geometry("900x600")
-
-mi_ventana.minsize(900, 600)
-
-mi_ventana.maxsize(900, 600)
-
+mi_ventana.geometry("1200x600")
+mi_ventana.minsize(1200, 600)
+mi_ventana.maxsize(1200, 600)
 mi_ventana.configure(bg=rosado_claro)
-
 mi_ventana.iconbitmap(ícono)
-
 mi_ventana.attributes("-alpha", 1)
 
 #Creo los botones necesarios para el ABM de alumnos
-botón_agregar = TK.Button(text="Agregar Dato", command=lambda:insertar_datos('alumno'), width= 10,height= 1)
+botón_agregar = TK.Button(text="Agregar Dato", command=insertar_todos_los_datos, width= 10,height= 1)
 botón_agregar.config(fg="black", bg=verde, font=("Arial", 8))
 
 botón_modificar = TK.Button(text="Modificar Dato", command=lambda:modificar_datos('alumno'), width= 10,height= 1)
 botón_modificar.config(fg="black", bg="red", font=("Arial", 8))
 
-botón_eliminar = TK.Button(text="Eliminar Dato", command=lambda:eliminar_datos('alumno') , width= 10,height= 1)
+botón_eliminar = TK.Button(text="Eliminar Dato", command=lambda:eliminar_datos('alumno'), width= 10,height= 1)
 botón_eliminar.config(fg="black", bg="blue", font=("Arial", 8))
 
 
@@ -146,7 +156,7 @@ Botón_Tabla_de_Alumno.config(bg=rosado_claro, font=("Arial", 12))
 Botón_Tabla_de_Carrera = TK.Radiobutton(mi_ventana, text="Carrera", variable=opción, value= 2, command=seleccionar_y_consultar)
 Botón_Tabla_de_Carrera.config(bg=rosado_claro, font=("Arial", 12))
 
-Botón_Tabla_de_Curso = TK.Radiobutton(mi_ventana, text="Curso", variable=opción, value= 3, command=seleccionar_y_consultar)
+Botón_Tabla_de_Curso = TK.Radiobutton(mi_ventana, text="Materia", variable=opción, value= 3, command=seleccionar_y_consultar)
 Botón_Tabla_de_Curso.config(bg=rosado_claro, font=("Arial", 12))
 
 Botón_Tabla_de_Alumno.place(x= 60, y = 500)
@@ -156,34 +166,39 @@ Botón_Tabla_de_Curso.place(x = 300, y = 500)
 #En esta región habrá una listBox
 Lista_de_datos = TK.Listbox(mi_ventana, width= 60, height= 40)
 Lista_de_datos.config(fg="blue", font=("Arial", 10))
-Lista_de_datos.place(x= 525, y= 0)
+Lista_de_datos.place(x= 750, y= 0)
 
 #Hice un pequeño desorden dentro de mi proyecto, porque creé la función insertar y modificar datos después de declarar
 #las variables entry, es decir, textbox ya que en caso contrario la función me dirá que el txBox no se encuentra
 def insertar_datos(nombre_de_la_tabla):
   Nombre = txBox_Nombre.get()
+  Fecha_de_Nacimiento = txBox_FechaNacimiento.get()
   Cantidad_de_notas = txBox_Nota.get()
   
-  Datos_necesarios = Nombre and Cantidad_de_notas
+  Datos_necesarios = Nombre and Cantidad_de_notas and Fecha_de_Nacimiento
   
   if Datos_necesarios:
     conexión = conectar_base_de_datos()
-    
+    cursor = conexión.cursor()
+    try:
+      Fecha_de_Nacimiento = datetime.strptime(Fecha_de_Nacimiento, '%Y-%m-%d')
+    except ValueError:
+      print("El formato no es correcto.Debe ser YYYY-MM-DD")
+      return
     try:
       if conexión:
-        cursor = conexión.cursor()
-        values = (Nombre, Cantidad_de_notas)
-        query = f"INSERT INTO {nombre_de_la_tabla} (Nombre, Cantidad_de_notas) VALUES (%s, %s)"
-        
+        values = (Nombre, Cantidad_de_notas, Fecha_de_Nacimiento)
+        query = f"INSERT INTO {nombre_de_la_tabla} (Nombre, Cantidad_de_notas, Fecha_de_Nacimiento) VALUES (%s, %s, %s)"
         cursor.execute(query, values)
         conexión.commit()
         
         print("SE AGREGÓ LOS DATOS NECESARIOS")
         
         txBox_Nombre.delete(0, TK.END)
+        txBox_FechaNacimiento.delete(0, TK.END)
         txBox_Nota.delete(0, TK.END)
         
-        consultar_tabla_Alumno()
+        consultar_tabla(nombre_de_la_tabla)
     except Error as e:
       print(f"ERROR INESPERADO AL INSERTAR: {e}")
   else:
@@ -193,7 +208,7 @@ def modificar_datos(nombre_de_la_tabla):
   columna_seleccionada = Lista_de_datos.curselection()
 
   if columna_seleccionada:
-    ID_Seleccionado = Lista_de_datos.get(columna_seleccionada)
+    ID_Seleccionado = Lista_de_datos.get(columna_seleccionada).split('|')[3].strip()
 
     Nombre = txBox_Nombre.get()
     Fecha_de_Nacimiento = txBox_FechaNacimiento.get()
@@ -203,13 +218,19 @@ def modificar_datos(nombre_de_la_tabla):
   
     if Datos_necesarios:
       conexión = conectar_base_de_datos()
+      cursor = conexión.cursor()
+      try:
+        Fecha_de_Nacimiento = datetime.strptime(Fecha_de_Nacimiento, '%Y-%m-%d')
+      except ValueError:
+        print("El formato no es correcto.Debe ser YYYY-MM-DD")
+        return
       try:
         if conexión:
-          cursor = conexión.cursor()
-          values = (Nombre, Fecha_de_Nacimiento, Cantidad_de_Notas)
-          query = f"UPDATE {nombre_de_la_tabla} SET Nombre = %s, Fecha_de_Nacimiento = %s, Cantidad_de_Notas = %s"
+          values = (Nombre, Fecha_de_Nacimiento, Cantidad_de_Notas, ID_Seleccionado,)
+          query = f"UPDATE {nombre_de_la_tabla} SET Nombre = %s, Fecha_de_Nacimiento = %s, Cantidad_de_Notas = %s WHERE ID = %s"
           cursor.execute(query, values)
           conexión.commit()
+          print("Se ha modificado correctamente los datos")
       except Error as e:
         print(f"ERROR INESPERADO: {e}")
     else:
@@ -223,26 +244,28 @@ def eliminar_datos(nombre_de_la_tabla):
   
   if columna_seleccionada:
     conexión = conectar_base_de_datos()
-    
-    
     if conexión:
+      cursor = conexión.cursor()
+      try:
         for _ in columna_seleccionada:
           selección = Lista_de_datos.get(_)
           try:
-            ID_Seleccionado = int(selección.split('|')[0].strip())
-            cursor = conexión.cursor()
-            values = (ID_Seleccionado,)
-            query = f"DELETE FROM {nombre_de_la_tabla} where ID = %s"
-            cursor.execute(query, values)
-            conexión.commit()
-            print(f"Una columna ha sido eliminada exitosamente con id {ID_Seleccionado}")
+            ID_Seleccionado = int(selección.split('|')[3].strip())
           except ValueError:
-            print("El ID no vale")
-          except Error as e:
-            print(f"ERROR INESPERADO: {e}")
+            print(f"El ID {ID_Seleccionado} no vale")
+            continue
+        values = (ID_Seleccionado,)
+        query = f"DELETE FROM {nombre_de_la_tabla} where ID = %s"
+        cursor.execute(query, values)
+        conexión.commit()
+        print(f"Una columna ha sido eliminada exitosamente con id {ID_Seleccionado}")
+        consultar_tabla(nombre_de_la_tabla)
+      except Error as e:
+        print(f"ERROR INESPERADO: {e}")
+      finally:
         desconectar_base_de_datos(conexión)
-    else:
-      print("No seleccionaste la columna a eliminar")
+  else:
+    print("No seleccionaste la columna a eliminar")
 
 actualizar_la_hora()
 mi_ventana.mainloop()

@@ -5,14 +5,14 @@ import mysql.connector as MySql
 import time
 import tkinter as TK
 
-##Colores en hexadecimales
+# --- COLORES EN HEXADECIMALES ---
 rosado_claro = "#FFDEDE"
 verde = "#00FF00"
-amarillo_claro = "#F6F4CB"
+amarillo_claro = "#FFFF99"
 
+# --- CONEXIÓN CON LA BASE DE DATOS MySQL WORKBENCH
+# --- Y UN ÍCONO PARA LA IMPLEMENTACIÓN---
 ícono = os.path.join(os.path.dirname(__file__),"escuela.ico")
-
-#Esta función se trata de la cadena de conexión con mi base de datos
 def conectar_base_de_datos():
   try:
     cadena_de_conexión = MySql.connect(
@@ -33,7 +33,7 @@ def desconectar_base_de_datos(conexión):
   if desconectando_db:
     conexión.close()
 
-#En esta región tendré las funciones de base de datos MySQL como Consultar
+#--- FUNCIONES DEL ABM (ALTA, BAJA Y MODIFICACIÓN) ---
 def consultar_tabla(nombre_de_la_tabla):
   conexión = conectar_base_de_datos()
   if conexión:
@@ -92,7 +92,7 @@ def insertar_todos_los_datos():
 def habilitar_botones_e_inputs():
   #Este for me permite gestionar los texBox con sus respectivos labels
   #para que a la hora de seleccionar un radioButton me muestre lo necesario
-  for widget in [txBox_NombreAlumno, label_NombreAlumno, txBox_FechaNacimiento, label_FechaNacimiento,
+  for widget in [  txBox_NombreAlumno, label_NombreAlumno, txBox_FechaNacimiento, label_FechaNacimiento,
                    txBox_NombreCarrera, label_NombreCarrera, txBox_Duración, label_Duración,
                    txBox_NombreMateria, label_NombreMateria, txBox_HorarioCorrespondiente, label_HorarioCorrespondiente,
                    txBox_NombreProfesor, label_NombreProfesor, txBox_HorasTrabajadas, label_HorasTrabajadas,
@@ -149,7 +149,11 @@ def actualizar_la_hora():
   label_Hora.config(text=time.strftime("%H:%M:%S"))
   mi_ventana.after(1000, actualizar_la_hora)
 
-#Esta ventana es el comienzo de mi proyecto Tkinter
+def deseleccionar_RadioButton():
+  botón_seleccionado = opción.get()
+
+
+# --- CONDIFGURACIÓN DE INTERFAZ Y ELEMENTOS IMPORTANTES DE TKINTER PARA LAS INSTRUCCIONES---
 mi_ventana = TK.Tk()
 mi_ventana.title("ABM de Alumnos")
 mi_ventana.geometry("1200x600")
@@ -159,18 +163,22 @@ mi_ventana.configure(bg=rosado_claro)
 mi_ventana.iconbitmap(ícono)
 mi_ventana.attributes("-alpha", 1)
 
-#Creo los botones necesarios para el ABM de alumnos
+# --- BOTONES NECESARIOS ---
+#Agregar
 botón_agregar = TK.Button(text="Agregar Dato", command=insertar_todos_los_datos, width= 10,height= 1)
 botón_agregar.config(fg="black", bg=verde, font=("Arial", 8))
 
+#Modificar
 botón_modificar = TK.Button(text="Modificar Dato", command=insertar_todos_los_datos, width= 10,height= 1)
 botón_modificar.config(fg="black", bg="red", font=("Arial", 8))
 
+#Eliminar
 botón_eliminar = TK.Button(text="Eliminar Dato", command=insertar_todos_los_datos, width= 10,height= 1)
 botón_eliminar.config(fg="black", bg="blue", font=("Arial", 8))
 
 
-#Aquí van las etiquetas necesarias como los datos necesarios según la tabla que se seleccione a consultar
+# --- ETIQUETAS ---
+
 #Etiquetas para la tabla de alumno
 label_NombreAlumno = TK.Label(mi_ventana, text="Nombre")
 label_NombreAlumno.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
@@ -199,7 +207,8 @@ label_NombreProfesor.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 label_HorasTrabajadas = TK.Label(mi_ventana, text="Horas trabajadas")
 label_HorasTrabajadas.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-#Etiquetas para la table de nota
+#Etiquetas para la tabla de nota
+
 label_NotaCalificada = TK.Label(mi_ventana, text="Calificación")
 label_NotaCalificada.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
@@ -215,7 +224,7 @@ label_Hora = TK.Label(mi_ventana, text=time.strftime("%H:%M:%S"))
 label_Hora.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 label_Hora.pack()
 
-#En esta región crearé un textBox para cada tabla
+#--- ENTRIES ---
 
 #Tabla alumno
 txBox_NombreAlumno = TK.Entry(mi_ventana)
@@ -239,7 +248,7 @@ txBox_CantidadNotas = TK.Entry(mi_ventana)
 txBox_Promedio = TK.Entry(mi_ventana)
 
 
-#En esta región tendrá RadioButtons
+# --- RADIOBUTTONS ---
 opción = TK.IntVar()
 
 Botón_Tabla_de_Alumno = TK.Radiobutton(mi_ventana, text="Alumno", variable=opción, value= 1, command=doble_acción)
@@ -263,13 +272,13 @@ Botón_Tabla_de_Materia.place(x = 300, y = 500)
 Botón_Tabla_de_Profesor.place(x = 420, y = 500)
 Botón_Tabla_de_Notas.place(x = 540, y = 500)
 
-#En esta región habrá una listBox
+#--- LISTBOX ---
 Lista_de_datos = TK.Listbox(mi_ventana, width= 60, height= 40)
 Lista_de_datos.config(fg="blue",bg=amarillo_claro, font=("Arial", 10))
 Lista_de_datos.place(x= 750, y= 0)
 
-#Hice un pequeño desorden dentro de mi proyecto, porque creé la función insertar y modificar datos después de declarar
-#las variables entry, es decir, textbox ya que en caso contrario la función me dirá que el txBox no se encuentra
+# --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
+
 def insertar_datos(nombre_de_la_tabla):
   Nombre = txBox_NombreAlumno.get()
   Fecha_de_Nacimiento = txBox_FechaNacimiento.get()
@@ -287,7 +296,7 @@ def insertar_datos(nombre_de_la_tabla):
     try:
       if conexión:
         values = (Nombre, Fecha_de_Nacimiento)
-        query = f"INSERT INTO {nombre_de_la_tabla} (Nombre, Fecha_de_Nacimiento) VALUES (%s, %s, %s)"
+        query = f"INSERT INTO {nombre_de_la_tabla} (Nombre, Fecha_de_Nacimiento) VALUES (%s, %s)"
         cursor.execute(query, values)
         conexión.commit()
         
@@ -324,7 +333,7 @@ def modificar_datos(nombre_de_la_tabla):
       try:
         if conexión:
           values = (Nombre, Fecha_de_Nacimiento, ID_Seleccionado,)
-          query = f"UPDATE {nombre_de_la_tabla} SET Nombre = %s, Fecha_de_Nacimiento = %s, WHERE ID_Alumno = %s"
+          query = f"UPDATE {nombre_de_la_tabla} SET Nombre = %s, Fecha_de_Nacimiento = %s WHERE ID_Alumno = %s"
           cursor.execute(query, values)
           conexión.commit()
           print("Se ha modificado correctamente los datos")
@@ -352,7 +361,7 @@ def eliminar_datos(nombre_de_la_tabla):
             print(f"El ID {ID_Seleccionado} no vale")
             continue
         values = (ID_Seleccionado,)
-        query = f"DELETE FROM {nombre_de_la_tabla} where ID = %s"
+        query = f"DELETE FROM {nombre_de_la_tabla} where ID_Alumno = %s"
         cursor.execute(query, values)
         conexión.commit()
         print(f"Una columna ha sido eliminada exitosamente con id {ID_Seleccionado}")

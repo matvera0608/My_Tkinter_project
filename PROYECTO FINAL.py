@@ -138,7 +138,12 @@ def habilitar_botones_e_inputs():
         label_Promedio.place(relx=0.25, rely=0.325)
       case _:
           print("ES NECESARIO SELECCIONAR")
-    
+
+def obtener_tabla_seleccionada():
+  tabla = {1: 'alumno', 2: 'carrera', 3: 'materia', 4: 'profesor', 5: 'nota'}
+  nombre = tabla.get(opción.get(), None)
+  return nombre
+
 def doble_acción():
   habilitar_botones_e_inputs()
   
@@ -169,11 +174,11 @@ botón_agregar = TK.Button(text="Agregar Dato", command=insertar_todos_los_datos
 botón_agregar.config(fg="black", bg=verde, font=("Arial", 8))
 
 #Modificar
-botón_modificar = TK.Button(text="Modificar Dato", command=insertar_todos_los_datos, width= 10,height= 1)
+botón_modificar = TK.Button(text="Modificar Dato", command=lambda:modificar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
 botón_modificar.config(fg="black", bg="red", font=("Arial", 8))
 
 #Eliminar
-botón_eliminar = TK.Button(text="Eliminar Dato", command=insertar_todos_los_datos, width= 10,height= 1)
+botón_eliminar = TK.Button(text="Eliminar Dato", command=lambda:eliminar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
 botón_eliminar.config(fg="black", bg="blue", font=("Arial", 8))
 
 

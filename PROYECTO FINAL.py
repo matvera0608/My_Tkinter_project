@@ -87,14 +87,57 @@ def insertar_todos_los_datos():
     print(f"Error al insertar datos necesarios: {e}")
 
 
-#Definí una función para hacer aparecer las opciones de agregar,
-#modificar y eliminar ciertos datos
+#Definí una función para poder mostrar 
+#cuando uno de los radioButtons esté seleccionado
 def habilitar_botones_e_inputs():
+  #Este for me permite gestionar los texBox con sus respectivos labels
+  #para que a la hora de seleccionar un radioButton me muestre lo necesario
+  for widget in [txBox_NombreAlumno, label_NombreAlumno, txBox_FechaNacimiento, label_FechaNacimiento,
+                   txBox_NombreCarrera, label_NombreCarrera, txBox_Duración, label_Duración,
+                   txBox_NombreMateria, label_NombreMateria, txBox_HorarioCorrespondiente, label_HorarioCorrespondiente,
+                   txBox_NombreProfesor, label_NombreProfesor, txBox_HorasTrabajadas, label_HorasTrabajadas,
+                   txBox_NotaCalificada, label_NotaCalificada, txBox_CantidadNotas, label_CantidadNotas,
+                   txBox_Promedio, label_Promedio]:
+      widget.place_forget()
+    
+  
   botón_seleccionado = opción.get()
-  if botón_seleccionado == 1 or botón_seleccionado == 2 or botón_seleccionado == 3:
-    print()
-  else:
-    print()
+  
+  if botón_seleccionado in (1, 2, 3, 4, 5):
+    botón_agregar.place(x=60,y= 100)
+    botón_modificar.place(x=60,y= 160)
+    botón_eliminar.place(x=60,y= 220)
+    
+    match botón_seleccionado:
+      case 1:
+        txBox_NombreAlumno.place(x=150, y= 100)
+        label_NombreAlumno.place(relx=0.25, rely=0.155)
+        txBox_FechaNacimiento.place(x=150, y= 150)
+        label_FechaNacimiento.place(relx=0.25, rely=0.25)
+      case 2:
+        txBox_NombreCarrera.place(x=150, y= 100)
+        label_NombreCarrera.place(relx=0.25, rely=0.155)
+        txBox_Duración.place(x=150, y= 150)
+        label_Duración.place(relx=0.25, rely=0.25)
+      case 3:
+        txBox_NombreMateria.place(x=150, y= 100)
+        label_NombreMateria.place(relx=0.25, rely=0.155)
+        txBox_HorarioCorrespondiente.place(x=150, y= 150)
+        label_HorarioCorrespondiente.place(relx=0.25, rely=0.25)
+      case 4:
+        txBox_NombreProfesor.place(x=150, y= 100)
+        label_NombreProfesor.place(relx=0.25, rely=0.155)
+        txBox_HorasTrabajadas.place(x=150, y= 150)
+        label_HorasTrabajadas.place(relx=0.25, rely=0.25)
+      case 5:
+        txBox_NotaCalificada.place(x=150, y= 100)
+        label_NotaCalificada.place(relx=0.25, rely=0.155)
+        txBox_CantidadNotas.place(x=150, y= 150)
+        label_CantidadNotas.place(relx=0.25, rely=0.25)
+        txBox_Promedio.place(x=150, y= 200)
+        label_Promedio.place(relx=0.25, rely=0.325)
+      case _:
+          print("ES NECESARIO SELECCIONAR")
     
 def doble_acción():
   habilitar_botones_e_inputs()
@@ -149,16 +192,51 @@ label_NombreMateria.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 label_HorarioCorrespondiente = TK.Label(mi_ventana, text="Horario correspondiente")
 label_HorarioCorrespondiente.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
+#Etiquetas para la tabla de profesor
+label_NombreProfesor = TK.Label(mi_ventana, text="Nombre")
+label_NombreProfesor.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+label_HorasTrabajadas = TK.Label(mi_ventana, text="Horas trabajadas")
+label_HorasTrabajadas.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+#Etiquetas para la table de nota
+label_NotaCalificada = TK.Label(mi_ventana, text="Calificación")
+label_NotaCalificada.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+label_CantidadNotas = TK.Label(mi_ventana, text="Cantidad")
+label_CantidadNotas.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+label_Promedio = TK.Label(mi_ventana, text="Promedio")
+label_Promedio.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+
+
 label_Hora = TK.Label(mi_ventana, text=time.strftime("%H:%M:%S"))
 label_Hora.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 label_Hora.pack()
 
-#En esta región crearé un textBox a prueba
-txBox_Nombre = TK.Entry(mi_ventana)
+#En esta región crearé un textBox para cada tabla
 
+#Tabla alumno
+txBox_NombreAlumno = TK.Entry(mi_ventana)
 txBox_FechaNacimiento = TK.Entry(mi_ventana)
 
-txBox_Nota = TK.Entry(mi_ventana)
+#Tabla carrera
+txBox_NombreCarrera = TK.Entry(mi_ventana)
+txBox_Duración = TK.Entry(mi_ventana)
+
+#Tabla materia
+txBox_NombreMateria = TK.Entry(mi_ventana)
+txBox_HorarioCorrespondiente = TK.Entry(mi_ventana)
+
+#Tabla profesor
+txBox_NombreProfesor = TK.Entry(mi_ventana)
+txBox_HorasTrabajadas = TK.Entry(mi_ventana)
+
+#Tabla nota
+txBox_NotaCalificada = TK.Entry(mi_ventana)
+txBox_CantidadNotas = TK.Entry(mi_ventana)
+txBox_Promedio = TK.Entry(mi_ventana)
 
 
 #En esta región tendrá RadioButtons
@@ -187,17 +265,16 @@ Botón_Tabla_de_Notas.place(x = 540, y = 500)
 
 #En esta región habrá una listBox
 Lista_de_datos = TK.Listbox(mi_ventana, width= 60, height= 40)
-Lista_de_datos.config(fg="blue", font=("Arial", 10))
+Lista_de_datos.config(fg="blue",bg=amarillo_claro, font=("Arial", 10))
 Lista_de_datos.place(x= 750, y= 0)
 
 #Hice un pequeño desorden dentro de mi proyecto, porque creé la función insertar y modificar datos después de declarar
 #las variables entry, es decir, textbox ya que en caso contrario la función me dirá que el txBox no se encuentra
 def insertar_datos(nombre_de_la_tabla):
-  Nombre = txBox_Nombre.get()
+  Nombre = txBox_NombreAlumno.get()
   Fecha_de_Nacimiento = txBox_FechaNacimiento.get()
-  Cantidad_de_notas = txBox_Nota.get()
   
-  Datos_necesarios = Nombre and Cantidad_de_notas and Fecha_de_Nacimiento
+  Datos_necesarios = Nombre and Fecha_de_Nacimiento
   
   if Datos_necesarios:
     conexión = conectar_base_de_datos()
@@ -209,16 +286,15 @@ def insertar_datos(nombre_de_la_tabla):
       return
     try:
       if conexión:
-        values = (Nombre, Cantidad_de_notas, Fecha_de_Nacimiento)
+        values = (Nombre, Fecha_de_Nacimiento)
         query = f"INSERT INTO {nombre_de_la_tabla} (Nombre, Fecha_de_Nacimiento) VALUES (%s, %s, %s)"
         cursor.execute(query, values)
         conexión.commit()
         
         print("SE AGREGÓ LOS DATOS NECESARIOS")
         
-        txBox_Nombre.delete(0, TK.END)
+        txBox_NombreAlumno.delete(0, TK.END)
         txBox_FechaNacimiento.delete(0, TK.END)
-        txBox_Nota.delete(0, TK.END)
         
         consultar_tabla(nombre_de_la_tabla)
     except Error as e:
@@ -232,11 +308,10 @@ def modificar_datos(nombre_de_la_tabla):
   if columna_seleccionada:
     ID_Seleccionado = Lista_de_datos.get(columna_seleccionada).split('|')[3].strip()
 
-    Nombre = txBox_Nombre.get()
+    Nombre = txBox_NombreAlumno.get()
     Fecha_de_Nacimiento = txBox_FechaNacimiento.get()
-    Cantidad_de_Notas = txBox_Nota.get()
   
-    Datos_necesarios = Nombre and Fecha_de_Nacimiento and Cantidad_de_Notas
+    Datos_necesarios = Nombre and Fecha_de_Nacimiento
   
     if Datos_necesarios:
       conexión = conectar_base_de_datos()
@@ -248,7 +323,7 @@ def modificar_datos(nombre_de_la_tabla):
         return
       try:
         if conexión:
-          values = (Nombre, Fecha_de_Nacimiento, Cantidad_de_Notas, ID_Seleccionado,)
+          values = (Nombre, Fecha_de_Nacimiento, ID_Seleccionado,)
           query = f"UPDATE {nombre_de_la_tabla} SET Nombre = %s, Fecha_de_Nacimiento = %s, WHERE ID_Alumno = %s"
           cursor.execute(query, values)
           conexión.commit()

@@ -8,7 +8,7 @@ import tkinter as TK
 ##Colores en hexadecimales
 rosado_claro = "#FFDEDE"
 verde = "#00FF00"
-amarillo_claro = "#FFFF99"
+amarillo_claro = "#F6F4CB"
 
 ícono = os.path.join(os.path.dirname(__file__),"escuela.ico")
 

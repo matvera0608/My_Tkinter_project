@@ -8,7 +8,7 @@ import tkinter as TK
 ##Colores en hexadecimales
 rosado_claro = "#FFDEDE"
 verde = "#00FF00"
-amarillo_claro = ""
+amarillo_claro = "#FFFF99"
 
 ícono = os.path.join(os.path.dirname(__file__),"escuela.ico")
 
@@ -49,26 +49,21 @@ def consultar_tabla(nombre_de_la_tabla):
     
     desconectar_base_de_datos(conexión)
 
-def consultar_tabla_Alumno():
-  consultar_tabla('alumno')
-
-def consultar_tabla_Carrera():
-  consultar_tabla('carrera')
-
-def consultar_tabla_Materia():
-  consultar_tabla('materia')
-
 def seleccionar_y_consultar():
   
   botón_seleccionado = opción.get()
   try:
     match botón_seleccionado:
       case 1:
-        consultar_tabla_Alumno()
+        consultar_tabla('alumno')
       case 2:
-        consultar_tabla_Carrera()
+        consultar_tabla('carrera')
       case 3:
-        consultar_tabla_Materia()
+        consultar_tabla('materia')
+      case 4:
+        consultar_tabla('profesor')
+      case 5:
+        consultar_tabla('nota')
       case _:
         print("LA OPCIÓN NO ES VÁLIDA")
   except Error as e:
@@ -84,8 +79,27 @@ def insertar_todos_los_datos():
         insertar_datos('carrera')
       case 3:
         insertar_datos('materia')
+      case 4:
+        insertar_datos('profesor')
+      case 5:
+        insertar_datos('nota')
   except Exception as e:
     print(f"Error al insertar datos necesarios: {e}")
+
+
+#Definí una función para hacer aparecer las opciones de agregar,
+#modificar y eliminar ciertos datos
+def habilitar_botones_e_inputs():
+  botón_seleccionado = opción.get()
+  if botón_seleccionado == 1 or botón_seleccionado == 2 or botón_seleccionado == 3:
+    print()
+  else:
+    print()
+    
+def doble_acción():
+  habilitar_botones_e_inputs()
+  
+  seleccionar_y_consultar()
 
 #Esta función sirve para actualizar la hora
 def actualizar_la_hora():
@@ -106,32 +120,34 @@ mi_ventana.attributes("-alpha", 1)
 botón_agregar = TK.Button(text="Agregar Dato", command=insertar_todos_los_datos, width= 10,height= 1)
 botón_agregar.config(fg="black", bg=verde, font=("Arial", 8))
 
-botón_modificar = TK.Button(text="Modificar Dato", command=lambda:modificar_datos('alumno'), width= 10,height= 1)
+botón_modificar = TK.Button(text="Modificar Dato", command=insertar_todos_los_datos, width= 10,height= 1)
 botón_modificar.config(fg="black", bg="red", font=("Arial", 8))
 
-botón_eliminar = TK.Button(text="Eliminar Dato", command=lambda:eliminar_datos('alumno'), width= 10,height= 1)
+botón_eliminar = TK.Button(text="Eliminar Dato", command=insertar_todos_los_datos, width= 10,height= 1)
 botón_eliminar.config(fg="black", bg="blue", font=("Arial", 8))
 
 
-botón_agregar.place(x = 20, y = 120)
-
-botón_modificar.place(x = 20, y = 180)
-
-botón_eliminar.place(x = 20, y = 240)
-
-
-#Aquí van las etiquetas necesarias como los datos necesarios del alumno
-label_Nombre = TK.Label(mi_ventana, text="Nombre")
-label_Nombre.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
-label_Nombre.place(x = 300, y = 100)
+#Aquí van las etiquetas necesarias como los datos necesarios según la tabla que se seleccione a consultar
+#Etiquetas para la tabla de alumno
+label_NombreAlumno = TK.Label(mi_ventana, text="Nombre")
+label_NombreAlumno.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
 label_FechaNacimiento = TK.Label(mi_ventana, text="Fecha que nació: Formato YYYY-MM-DD")
 label_FechaNacimiento.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
-label_FechaNacimiento.place(x = 300, y = 150)
 
-label_Nota = TK.Label(mi_ventana, text="Cantidad de notas")
-label_Nota.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
-label_Nota.place(x = 300, y = 200)
+#Etiquetas para la tabla de carrera
+label_NombreCarrera = TK.Label(mi_ventana, text="Nombre")
+label_NombreCarrera.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+label_Duración = TK.Label(mi_ventana, text="Duración")
+label_Duración.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+#Etiquetas para la tabla de materia
+label_NombreMateria = TK.Label(mi_ventana, text="Nombre")
+label_NombreMateria.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+label_HorarioCorrespondiente = TK.Label(mi_ventana, text="Horario correspondiente")
+label_HorarioCorrespondiente.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
 label_Hora = TK.Label(mi_ventana, text=time.strftime("%H:%M:%S"))
 label_Hora.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
@@ -139,29 +155,35 @@ label_Hora.pack()
 
 #En esta región crearé un textBox a prueba
 txBox_Nombre = TK.Entry(mi_ventana)
-txBox_Nombre.place(x = 130, y = 100)
 
 txBox_FechaNacimiento = TK.Entry(mi_ventana)
-txBox_FechaNacimiento.place(x = 130, y = 150)
 
 txBox_Nota = TK.Entry(mi_ventana)
-txBox_Nota.place(x = 130, y = 200)
+
 
 #En esta región tendrá RadioButtons
 opción = TK.IntVar()
 
-Botón_Tabla_de_Alumno = TK.Radiobutton(mi_ventana, text="Alumno", variable=opción, value= 1, command=seleccionar_y_consultar)
+Botón_Tabla_de_Alumno = TK.Radiobutton(mi_ventana, text="Alumno", variable=opción, value= 1, command=doble_acción)
 Botón_Tabla_de_Alumno.config(bg=rosado_claro, font=("Arial", 12))
 
-Botón_Tabla_de_Carrera = TK.Radiobutton(mi_ventana, text="Carrera", variable=opción, value= 2, command=seleccionar_y_consultar)
+Botón_Tabla_de_Carrera = TK.Radiobutton(mi_ventana, text="Carrera", variable=opción, value= 2, command=doble_acción)
 Botón_Tabla_de_Carrera.config(bg=rosado_claro, font=("Arial", 12))
 
-Botón_Tabla_de_Materia = TK.Radiobutton(mi_ventana, text="Materia", variable=opción, value= 3, command=seleccionar_y_consultar)
+Botón_Tabla_de_Materia = TK.Radiobutton(mi_ventana, text="Materia", variable=opción, value= 3, command=doble_acción)
 Botón_Tabla_de_Materia.config(bg=rosado_claro, font=("Arial", 12))
+
+Botón_Tabla_de_Profesor = TK.Radiobutton(mi_ventana, text="Profesor", variable=opción, value= 4, command=doble_acción)
+Botón_Tabla_de_Profesor.config(bg=rosado_claro, font=("Arial", 12))
+
+Botón_Tabla_de_Notas = TK.Radiobutton(mi_ventana, text="Nota", variable=opción, value= 5, command=doble_acción)
+Botón_Tabla_de_Notas.config(bg=rosado_claro, font=("Arial", 12))
 
 Botón_Tabla_de_Alumno.place(x= 60, y = 500)
 Botón_Tabla_de_Carrera.place(x = 180, y = 500)
 Botón_Tabla_de_Materia.place(x = 300, y = 500)
+Botón_Tabla_de_Profesor.place(x = 420, y = 500)
+Botón_Tabla_de_Notas.place(x = 540, y = 500)
 
 #En esta región habrá una listBox
 Lista_de_datos = TK.Listbox(mi_ventana, width= 60, height= 40)

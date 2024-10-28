@@ -144,6 +144,20 @@ def obtener_tabla_seleccionada():
   nombre = tabla.get(opción.get(), None)
   return nombre
 
+def obtener_datos_de_Formulario(nombre_de_la_tabla):
+  TablaAlumno = nombre_de_la_tabla == 'alumno'
+  if TablaAlumno:
+    nombre = txBox_NombreAlumno.get()
+    fecha_de_nacimiento = txBox_Fecha_de_Nacimiento.get()
+    ambos_datos_seleccionados = nombre and fecha_de_nacimiento
+    if ambos_datos_seleccionados:
+      try:
+        fecha_de_nacimiento = datetime.strptime(fecha_de_nacimiento, '%Y-%m-%d')
+      except ValueError:
+        return None
+    return {"Nombre": nombre, "FechaDeNacimiento": fecha_de_nacimiento}
+  return None
+
 def doble_acción():
   habilitar_botones_e_inputs()
   

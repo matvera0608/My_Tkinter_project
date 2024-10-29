@@ -9,7 +9,7 @@ import tkinter as TK
 # --- COLORES EN HEXADECIMALES ---
 rosado_claro = "#FFDEDE"
 verde = "#00FF00"
-amarillo_claro = "#FFFF99"
+amarillo_claro = "#FBFFBF"
 
 # --- CONEXIÓN CON LA BASE DE DATOS MySQL WORKBENCH
 # --- Y UN ÍCONO PARA LA IMPLEMENTACIÓN---

@@ -1,6 +1,7 @@
 import os
 from mysql.connector import Error
 from datetime import datetime
+from dotenv import load_dotenv
 from tkinter import messagebox
 import mysql.connector as MySql
 import time
@@ -14,6 +15,11 @@ amarillo_claro = "#FBFFBF"
 # --- CONEXIÓN CON LA BASE DE DATOS MySQL WORKBENCH
 # --- Y UN ÍCONO PARA LA IMPLEMENTACIÓN---
 ícono = os.path.join(os.path.dirname(__file__),"escuela.ico")
+load_dotenv()
+host = os.getenv("DB_HOST")
+user = os.getenv("DB_USER")
+password = os.getenv("DB_PASSWORD")
+
 def conectar_base_de_datos():
   try:
     cadena_de_conexión = MySql.connect(
@@ -147,68 +153,39 @@ def obtener_tabla_seleccionada():
 
 def obtener_datos_de_Formulario(nombre_de_la_tabla):
   
+  campos_de_la_base_de_datos = {'alumno': [txBox_NombreAlumno, txBox_FechaNacimiento],
+                                'carrera': [txBox_NombreCarrera, txBox_Duración],
+                                'materia': [txBox_NombreMateria, txBox_HorarioCorrespondiente],
+                                'profesor': [txBox_NombreProfesor, txBox_HorasTrabajadas],
+                                'nota': [txBox_NotaCalificada, txBox_CantidadNotas]
+                                }
+  
   datos = {}
   
-  TablaAlumno = nombre_de_la_tabla == 'alumno'
-  TablaCarrera = nombre_de_la_tabla == 'carrera'
-  TablaMateria = nombre_de_la_tabla == 'materia'
-  TablaProfesor = nombre_de_la_tabla == 'profesor'
-  TablaNota = nombre_de_la_tabla == 'nota'
-  
-  if TablaAlumno:
-    nombre = txBox_NombreAlumno.get()
-    fecha_de_nacimiento = txBox_FechaNacimiento.get()
-    ambos_datos_seleccionados = nombre and fecha_de_nacimiento
-    if ambos_datos_seleccionados:
-      try:
-        fecha_de_nacimiento = datetime.strptime(fecha_de_nacimiento, '%Y-%m-%d')
+  try:
+    match nombre_de_la_tabla:
+      case 'alumno':
+        nombre = txBox_NombreAlumno.get()
+        fecha_de_nacimiento = txBox_FechaNacimiento.get()
         datos = {"Nombre": nombre, "FechaDeNacimiento": fecha_de_nacimiento}
-      except ValueError:
-        messagebox.showerror("El formato de fecha es incorrecto")
-        return None
-  elif TablaCarrera:
-    nombre = txBox_NombreCarrera.get()
-    duración = txBox_Duración.get()
-    ambos_datos_seleccionados = nombre and duración
-    if ambos_datos_seleccionados:
-      datos = {"Nombre": nombre, "Duración": duración}
-    else:
-      messagebox.showerror("Los datos de la tabla carrera son necesarias")
-  elif TablaMateria:
-    nombre = txBox_NombreMateria.get()
-    horario = txBox_HorarioCorrespondiente.get()
-    ambos_datos_seleccionados = nombre and horario
-    if ambos_datos_seleccionados:
-      try:
-        horario = datetime.strptime(horario,'%H:%M').time()
+      case 'carrera':
+        nombre = txBox_NombreCarrera.get()
+        duración = txBox_Duración.get()
+        datos = {"Nombre": nombre, "Duración": duración}
+      case 'materia':
+        nombre = txBox_NombreMateria.get()
+        horario = txBox_HorarioCorrespondiente.get()
         datos = {"Nombre": nombre, "HorarioMateria": horario}
-      except ValueError:
-        messagebox.showerror("El formato de hora es incorrecto")
-        return None
-  elif TablaProfesor:
-    nombre = txBox_NombreProfesor.get()
-    horaTrabajada = txBox_HorasTrabajadas.get()
-    ambos_datos_seleccionados = nombre and horaTrabajada
-    if ambos_datos_seleccionados:
-      try:
-        horaTrabajada = float(horaTrabajada)
-        datos = {"Nombre": nombre, "HorasTrabajadas": horaTrabajada}
-      except ValueError:
-        messagebox.showerror("El formato de número de tipo float es incorrecto")
-        return None
-  elif TablaNota:
-    número = txBox_NotaCalificada.get()
-    cantidadNotas = txBox_CantidadNotas.get()
-    ambos_datos_seleccionados = número and cantidadNotas
-    if ambos_datos_seleccionados:
-      try:
-        número = float(número)
-        cantidadNotas = float(cantidadNotas)
+      case 'profesor':
+        nombre = txBox_NombreProfesor.get()
+        horaTrabajada = txBox_HorasTrabajadas.get()
+      case 'nota':
+        número = txBox_NotaCalificada.get()
+        cantidadNotas = txBox_CantidadNotas.get()
         datos = {"Número de nota": número, "Cantidad de notas": cantidadNotas}
-      except ValueError:
-        messagebox.showerror("El formato o los formatos de número no son correctos")
-        return None
-  return None
+  except ValueError:
+    messagebox.showerror("Error", "Uno de los datos ingresados no es correcto")
+  return datos if datos else None
 
 def doble_acción():
   habilitar_botones_e_inputs()
@@ -351,31 +328,23 @@ Lista_de_datos.place(x= 750, y= 0)
 # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
 
 def insertar_datos(nombre_de_la_tabla):
-  Nombre = txBox_NombreAlumno.get()
-  Fecha_de_Nacimiento = txBox_FechaNacimiento.get()
   
-  Datos_necesarios = Nombre and Fecha_de_Nacimiento
+  datosNecesarios = obtener_datos_de_Formulario(nombre_de_la_tabla)
   
-  if Datos_necesarios:
+  if datosNecesarios:
     conexión = conectar_base_de_datos()
-    cursor = conexión.cursor()
-    try:
-      Fecha_de_Nacimiento = datetime.strptime(Fecha_de_Nacimiento, '%Y-%m-%d')
-    except ValueError:
-      print("El formato no es correcto.Debe ser YYYY-MM-DD")
-      return
+    
     try:
       if conexión:
-        values = (Nombre, Fecha_de_Nacimiento)
-        query = f"INSERT INTO {nombre_de_la_tabla} (Nombre, Fecha_de_Nacimiento) VALUES (%s, %s)"
+        cursor = conexión.cursor()
+        columnas = ', '.join(datosNecesarios.keys())
+        marcador_de_posiciones = ', '.join(['%s'] * len(datosNecesarios))
+        values = tuple(datosNecesarios.values())
+        
+        query = f"INSERT INTO {nombre_de_la_tabla} ({columnas}) VALUES ({marcador_de_posiciones})"
         cursor.execute(query, values)
         conexión.commit()
-        
-        print("SE AGREGÓ LOS DATOS NECESARIOS")
-        
-        txBox_NombreAlumno.delete(0, TK.END)
-        txBox_FechaNacimiento.delete(0, TK.END)
-        
+        messagebox.showwarning("WARNING", "SE AGREGÓ LOS DATOS NECESARIOS")
         consultar_tabla(nombre_de_la_tabla)
     except Error as e:
       print(f"ERROR INESPERADO AL INSERTAR: {e}")

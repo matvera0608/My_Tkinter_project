@@ -183,22 +183,31 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla):
     messagebox.showerror("Error", "Uno de los datos ingresados no es correcto")
   return datos if datos else None
 
+#Esta función llamada extraerIDs sirve
+#para que pueda modificar y eliminar datos de una tabla dinámicamente
+def extraerIDs(selección):
+  partes = selección.split('|')
+  for parte in partes:
+    ID_númeroEntero = parte.strip().isdigit()
+    if ID_númeroEntero:
+      return int(parte.strip())
+  return None
+
 def doble_acción():
   habilitar_botones_e_inputs()
   
   seleccionar_y_consultar()
 
-#Esta función sirve para actualizar la hora
-def actualizar_la_hora():
-  label_Hora.config(text=time.strftime("%H:%M:%S"))
-  mi_ventana.after(1000, actualizar_la_hora)
-
-def deseleccionar_RadioButton(event=None):
+def deseleccionar_RadioButton(Event):
   opción.set(0)
   Lista_de_datos.delete(0, TK.END)
   habilitar_botones_e_inputs()
 
-
+#Esta función sirve para actualizar la hora
+def actualizar_la_hora():
+  label_Hora.config(text=time.strftime("%H:%M:%S"))
+  mi_ventana.after(1000, actualizar_la_hora)
+  
 # --- CONFIGURACIÓN DE INTERFAZ Y ELEMENTOS IMPORTANTES DE TKINTER PARA LAS INSTRUCCIONES---
 mi_ventana = TK.Tk()
 mi_ventana.title("ABM de Alumnos")
@@ -324,6 +333,8 @@ Lista_de_datos.place(x= 750, y= 0)
 
 # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
 
+#Mejoré mi función de insertar datos para agregarlo
+#dinámicamente sin tener que entrar a MySQL
 def insertar_datos(nombre_de_la_tabla):
   
   datosNecesarios = obtener_datos_de_Formulario(nombre_de_la_tabla)
@@ -350,68 +361,66 @@ def insertar_datos(nombre_de_la_tabla):
   else:
     messagebox.showwarning("FALTA DE DATOS", "FALTA LOS DATOS NECESARIOS")
 
+#Mejoré mi función de insertar datos para modificarlo
+#dinámicamente sin tener que entrar a MySQL y puse una
+#función que extrae el ID en todas las palabras ya que
+#no siempre tiene un valor fijo
 def modificar_datos(nombre_de_la_tabla):
   columna_seleccionada = Lista_de_datos.curselection()
-
+  selección = Lista_de_datos.get(columna_seleccionada[0])
+  ID_Seleccionado = extraerIDs(selección)
+  ID_Encontrado = ID_Seleccionado is not None
+  
   if columna_seleccionada:
-    ID_Seleccionado = Lista_de_datos.get(columna_seleccionada).split('|')[3].strip()
-
-    Nombre = txBox_NombreAlumno.get()
-    Fecha_de_Nacimiento = txBox_FechaNacimiento.get()
-  
-    Datos_necesarios = Nombre and Fecha_de_Nacimiento
-  
-    if Datos_necesarios:
-      conexión = conectar_base_de_datos()
-      cursor = conexión.cursor()
-      try:
-        Fecha_de_Nacimiento = datetime.strptime(Fecha_de_Nacimiento, '%Y-%m-%d')
-      except ValueError:
-        print("El formato no es correcto.Debe ser YYYY-MM-DD")
-        return
-      try:
-        if conexión:
-          values = (Nombre, Fecha_de_Nacimiento, ID_Seleccionado,)
-          query = f"UPDATE {nombre_de_la_tabla} SET Nombre = %s, Fecha_de_Nacimiento = %s WHERE ID_Alumno = %s"
-          cursor.execute(query, values)
-          conexión.commit()
-          print("Se ha modificado correctamente los datos")
-      except Error as e:
-        print(f"ERROR INESPERADO: {e}")
+    if ID_Encontrado:    
+      Datos_necesarios = obtener_datos_de_Formulario(nombre_de_la_tabla)
+      if Datos_necesarios:
+        try:
+          with conectar_base_de_datos() as conexión:
+            cursor = conexión.cursor()
+            values = list(Datos_necesarios.values()) + [ID_Seleccionado]
+            columnas = ', '.join([f"{k} = %s" for k in Datos_necesarios.keys()])
+            query = f"UPDATE {nombre_de_la_tabla} SET {columnas}"
+            cursor.execute(query, values)
+            conexión.commit()
+            messagebox.showinfo("CORRECTO", "SE MODIFICÓ EXITOSAMENTE")
+        except Error as e:
+          messagebox.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {e}")
+      else:
+        messagebox.showwarning("FALTA DE DATOS", "FALTA LOS DATOS NECESARIOS")
     else:
-      print("Faltó completar los campos obligatorios")
-
+      messagebox.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
   else:
-    print("No se seleccionó ninguna columna")
+    messagebox.showwarning("ADVERTENCIA", "FALTA SELECCIONAR UNA COLUMNA")
 
+#Mejoré mi función de insertar datos para eliminar
+#dinámicamente sin tener que entrar a MySQL y puse una
+#función que extrae el ID en todas las palabras ya que
+#no siempre tiene un valor fijo
 def eliminar_datos(nombre_de_la_tabla):
   columna_seleccionada = Lista_de_datos.curselection()
   
   if columna_seleccionada:
-    conexión = conectar_base_de_datos()
-    if conexión:
-      cursor = conexión.cursor()
       try:
-        for _ in columna_seleccionada:
-          selección = Lista_de_datos.get(_)
-          try:
-            ID_Seleccionado = int(selección.split('|')[3].strip())
-          except ValueError:
-            print(f"El ID {ID_Seleccionado} no vale")
-            continue
-        values = (ID_Seleccionado,)
-        query = f"DELETE FROM {nombre_de_la_tabla} where ID_Alumno = %s"
-        cursor.execute(query, values)
-        conexión.commit()
-        print(f"Una columna ha sido eliminada exitosamente con id {ID_Seleccionado}")
-        consultar_tabla(nombre_de_la_tabla)
+        with conectar_base_de_datos() as conexión:
+          cursor = conexión.cursor()
+          for index in columna_seleccionada:
+            selección = Lista_de_datos.get(index)
+            ID_Seleccionado = extraerIDs(selección)
+            ID_Encontrado = ID_Seleccionado is not None
+            if ID_Encontrado:
+              values = (ID_Seleccionado,)
+              query = f"DELETE FROM {nombre_de_la_tabla} where ID_Alumno = %s"
+              cursor.execute(query, values)
+              messagebox.showinfo("ÉXITOS", f"Una columna ha sido eliminada exitosamente con id {ID_Seleccionado}")
+            else:
+              messagebox.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
+            conexión.commit()
+            consultar_tabla(nombre_de_la_tabla)
       except Error as e:
-        print(f"ERROR INESPERADO: {e}")
-      finally:
-        desconectar_base_de_datos(conexión)
+         messagebox.showerror("ERROR", f"ERROR INESPERADO AL ELIMINAR: {e}")
   else:
-    print("No seleccionaste la columna a eliminar")
+    messagebox.showwarning("ADVERTENCIA", "NO SELECCIONASTE NINGUNA COLUMNA")
 
 actualizar_la_hora()
-mi_ventana.bind("<Button-1>", deseleccionar_RadioButton)
 mi_ventana.mainloop()

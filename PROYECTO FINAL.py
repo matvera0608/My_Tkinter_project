@@ -193,11 +193,13 @@ def actualizar_la_hora():
   label_Hora.config(text=time.strftime("%H:%M:%S"))
   mi_ventana.after(1000, actualizar_la_hora)
 
-def deseleccionar_RadioButton():
-  botón_seleccionado = opción.get()
+def deseleccionar_RadioButton(event=None):
+  opción.set(0)
+  Lista_de_datos.delete(0, TK.END)
+  habilitar_botones_e_inputs()
 
 
-# --- CONDIFGURACIÓN DE INTERFAZ Y ELEMENTOS IMPORTANTES DE TKINTER PARA LAS INSTRUCCIONES---
+# --- CONFIGURACIÓN DE INTERFAZ Y ELEMENTOS IMPORTANTES DE TKINTER PARA LAS INSTRUCCIONES---
 mi_ventana = TK.Tk()
 mi_ventana.title("ABM de Alumnos")
 mi_ventana.geometry("1200x600")
@@ -411,4 +413,5 @@ def eliminar_datos(nombre_de_la_tabla):
     print("No seleccionaste la columna a eliminar")
 
 actualizar_la_hora()
+mi_ventana.bind("<Button-1>", deseleccionar_RadioButton)
 mi_ventana.mainloop()

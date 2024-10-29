@@ -1,7 +1,6 @@
 import os
 from mysql.connector import Error
 from datetime import datetime
-from dotenv import load_dotenv
 from tkinter import messagebox
 import mysql.connector as MySql
 import time
@@ -15,10 +14,7 @@ amarillo_claro = "#FBFFBF"
 # --- CONEXIÓN CON LA BASE DE DATOS MySQL WORKBENCH
 # --- Y UN ÍCONO PARA LA IMPLEMENTACIÓN---
 ícono = os.path.join(os.path.dirname(__file__),"escuela.ico")
-load_dotenv()
-host = os.getenv("DB_HOST")
-user = os.getenv("DB_USER")
-password = os.getenv("DB_PASSWORD")
+cadena_de_conexión = None
 
 def conectar_base_de_datos():
   try:
@@ -226,7 +222,6 @@ botón_eliminar.config(fg="black", bg="blue", font=("Arial", 8))
 
 
 # --- ETIQUETAS ---
-
 #Etiquetas para la tabla de alumno
 label_NombreAlumno = TK.Label(mi_ventana, text="Nombre")
 label_NombreAlumno.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
@@ -344,12 +339,14 @@ def insertar_datos(nombre_de_la_tabla):
         query = f"INSERT INTO {nombre_de_la_tabla} ({columnas}) VALUES ({marcador_de_posiciones})"
         cursor.execute(query, values)
         conexión.commit()
-        messagebox.showwarning("WARNING", "SE AGREGÓ LOS DATOS NECESARIOS")
+        messagebox.showinfo("CORRECTO", "SE AGREGÓ LOS DATOS NECESARIOS")
         consultar_tabla(nombre_de_la_tabla)
     except Error as e:
-      print(f"ERROR INESPERADO AL INSERTAR: {e}")
+      messagebox.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {e}")
+    finally:
+      desconectar_base_de_datos(conexión)
   else:
-    print("No tiene todos los datos")
+    messagebox.showwarning("FALTA DE DATOS", "FALTA LOS DATOS NECESARIOS")
 
 def modificar_datos(nombre_de_la_tabla):
   columna_seleccionada = Lista_de_datos.curselection()

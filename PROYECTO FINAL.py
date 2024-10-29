@@ -1,6 +1,7 @@
 import os
 from mysql.connector import Error
 from datetime import datetime
+from tkinter import messagebox
 import mysql.connector as MySql
 import time
 import tkinter as TK
@@ -145,17 +146,68 @@ def obtener_tabla_seleccionada():
   return nombre
 
 def obtener_datos_de_Formulario(nombre_de_la_tabla):
+  
+  datos = {}
+  
   TablaAlumno = nombre_de_la_tabla == 'alumno'
+  TablaCarrera = nombre_de_la_tabla == 'carrera'
+  TablaMateria = nombre_de_la_tabla == 'materia'
+  TablaProfesor = nombre_de_la_tabla == 'profesor'
+  TablaNota = nombre_de_la_tabla == 'nota'
+  
   if TablaAlumno:
     nombre = txBox_NombreAlumno.get()
-    fecha_de_nacimiento = txBox_Fecha_de_Nacimiento.get()
+    fecha_de_nacimiento = txBox_FechaNacimiento.get()
     ambos_datos_seleccionados = nombre and fecha_de_nacimiento
     if ambos_datos_seleccionados:
       try:
         fecha_de_nacimiento = datetime.strptime(fecha_de_nacimiento, '%Y-%m-%d')
+        datos = {"Nombre": nombre, "FechaDeNacimiento": fecha_de_nacimiento}
       except ValueError:
+        messagebox.showerror("El formato de fecha es incorrecto")
         return None
-    return {"Nombre": nombre, "FechaDeNacimiento": fecha_de_nacimiento}
+  elif TablaCarrera:
+    nombre = txBox_NombreCarrera.get()
+    duración = txBox_Duración.get()
+    ambos_datos_seleccionados = nombre and duración
+    if ambos_datos_seleccionados:
+      datos = {"Nombre": nombre, "Duración": duración}
+    else:
+      messagebox.showerror("Los datos de la tabla carrera son necesarias")
+  elif TablaMateria:
+    nombre = txBox_NombreMateria.get()
+    horario = txBox_HorarioCorrespondiente.get()
+    ambos_datos_seleccionados = nombre and horario
+    if ambos_datos_seleccionados:
+      try:
+        horario = datetime.strptime(horario,'%H:%M').time()
+        datos = {"Nombre": nombre, "HorarioMateria": horario}
+      except ValueError:
+        messagebox.showerror("El formato de hora es incorrecto")
+        return None
+  elif TablaProfesor:
+    nombre = txBox_NombreProfesor.get()
+    horaTrabajada = txBox_HorasTrabajadas.get()
+    ambos_datos_seleccionados = nombre and horaTrabajada
+    if ambos_datos_seleccionados:
+      try:
+        horaTrabajada = float(horaTrabajada)
+        datos = {"Nombre": nombre, "HorasTrabajadas": horaTrabajada}
+      except ValueError:
+        messagebox.showerror("El formato de número de tipo float es incorrecto")
+        return None
+  elif TablaNota:
+    número = txBox_NotaCalificada.get()
+    cantidadNotas = txBox_CantidadNotas.get()
+    ambos_datos_seleccionados = número and cantidadNotas
+    if ambos_datos_seleccionados:
+      try:
+        número = float(número)
+        cantidadNotas = float(cantidadNotas)
+        datos = {"Número de nota": número, "Cantidad de notas": cantidadNotas}
+      except ValueError:
+        messagebox.showerror("El formato o los formatos de número no son correctos")
+        return None
   return None
 
 def doble_acción():

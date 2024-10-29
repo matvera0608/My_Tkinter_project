@@ -57,7 +57,6 @@ def consultar_tabla(nombre_de_la_tabla):
     desconectar_base_de_datos(conexión)
 
 def seleccionar_y_consultar():
-  
   botón_seleccionado = opción.get()
   try:
     match botón_seleccionado:
@@ -179,10 +178,11 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla):
       case 'profesor':
         nombre = txBox_NombreProfesor.get()
         horaTrabajada = txBox_HorasTrabajadas.get()
+        datos = {"Nombre": número, "HorasTrabajadas": horaTrabajada}
       case 'nota':
         número = txBox_NotaCalificada.get()
         cantidadNotas = txBox_CantidadNotas.get()
-        datos = {"Número de nota": número, "Cantidad de notas": cantidadNotas}
+        datos = {"NúmeroDeNota": número, "CantidadDeNotas": cantidadNotas}
   except ValueError:
     messagebox.showerror("Error", "Uno de los datos ingresados no es correcto")
   return datos if datos else None

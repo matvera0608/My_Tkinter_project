@@ -195,6 +195,22 @@ def extraerIDs(selección):
     else:
       return None
 
+conseguir_campo_ID(nombre_de_la_tabla):
+            nombre_de_la_tabla = nombre_de_la_tabla.strip().lower()
+            
+            match nombre_de_la_tabla:
+              case 'alumno':
+                campo_ID = "ID_Alumno"
+              case 'carrera':
+                campo_ID = "ID_Carrera"
+              case 'materia':
+                campo_ID = "ID_Materia"
+              case 'profesor':
+                campo_ID = "ID_Profesor"
+              case 'nota':
+                campo_ID = "ID_Nota"
+
+
 def doble_acción():
   habilitar_botones_e_inputs()
   
@@ -383,18 +399,6 @@ def modificar_datos(nombre_de_la_tabla):
           with conectar_base_de_datos() as conexión:
             cursor = conexión.cursor()
             values = list(Datos_necesarios.values()) + [ID_Seleccionado]
-            
-            match nombre_de_la_tabla:
-              case 'alumno':
-                campo_ID = "ID_Alumno"
-              case 'carrera':
-                campo_ID = "ID_Carrera"
-              case 'materia':
-                campo_ID = "ID_Materia"
-              case 'profesor':
-                campo_ID = "ID_Profesor"
-              case 'nota':
-                campo_ID = "ID_Nota"
             
             columnas = ', '.join([f"{k} = %s" for k in Datos_necesarios.keys()])
             query = f"UPDATE {nombre_de_la_tabla} SET {columnas} WHERE {campo_ID} = %s"

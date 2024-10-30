@@ -4,7 +4,7 @@ from datetime import datetime
 from tkinter import messagebox
 import mysql.connector as MySql
 import time
-import tkinter as TK
+import tkinter as TK, re
 
 # --- COLORES EN HEXADECIMALES ---
 rosado_claro = "#FFDEDE"
@@ -188,10 +188,12 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla):
 def extraerIDs(selección):
   partes = selección.split('|')
   for parte in partes:
-    ID_númeroEntero = parte.strip().isdigit()
-    if ID_númeroEntero:
-      return int(parte.strip())
-  return None
+    parte = parte.strip()
+    dígito = parte.isdigit()
+    if dígito:
+      return int(parte)
+    else:
+      return None
 
 def doble_acción():
   habilitar_botones_e_inputs()
@@ -234,49 +236,51 @@ botón_eliminar.config(fg="black", bg="blue", font=("Arial", 8))
 
 # --- ETIQUETAS ---
 #Etiquetas para la tabla de alumno
-label_NombreAlumno = TK.Label(mi_ventana, text="Nombre")
+label_NombreAlumno = TK.Label(mi_ventana, text="Nombre del Alumno *")
 label_NombreAlumno.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-label_FechaNacimiento = TK.Label(mi_ventana, text="Fecha que nació: Formato YYYY-MM-DD")
+label_FechaNacimiento = TK.Label(mi_ventana, text="Fecha que nació: Formato YYYY-MM-DD *")
 label_FechaNacimiento.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
 #Etiquetas para la tabla de carrera
-label_NombreCarrera = TK.Label(mi_ventana, text="Nombre")
+label_NombreCarrera = TK.Label(mi_ventana, text="Nombre de la Carrera *")
 label_NombreCarrera.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-label_Duración = TK.Label(mi_ventana, text="Duración")
+label_Duración = TK.Label(mi_ventana, text="Duración *")
 label_Duración.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
 #Etiquetas para la tabla de materia
-label_NombreMateria = TK.Label(mi_ventana, text="Nombre")
+label_NombreMateria = TK.Label(mi_ventana, text="Nombre de la Materia*")
 label_NombreMateria.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-label_HorarioCorrespondiente = TK.Label(mi_ventana, text="Horario correspondiente")
+label_HorarioCorrespondiente = TK.Label(mi_ventana, text="Horario correspondiente *")
 label_HorarioCorrespondiente.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
 #Etiquetas para la tabla de profesor
-label_NombreProfesor = TK.Label(mi_ventana, text="Nombre")
+label_NombreProfesor = TK.Label(mi_ventana, text="Nombre del Profesor *")
 label_NombreProfesor.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-label_HorasTrabajadas = TK.Label(mi_ventana, text="Horas trabajadas")
+label_HorasTrabajadas = TK.Label(mi_ventana, text="Horas trabajadas *")
 label_HorasTrabajadas.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
 #Etiquetas para la tabla de nota
 
-label_NotaCalificada = TK.Label(mi_ventana, text="Calificación")
+label_NotaCalificada = TK.Label(mi_ventana, text="Calificación *")
 label_NotaCalificada.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-label_CantidadNotas = TK.Label(mi_ventana, text="Cantidad")
+label_CantidadNotas = TK.Label(mi_ventana, text="Cantidad *")
 label_CantidadNotas.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
 label_Promedio = TK.Label(mi_ventana, text="Promedio")
 label_Promedio.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-
-
 label_Hora = TK.Label(mi_ventana, text=time.strftime("%H:%M:%S"))
 label_Hora.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 label_Hora.pack()
+
+label_Obligatoriedad = TK.Label(mi_ventana, text="el * significa que son obligatorio seleccionar los datos")
+label_Obligatoriedad.config(fg="Black",bg=rosado_claro, font=("Arial", 8))
+label_Obligatoriedad.pack(padx= 10, pady= 10)
 
 #--- ENTRIES ---
 
@@ -379,10 +383,24 @@ def modificar_datos(nombre_de_la_tabla):
           with conectar_base_de_datos() as conexión:
             cursor = conexión.cursor()
             values = list(Datos_necesarios.values()) + [ID_Seleccionado]
+            
+            match nombre_de_la_tabla:
+              case 'alumno':
+                campo_ID = "ID_Alumno"
+              case 'carrera':
+                campo_ID = "ID_Carrera"
+              case 'materia':
+                campo_ID = "ID_Materia"
+              case 'profesor':
+                campo_ID = "ID_Profesor"
+              case 'nota':
+                campo_ID = "ID_Nota"
+            
             columnas = ', '.join([f"{k} = %s" for k in Datos_necesarios.keys()])
-            query = f"UPDATE {nombre_de_la_tabla} SET {columnas}"
+            query = f"UPDATE {nombre_de_la_tabla} SET {columnas} WHERE {campo_ID} = %s"
             cursor.execute(query, values)
             conexión.commit()
+            consultar_tabla(nombre_de_la_tabla)
             messagebox.showinfo("CORRECTO", "SE MODIFICÓ EXITOSAMENTE")
         except Error as e:
           messagebox.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {e}")

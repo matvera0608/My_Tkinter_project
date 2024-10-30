@@ -195,21 +195,21 @@ def extraerIDs(selección):
     else:
       return None
 
+#Esta función me permite obtener el ID 
+#de cualquier tabla que se encuentre en mi base de datos
 conseguir_campo_ID(nombre_de_la_tabla):
-            nombre_de_la_tabla = nombre_de_la_tabla.strip().lower()
-            
-            match nombre_de_la_tabla:
-              case 'alumno':
-                campo_ID = "ID_Alumno"
-              case 'carrera':
-                campo_ID = "ID_Carrera"
-              case 'materia':
-                campo_ID = "ID_Materia"
-              case 'profesor':
-                campo_ID = "ID_Profesor"
-              case 'nota':
-                campo_ID = "ID_Nota"
-
+    nombre_de_la_tabla = nombre_de_la_tabla.strip().lower() 
+    match nombre_de_la_tabla:
+     case 'alumno':
+        campo_ID = "ID_Alumno"
+     case 'carrera':
+        campo_ID = "ID_Carrera"
+     case 'materia':
+        campo_ID = "ID_Materia"
+     case 'profesor':
+        campo_ID = "ID_Profesor"
+     case 'nota':
+        campo_ID = "ID_Nota"
 
 def doble_acción():
   habilitar_botones_e_inputs()

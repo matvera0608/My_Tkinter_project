@@ -7,14 +7,13 @@ import time
 import tkinter as TK, re
 
 # --- COLORES EN HEXADECIMALES ---
-rosado_claro = "#FFDEDE"
+rosado_claro = "#FEE"
 verde = "#00FF00"
 amarillo_claro = "#FBFFBF"
 
 # --- CONEXIÓN CON LA BASE DE DATOS MySQL WORKBENCH
 # --- Y UN ÍCONO PARA LA IMPLEMENTACIÓN---
 ícono = os.path.join(os.path.dirname(__file__),"escuela.ico")
-cadena_de_conexión = None
 
 def conectar_base_de_datos():
   try:
@@ -94,21 +93,20 @@ def insertar_todos_los_datos():
 def habilitar_botones_e_inputs():
   #Este for me permite gestionar los texBox con sus respectivos labels
   #para que a la hora de seleccionar un radioButton me muestre lo necesario
-  for widget in [  txBox_NombreAlumno, label_NombreAlumno, txBox_FechaNacimiento, label_FechaNacimiento,
-                   txBox_NombreCarrera, label_NombreCarrera, txBox_Duración, label_Duración,
-                   txBox_NombreMateria, label_NombreMateria, txBox_HorarioCorrespondiente, label_HorarioCorrespondiente,
-                   txBox_NombreProfesor, label_NombreProfesor, txBox_HorasTrabajadas, label_HorasTrabajadas,
-                   txBox_NotaCalificada, label_NotaCalificada, txBox_CantidadNotas, label_CantidadNotas,
-                   txBox_Promedio, label_Promedio]:
+  for widget in [  txBox_NombreAlumno, label_NombreAlumno, txBox_FechaNacimiento, label_FechaNacimiento, txBox_IDAlumno, label_IDAlumno, 
+                   txBox_NombreCarrera, label_NombreCarrera, txBox_Duración, label_Duración, txBox_IDCarrera, label_IDCarrera,
+                   txBox_NombreMateria, label_NombreMateria, txBox_HorarioCorrespondiente, label_HorarioCorrespondiente, txBox_IDMateria, label_IDMateria,
+                   txBox_NombreProfesor, label_NombreProfesor, txBox_HorasTrabajadas, label_HorasTrabajadas, txBox_IDProfesor, label_IDProfesor,
+                   txBox_NotaCalificada, label_NotaCalificada, txBox_CantidadNotas, txBox_Promedio, label_Promedio, txBox_IDNota, label_IDNota ]:
       widget.place_forget()
-    
-  
+
   botón_seleccionado = opción.get()
   
   if botón_seleccionado in (1, 2, 3, 4, 5):
     botón_agregar.place(x=60,y= 100)
     botón_modificar.place(x=60,y= 160)
     botón_eliminar.place(x=60,y= 220)
+    label_Obligatoriedad.pack(padx= 10, pady= 10)
     
     match botón_seleccionado:
       case 1:
@@ -116,28 +114,36 @@ def habilitar_botones_e_inputs():
         label_NombreAlumno.place(relx=0.25, rely=0.155)
         txBox_FechaNacimiento.place(x=150, y= 150)
         label_FechaNacimiento.place(relx=0.25, rely=0.25)
+        txBox_IDAlumno.place(x=150, y= 200)
+        label_IDAlumno.place(relx=0.25, rely=0.345)
       case 2:
         txBox_NombreCarrera.place(x=150, y= 100)
         label_NombreCarrera.place(relx=0.25, rely=0.155)
         txBox_Duración.place(x=150, y= 150)
         label_Duración.place(relx=0.25, rely=0.25)
+        txBox_IDCarrera.place(x=150, y= 200)
+        label_IDCarrera.place(relx=0.25, rely=0.345)
       case 3:
         txBox_NombreMateria.place(x=150, y= 100)
         label_NombreMateria.place(relx=0.25, rely=0.155)
         txBox_HorarioCorrespondiente.place(x=150, y= 150)
         label_HorarioCorrespondiente.place(relx=0.25, rely=0.25)
+        txBox_IDMateria.place(x=150, y= 200)
+        label_IDMateria.place(relx=0.25, rely=0.345)
       case 4:
         txBox_NombreProfesor.place(x=150, y= 100)
         label_NombreProfesor.place(relx=0.25, rely=0.155)
         txBox_HorasTrabajadas.place(x=150, y= 150)
         label_HorasTrabajadas.place(relx=0.25, rely=0.25)
+        txBox_IDProfesor.place(x=150, y= 200)
+        label_IDProfesor.place(relx=0.25, rely=0.345)
       case 5:
-        txBox_NotaCalificada.place(x=150, y= 100)
-        label_NotaCalificada.place(relx=0.25, rely=0.155)
         txBox_CantidadNotas.place(x=150, y= 150)
         label_CantidadNotas.place(relx=0.25, rely=0.25)
         txBox_Promedio.place(x=150, y= 200)
-        label_Promedio.place(relx=0.25, rely=0.325)
+        label_Promedio.place(relx=0.25, rely=0.345)
+        txBox_IDNota.place(x=150, y= 250)
+        label_IDNota.place(relx=0.25, rely=0.420)
       case _:
           print("ES NECESARIO SELECCIONAR")
 
@@ -152,6 +158,7 @@ def validar_datos(nombre_de_la_tabla, datos):
   #El patron_nombre contiene una expresión regular para permitir
   #letras con acentos y otros caracteres especiales
   patron_nombre = re.compile(r"^[\w\sáéíóúÁÉÍÓÚñÑüÜ]+$")
+  patrón_númerosDecimales = re.compile([r'^\d+(,\d+)?$'])
   
   try:
     match nombre_de_la_tabla:
@@ -178,7 +185,7 @@ def validar_datos(nombre_de_la_tabla, datos):
           return False
     
       case 'nota':
-        if not datos["NúmeroDeNota"].isdigit():
+        if not patrón_númerosDecimales.match(["NúmeroDeNota"]):
           messagebox.showerror("Error", "La nota calificada permite sólo números")
           return False
       
@@ -269,7 +276,7 @@ def actualizar_la_hora():
   
 # --- CONFIGURACIÓN DE INTERFAZ Y ELEMENTOS IMPORTANTES DE TKINTER PARA LAS INSTRUCCIONES---
 mi_ventana = TK.Tk()
-mi_ventana.title("ABM de Alumnos")
+mi_ventana.title("Sistema Gestor de Asistencia")
 mi_ventana.geometry("1200x600")
 mi_ventana.minsize(1200, 600)
 mi_ventana.maxsize(1200, 600)
@@ -299,12 +306,18 @@ label_NombreAlumno.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 label_FechaNacimiento = TK.Label(mi_ventana, text="Fecha que nació: Formato YYYY-MM-DD *")
 label_FechaNacimiento.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
+label_IDAlumno = TK.Label(mi_ventana, text="ID *")
+label_IDAlumno.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
 #Etiquetas para la tabla de carrera
 label_NombreCarrera = TK.Label(mi_ventana, text="Nombre de la Carrera *")
 label_NombreCarrera.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
 label_Duración = TK.Label(mi_ventana, text="Duración *")
 label_Duración.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+label_IDCarrera = TK.Label(mi_ventana, text="ID *")
+label_IDCarrera.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
 #Etiquetas para la tabla de materia
 label_NombreMateria = TK.Label(mi_ventana, text="Nombre de la Materia*")
@@ -313,6 +326,9 @@ label_NombreMateria.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 label_HorarioCorrespondiente = TK.Label(mi_ventana, text="Horario correspondiente: Formato %H:%M *")
 label_HorarioCorrespondiente.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
+label_IDMateria = TK.Label(mi_ventana, text="ID *")
+label_IDMateria.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
 #Etiquetas para la tabla de profesor
 label_NombreProfesor = TK.Label(mi_ventana, text="Nombre del Profesor *")
 label_NombreProfesor.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
@@ -320,8 +336,10 @@ label_NombreProfesor.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 label_HorasTrabajadas = TK.Label(mi_ventana, text="Horas trabajadas *")
 label_HorasTrabajadas.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-#Etiquetas para la tabla de nota
+label_IDProfesor = TK.Label(mi_ventana, text="ID *")
+label_IDProfesor.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
+#Etiquetas para la tabla de nota
 label_NotaCalificada = TK.Label(mi_ventana, text="Calificación *")
 label_NotaCalificada.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
@@ -331,37 +349,45 @@ label_CantidadNotas.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 label_Promedio = TK.Label(mi_ventana, text="Promedio")
 label_Promedio.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
+label_IDNota = TK.Label(mi_ventana, text="ID *")
+label_IDNota.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+#Etiqueta para mostrar la hora
 label_Hora = TK.Label(mi_ventana, text=time.strftime("%H:%M:%S"))
 label_Hora.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 label_Hora.pack()
 
+#Etiqueta para indicar que significa el asterisco
 label_Obligatoriedad = TK.Label(mi_ventana, text="el * significa que son obligatorio seleccionar los datos")
 label_Obligatoriedad.config(fg="Black",bg=rosado_claro, font=("Arial", 8))
-label_Obligatoriedad.pack(padx= 10, pady= 10)
 
 #--- ENTRIES ---
 
 #Tabla alumno
 txBox_NombreAlumno = TK.Entry(mi_ventana)
 txBox_FechaNacimiento = TK.Entry(mi_ventana)
+txBox_IDAlumno = TK.Entry(mi_ventana)
 
 #Tabla carrera
 txBox_NombreCarrera = TK.Entry(mi_ventana)
 txBox_Duración = TK.Entry(mi_ventana)
+txBox_IDCarrera = TK.Entry(mi_ventana)
 
 #Tabla materia
 txBox_NombreMateria = TK.Entry(mi_ventana)
 txBox_HorarioCorrespondiente = TK.Entry(mi_ventana)
+txBox_IDMateria = TK.Entry(mi_ventana)
 
 #Tabla profesor
 txBox_NombreProfesor = TK.Entry(mi_ventana)
 txBox_HorasTrabajadas = TK.Entry(mi_ventana)
+txBox_IDProfesor = TK.Entry(mi_ventana)
 
 #Tabla nota
 txBox_NotaCalificada = TK.Entry(mi_ventana)
 txBox_CantidadNotas = TK.Entry(mi_ventana)
 txBox_Promedio = TK.Entry(mi_ventana)
-
+txBox_IDNota = TK.Entry(mi_ventana)
 
 # --- RADIOBUTTONS ---
 opción = TK.IntVar()

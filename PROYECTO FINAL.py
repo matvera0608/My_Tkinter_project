@@ -141,47 +141,89 @@ def habilitar_botones_e_inputs():
       case _:
           print("ES NECESARIO SELECCIONAR")
 
+#Este obtiene la tabla a seleccionar cuando voy a seleccionar RadioButton
 def obtener_tabla_seleccionada():
   tabla = {1: 'alumno', 2: 'carrera', 3: 'materia', 4: 'profesor', 5: 'nota'}
   nombre = tabla.get(opción.get(), None)
   return nombre
 
-def obtener_datos_de_Formulario(nombre_de_la_tabla):
-  
-  campos_de_la_base_de_datos = {'alumno': [txBox_NombreAlumno, txBox_FechaNacimiento],
-                                'carrera': [txBox_NombreCarrera, txBox_Duración],
-                                'materia': [txBox_NombreMateria, txBox_HorarioCorrespondiente],
-                                'profesor': [txBox_NombreProfesor, txBox_HorasTrabajadas],
-                                'nota': [txBox_NotaCalificada, txBox_CantidadNotas]
-                                }
-  
-  datos = {}
+#Esta función validar_datos valida los datos para evitar redundancias
+def validar_datos(nombre_de_la_tabla, datos):
+  #El patron_nombre contiene una expresión regular para permitir
+  #letras con acentos y otros caracteres especiales
+  patron_nombre = re.compile(r"^[\w\sáéíóúÁÉÍÓÚñÑüÜ]+$")
   
   try:
     match nombre_de_la_tabla:
       case 'alumno':
-        nombre = txBox_NombreAlumno.get()
-        fecha_de_nacimiento = txBox_FechaNacimiento.get()
-        datos = {"Nombre": nombre, "FechaDeNacimiento": fecha_de_nacimiento}
+        if not patron_nombre.match(datos["Nombre"]):
+          messagebox.showerror("Error", "El nombre del alumno necesita contener letras")
+          return False
+        datetime.strptime(datos["FechaDeNacimiento"], '%Y-%m-%d')
+    
       case 'carrera':
-        nombre = txBox_NombreCarrera.get()
-        duración = txBox_Duración.get()
-        datos = {"Nombre": nombre, "Duración": duración}
+        if not patron_nombre.match(datos["Nombre"]):
+          messagebox.showerror("Error", "El nombre de la carrera necesita contener letras")
+          return False
+    
       case 'materia':
-        nombre = txBox_NombreMateria.get()
-        horario = txBox_HorarioCorrespondiente.get()
-        datos = {"Nombre": nombre, "HorarioMateria": horario}
+        if not patron_nombre.match(datos["Nombre"]):
+          messagebox.showerror("Error", "El nombre de la materia necesita contener letras")
+          return False
+        datetime.strptime(datos["HorarioMateria"], '%H:%M')
+    
       case 'profesor':
-        nombre = txBox_NombreProfesor.get()
-        horaTrabajada = txBox_HorasTrabajadas.get()
-        datos = {"Nombre": número, "HorasTrabajadas": horaTrabajada}
+        if not patron_nombre.match(datos["Nombre"]):
+          messagebox.showerror("Error", "El nombre del profesor necesita contener letras")
+          return False
+    
       case 'nota':
-        número = txBox_NotaCalificada.get()
-        cantidadNotas = txBox_CantidadNotas.get()
-        datos = {"NúmeroDeNota": número, "CantidadDeNotas": cantidadNotas}
+        if not datos["NúmeroDeNota"].isdigit():
+          messagebox.showerror("Error", "La nota calificada permite sólo números")
+          return False
+      
+        if not datos["CantidadDeNotas"].isdigit():
+          messagebox.showerror("Error", "La cantidad de notas permite sólo números")
+          return False
+      case _:
+        messagebox.showerror("Error", "No existe la tabla o la misma es desconocida")
+        return False
+    #Se retorna verdadero cuando las validaciones son correctas
+    return True
   except ValueError:
-    messagebox.showerror("Error", "Uno de los datos ingresados no es correcto")
-  return datos if datos else None
+    messagebox.showerror("Error", "El formato de uno de los campos es incorrecto")
+    return False
+
+def obtener_datos_de_Formulario(nombre_de_la_tabla):
+  
+  campos_de_la_base_de_datos = {'alumno': ["Nombre", "FechaDeNacimiento"],
+                                'carrera': ["Nombre", "Duración"],
+                                'materia': ["Nombre", "HorarioMateria"],
+                                'profesor': ["Nombre", "HorasTrabajadas"],
+                                'nota': ["NúmeroDeNota", "CantidadNotas"]
+                                }
+  
+  datos = {}
+  
+  cajasDeTexto = {'alumno': (txBox_NombreAlumno, txBox_FechaNacimiento),
+                  'carrera': (txBox_NombreCarrera, txBox_Duración),
+                  'materia': (txBox_NombreMateria, txBox_HorarioCorrespondiente),
+                  'profesor': (txBox_NombreProfesor, txBox_HorasTrabajadas),
+                  'nota': (txBox_NotaCalificada, txBox_CantidadNotas), 
+                  }
+  
+  for campo in campos_de_la_base_de_datos[nombre_de_la_tabla]:
+    if campo == "Nombre":
+      datos[campo] = cajasDeTexto[nombre_de_la_tabla][0].get()
+    elif campo in ["FechaDeNacimiento", "Duración", "HorarioMateria","HorasTrabajadas","NúmeroDeNota", "CantidadNotas"]:
+      datos[campo] = cajasDeTexto[nombre_de_la_tabla][1].get()
+
+  print(datos)
+  
+  if validar_datos(nombre_de_la_tabla, datos):
+    return datos
+  else:
+    return None
 
 #Esta función llamada extraerIDs sirve
 #para que pueda modificar y eliminar datos de una tabla dinámicamente
@@ -192,24 +234,23 @@ def extraerIDs(selección):
     dígito = parte.isdigit()
     if dígito:
       return int(parte)
-    else:
-      return None
+  return None
 
 #Esta función me permite obtener el ID 
 #de cualquier tabla que se encuentre en mi base de datos
-conseguir_campo_ID(nombre_de_la_tabla):
-    nombre_de_la_tabla = nombre_de_la_tabla.strip().lower() 
-    match nombre_de_la_tabla:
-     case 'alumno':
-        campo_ID = "ID_Alumno"
-     case 'carrera':
-        campo_ID = "ID_Carrera"
-     case 'materia':
-        campo_ID = "ID_Materia"
-     case 'profesor':
-        campo_ID = "ID_Profesor"
-     case 'nota':
-        campo_ID = "ID_Nota"
+def conseguir_campo_ID(nombre_de_la_tabla):
+  nombre_de_la_tabla = nombre_de_la_tabla.strip().lower() 
+  match nombre_de_la_tabla:
+    case 'alumno':
+      return "ID_Alumno"
+    case 'carrera':
+      return "ID_Carrera"
+    case 'materia':
+      return "ID_Materia"
+    case 'profesor':
+      return "ID_Profesor"
+    case 'nota':
+      return "ID_Nota"
 
 def doble_acción():
   habilitar_botones_e_inputs()
@@ -269,7 +310,7 @@ label_Duración.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 label_NombreMateria = TK.Label(mi_ventana, text="Nombre de la Materia*")
 label_NombreMateria.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-label_HorarioCorrespondiente = TK.Label(mi_ventana, text="Horario correspondiente *")
+label_HorarioCorrespondiente = TK.Label(mi_ventana, text="Horario correspondiente: Formato %H:%M *")
 label_HorarioCorrespondiente.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
 #Etiquetas para la tabla de profesor
@@ -387,41 +428,43 @@ def insertar_datos(nombre_de_la_tabla):
 #no siempre tiene un valor fijo
 def modificar_datos(nombre_de_la_tabla):
   columna_seleccionada = Lista_de_datos.curselection()
+  if not columna_seleccionada:
+    messagebox.showwarning("ADVERTENCIA", "FALTA SELECCIONAR UNA COLUMNA")
+    return
+
   selección = Lista_de_datos.get(columna_seleccionada[0])
   ID_Seleccionado = extraerIDs(selección)
-  ID_Encontrado = ID_Seleccionado is not None
-  
-  if columna_seleccionada:
-    if ID_Encontrado:    
-      Datos_necesarios = obtener_datos_de_Formulario(nombre_de_la_tabla)
-      if Datos_necesarios:
-        try:
-          with conectar_base_de_datos() as conexión:
-            cursor = conexión.cursor()
-            values = list(Datos_necesarios.values()) + [ID_Seleccionado]
-            
-            columnas = ', '.join([f"{k} = %s" for k in Datos_necesarios.keys()])
-            query = f"UPDATE {nombre_de_la_tabla} SET {columnas} WHERE {campo_ID} = %s"
-            cursor.execute(query, values)
-            conexión.commit()
-            consultar_tabla(nombre_de_la_tabla)
-            messagebox.showinfo("CORRECTO", "SE MODIFICÓ EXITOSAMENTE")
-        except Error as e:
-          messagebox.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {e}")
-      else:
-        messagebox.showwarning("FALTA DE DATOS", "FALTA LOS DATOS NECESARIOS")
-    else:
+  if ID_Seleccionado is None:
       messagebox.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
-  else:
-    messagebox.showwarning("ADVERTENCIA", "FALTA SELECCIONAR UNA COLUMNA")
-
+      return
+  Datos_necesarios = obtener_datos_de_Formulario(nombre_de_la_tabla)
+  CampoID = conseguir_campo_ID(nombre_de_la_tabla)
+  if not Datos_necesarios:
+    messagebox.showwarning("FALTA DE DATOS", "FALTA LOS DATOS NECESARIOS")
+    return
+  
+  try:
+    with conectar_base_de_datos() as conexión:
+      cursor = conexión.cursor()
+      columnas = ', '.join([f"{k} = %s" for k in Datos_necesarios.keys()])
+      values = list(Datos_necesarios.values()) + [ID_Seleccionado]
+      query = f"UPDATE {nombre_de_la_tabla} SET {columnas} WHERE {CampoID} = %s"
+      print("QUERY:",query)
+      print("VALUES",values)
+      cursor.execute(query, values)
+      conexión.commit()
+      consultar_tabla(nombre_de_la_tabla)
+      messagebox.showinfo("CORRECTO", "SE MODIFICÓ EXITOSAMENTE")
+  except Error as e:
+    messagebox.showerror("ERROR", f"ERROR INESPERADO AL MODIFICAR: {e}")
+  
 #Mejoré mi función de insertar datos para eliminar
 #dinámicamente sin tener que entrar a MySQL y puse una
 #función que extrae el ID en todas las palabras ya que
 #no siempre tiene un valor fijo
 def eliminar_datos(nombre_de_la_tabla):
   columna_seleccionada = Lista_de_datos.curselection()
-  
+  CampoID = conseguir_campo_ID(nombre_de_la_tabla)
   if columna_seleccionada:
       try:
         with conectar_base_de_datos() as conexión:
@@ -432,7 +475,7 @@ def eliminar_datos(nombre_de_la_tabla):
             ID_Encontrado = ID_Seleccionado is not None
             if ID_Encontrado:
               values = (ID_Seleccionado,)
-              query = f"DELETE FROM {nombre_de_la_tabla} where ID_Alumno = %s"
+              query = f"DELETE FROM {nombre_de_la_tabla} where {CampoID} = %s"
               cursor.execute(query, values)
               messagebox.showinfo("ÉXITOS", f"Una columna ha sido eliminada exitosamente con id {ID_Seleccionado}")
             else:

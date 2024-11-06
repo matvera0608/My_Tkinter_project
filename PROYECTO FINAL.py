@@ -97,8 +97,9 @@ def habilitar_botones_e_inputs():
                    txBox_NombreCarrera, label_NombreCarrera, txBox_Duración, label_Duración, txBox_IDCarrera, label_IDCarrera,
                    txBox_NombreMateria, label_NombreMateria, txBox_HorarioCorrespondiente, label_HorarioCorrespondiente, txBox_IDMateria, label_IDMateria,
                    txBox_NombreProfesor, label_NombreProfesor, txBox_HorasTrabajadas, label_HorasTrabajadas, txBox_IDProfesor, label_IDProfesor,
-                   txBox_NotaCalificada, label_NotaCalificada, txBox_CantidadNotas, txBox_Promedio, label_Promedio, txBox_IDNota, label_IDNota ]:
-      widget.place_forget()
+                   txBox_NotaCalificadaUNO, label_NotaCalificadaUNO, txBox_CantidadNotas, txBox_Promedio, label_Promedio, txBox_IDNota, label_IDNota
+                ]:
+    widget.place_forget()
 
   botón_seleccionado = opción.get()
   
@@ -144,8 +145,6 @@ def habilitar_botones_e_inputs():
         label_Promedio.place(relx=0.25, rely=0.345)
         txBox_IDNota.place(x=150, y= 250)
         label_IDNota.place(relx=0.25, rely=0.420)
-      case _:
-          print("ES NECESARIO SELECCIONAR")
 
 #Este obtiene la tabla a seleccionar cuando voy a seleccionar RadioButton
 def obtener_tabla_seleccionada():
@@ -158,8 +157,7 @@ def validar_datos(nombre_de_la_tabla, datos):
   #El patron_nombre contiene una expresión regular para permitir
   #letras con acentos y otros caracteres especiales
   patron_nombre = re.compile(r"^[\w\sáéíóúÁÉÍÓÚñÑüÜ]+$")
-  patrón_númerosDecimales = re.compile([r'^\d+(,\d+)?$'])
-  
+  patrón_númerosDecimales = re.compile(r'^\d+(,\d+)?$')
   try:
     match nombre_de_la_tabla:
       case 'alumno':
@@ -185,7 +183,11 @@ def validar_datos(nombre_de_la_tabla, datos):
           return False
     
       case 'nota':
-        if not patrón_númerosDecimales.match(["NúmeroDeNota"]):
+        if not patrón_númerosDecimales.match(["NúmeroDeNota_UNO"]):
+          messagebox.showerror("Error", "La nota calificada permite sólo números")
+          return False
+        
+        if not patrón_númerosDecimales.match(["NúmeroDeNota_DOS"]):
           messagebox.showerror("Error", "La nota calificada permite sólo números")
           return False
       
@@ -203,28 +205,32 @@ def validar_datos(nombre_de_la_tabla, datos):
 
 def obtener_datos_de_Formulario(nombre_de_la_tabla):
   
-  campos_de_la_base_de_datos = {'alumno': ["Nombre", "FechaDeNacimiento"],
-                                'carrera': ["Nombre", "Duración"],
-                                'materia': ["Nombre", "HorarioMateria"],
-                                'profesor': ["Nombre", "HorasTrabajadas"],
-                                'nota': ["NúmeroDeNota", "CantidadNotas"]
+  campos_de_la_base_de_datos = {'alumno': ["Nombre", "FechaDeNacimiento", "ID_Alumno"],
+                                'carrera': ["Nombre", "Duración", "ID_Carrera"],
+                                'materia': ["Nombre", "HorarioMateria", "ID_Materia"],
+                                'profesor': ["Nombre", "HorasTrabajadas", "ID_Profesor"],
+                                'nota': ["NúmeroDeNota_UNO","NúmeroDeNota_DOS", "CantidadNotas", "ID_Nota"]
                                 }
   
   datos = {}
   
-  cajasDeTexto = {'alumno': (txBox_NombreAlumno, txBox_FechaNacimiento),
-                  'carrera': (txBox_NombreCarrera, txBox_Duración),
-                  'materia': (txBox_NombreMateria, txBox_HorarioCorrespondiente),
-                  'profesor': (txBox_NombreProfesor, txBox_HorasTrabajadas),
-                  'nota': (txBox_NotaCalificada, txBox_CantidadNotas), 
+  cajasDeTexto = {'alumno': (txBox_NombreAlumno, txBox_FechaNacimiento, txBox_IDAlumno),
+                  'carrera': (txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera),
+                  'materia': (txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria),
+                  'profesor': (txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor),
+                  'nota': (txBox_NotaCalificadaUNO, txBox_NotaCalificadaDOS, txBox_CantidadNotas, txBox_IDNota), 
                   }
   
+  #Este bucle for controla que tenga todos los campos cargados antes de
+  #poner a la listBox con los datos precargados de mySQL Workbench
   for campo in campos_de_la_base_de_datos[nombre_de_la_tabla]:
     if campo == "Nombre":
       datos[campo] = cajasDeTexto[nombre_de_la_tabla][0].get()
-    elif campo in ["FechaDeNacimiento", "Duración", "HorarioMateria","HorasTrabajadas","NúmeroDeNota", "CantidadNotas"]:
+    elif campo in ["FechaDeNacimiento", "Duración", "HorarioMateria","HorasTrabajadas","NúmeroDeNota_UNO", "NúmeroDeNota_DOS", "CantidadNotas"]:
       datos[campo] = cajasDeTexto[nombre_de_la_tabla][1].get()
-
+    elif campo in ["ID_Alumno", "ID_Carrera", "ID_Materia", "ID_Profesor", "ID_Nota"]:
+      datos[campo] = cajasDeTexto[nombre_de_la_tabla][2].get()
+      
   print(datos)
   
   if validar_datos(nombre_de_la_tabla, datos):
@@ -340,8 +346,11 @@ label_IDProfesor = TK.Label(mi_ventana, text="ID *")
 label_IDProfesor.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
 #Etiquetas para la tabla de nota
-label_NotaCalificada = TK.Label(mi_ventana, text="Calificación *")
-label_NotaCalificada.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+label_NotaCalificadaUNO = TK.Label(mi_ventana, text="Calificación 1*")
+label_NotaCalificadaUNO.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+label_NotaCalificadaDOS = TK.Label(mi_ventana, text="Calificación 2*")
+label_NotaCalificadaDOS.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
 label_CantidadNotas = TK.Label(mi_ventana, text="Cantidad *")
 label_CantidadNotas.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
@@ -384,7 +393,8 @@ txBox_HorasTrabajadas = TK.Entry(mi_ventana)
 txBox_IDProfesor = TK.Entry(mi_ventana)
 
 #Tabla nota
-txBox_NotaCalificada = TK.Entry(mi_ventana)
+txBox_NotaCalificadaUNO = TK.Entry(mi_ventana)
+txBox_NotaCalificadaDOS = TK.Entry(mi_ventana)
 txBox_CantidadNotas = TK.Entry(mi_ventana)
 txBox_Promedio = TK.Entry(mi_ventana)
 txBox_IDNota = TK.Entry(mi_ventana)

@@ -97,54 +97,19 @@ def habilitar_botones_e_inputs():
                    txBox_NombreCarrera, label_NombreCarrera, txBox_Duración, label_Duración, txBox_IDCarrera, label_IDCarrera,
                    txBox_NombreMateria, label_NombreMateria, txBox_HorarioCorrespondiente, label_HorarioCorrespondiente, txBox_IDMateria, label_IDMateria,
                    txBox_NombreProfesor, label_NombreProfesor, txBox_HorasTrabajadas, label_HorasTrabajadas, txBox_IDProfesor, label_IDProfesor,
-                   txBox_NotaCalificadaUNO, label_NotaCalificadaUNO, txBox_CantidadNotas, txBox_Promedio, label_Promedio, txBox_IDNota, label_IDNota
+                   txBox_NotaCalificadaUNO, label_NotaCalificadaUNO, txBox_NotaCalificadaDOS, label_NotaCalificadaDOS, txBox_CantidadNotas, label_CantidadNotas, txBox_Promedio, label_Promedio, txBox_IDNota, label_IDNota,
                 ]:
-    widget.place_forget()
+          widget.place_forget()
 
   botón_seleccionado = opción.get()
   
-  if botón_seleccionado in (1, 2, 3, 4, 5):
-    botón_agregar.place(x=60,y= 100)
-    botón_modificar.place(x=60,y= 160)
-    botón_eliminar.place(x=60,y= 220)
-    label_Obligatoriedad.pack(padx= 10, pady= 10)
-    
-    match botón_seleccionado:
-      case 1:
-        txBox_NombreAlumno.place(x=150, y= 100)
-        label_NombreAlumno.place(relx=0.25, rely=0.155)
-        txBox_FechaNacimiento.place(x=150, y= 150)
-        label_FechaNacimiento.place(relx=0.25, rely=0.25)
-        txBox_IDAlumno.place(x=150, y= 200)
-        label_IDAlumno.place(relx=0.25, rely=0.345)
-      case 2:
-        txBox_NombreCarrera.place(x=150, y= 100)
-        label_NombreCarrera.place(relx=0.25, rely=0.155)
-        txBox_Duración.place(x=150, y= 150)
-        label_Duración.place(relx=0.25, rely=0.25)
-        txBox_IDCarrera.place(x=150, y= 200)
-        label_IDCarrera.place(relx=0.25, rely=0.345)
-      case 3:
-        txBox_NombreMateria.place(x=150, y= 100)
-        label_NombreMateria.place(relx=0.25, rely=0.155)
-        txBox_HorarioCorrespondiente.place(x=150, y= 150)
-        label_HorarioCorrespondiente.place(relx=0.25, rely=0.25)
-        txBox_IDMateria.place(x=150, y= 200)
-        label_IDMateria.place(relx=0.25, rely=0.345)
-      case 4:
-        txBox_NombreProfesor.place(x=150, y= 100)
-        label_NombreProfesor.place(relx=0.25, rely=0.155)
-        txBox_HorasTrabajadas.place(x=150, y= 150)
-        label_HorasTrabajadas.place(relx=0.25, rely=0.25)
-        txBox_IDProfesor.place(x=150, y= 200)
-        label_IDProfesor.place(relx=0.25, rely=0.345)
-      case 5:
-        txBox_CantidadNotas.place(x=150, y= 150)
-        label_CantidadNotas.place(relx=0.25, rely=0.25)
-        txBox_Promedio.place(x=150, y= 200)
-        label_Promedio.place(relx=0.25, rely=0.345)
-        txBox_IDNota.place(x=150, y= 250)
-        label_IDNota.place(relx=0.25, rely=0.420)
+  opciones_del_widget = {1: [(txBox_NombreAlumno,label_NombreAlumno, 100), (txBox_FechaNacimiento, label_FechaNacimiento, 150), (txBox_IDAlumno, label_IDAlumno, 200)],
+                         2: [(txBox_NombreCarrera, label_NombreCarrera, 100), (txBox_Duración, label_Duración, 150), (txBox_IDCarrera, label_IDCarrera, 200)],
+                         3: [(txBox_NombreMateria, label_NombreMateria,100), (txBox_HorarioCorrespondiente, label_HorarioCorrespondiente, 150), (txBox_IDMateria, label_IDMateria, 200)],
+                         4: [(txBox_NombreProfesor, label_NombreProfesor, 100), (txBox_HorasTrabajadas, label_HorasTrabajadas, 150), (txBox_IDProfesor, label_IDProfesor, 200)],
+                         5: [(txBox_NotaCalificadaUNO, label_NotaCalificadaUNO, 50), (txBox_NotaCalificadaDOS, label_NotaCalificadaDOS, 100), (txBox_CantidadNotas, label_CantidadNotas, 150),
+                             (txBox_Promedio, label_Promedio, 200), (txBox_IDNota, label_IDNota, 250)],
+                        }
 
 #Este obtiene la tabla a seleccionar cuando voy a seleccionar RadioButton
 def obtener_tabla_seleccionada():
@@ -183,17 +148,14 @@ def validar_datos(nombre_de_la_tabla, datos):
           return False
     
       case 'nota':
-        if not patrón_númerosDecimales.match(["NúmeroDeNota_UNO"]):
+        if not patrón_númerosDecimales.match(datos["NúmeroDeNota_UNO"]):
           messagebox.showerror("Error", "La nota calificada permite sólo números")
           return False
         
-        if not patrón_númerosDecimales.match(["NúmeroDeNota_DOS"]):
+        if not patrón_númerosDecimales.match(datos["NúmeroDeNota_DOS"]):
           messagebox.showerror("Error", "La nota calificada permite sólo números")
           return False
-      
-        if not datos["CantidadDeNotas"].isdigit():
-          messagebox.showerror("Error", "La cantidad de notas permite sólo números")
-          return False
+
       case _:
         messagebox.showerror("Error", "No existe la tabla o la misma es desconocida")
         return False
@@ -209,7 +171,7 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla):
                                 'carrera': ["Nombre", "Duración", "ID_Carrera"],
                                 'materia': ["Nombre", "HorarioMateria", "ID_Materia"],
                                 'profesor': ["Nombre", "HorasTrabajadas", "ID_Profesor"],
-                                'nota': ["NúmeroDeNota_UNO","NúmeroDeNota_DOS", "CantidadNotas", "ID_Nota"]
+                                'nota': ["NúmeroDeNota_UNO","NúmeroDeNota_DOS", "ID_Nota"]
                                 }
   
   datos = {}
@@ -218,7 +180,7 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla):
                   'carrera': (txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera),
                   'materia': (txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria),
                   'profesor': (txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor),
-                  'nota': (txBox_NotaCalificadaUNO, txBox_NotaCalificadaDOS, txBox_CantidadNotas, txBox_IDNota), 
+                  'nota': (txBox_NotaCalificadaUNO, txBox_NotaCalificadaDOS, txBox_IDNota), 
                   }
   
   #Este bucle for controla que tenga todos los campos cargados antes de
@@ -226,12 +188,10 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla):
   for campo in campos_de_la_base_de_datos[nombre_de_la_tabla]:
     if campo == "Nombre":
       datos[campo] = cajasDeTexto[nombre_de_la_tabla][0].get()
-    elif campo in ["FechaDeNacimiento", "Duración", "HorarioMateria","HorasTrabajadas","NúmeroDeNota_UNO", "NúmeroDeNota_DOS", "CantidadNotas"]:
+    elif campo in ["FechaDeNacimiento", "Duración", "HorarioMateria","HorasTrabajadas","NúmeroDeNota_UNO", "NúmeroDeNota_DOS"]:
       datos[campo] = cajasDeTexto[nombre_de_la_tabla][1].get()
     elif campo in ["ID_Alumno", "ID_Carrera", "ID_Materia", "ID_Profesor", "ID_Nota"]:
       datos[campo] = cajasDeTexto[nombre_de_la_tabla][2].get()
-      
-  print(datos)
   
   if validar_datos(nombre_de_la_tabla, datos):
     return datos

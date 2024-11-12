@@ -125,7 +125,7 @@ def validar_datos(nombre_de_la_tabla, datos):
                               'carrera': lambda: patrón_nombre.match(datos["Nombre"]),
                               'materia': lambda: patrón_nombre.match(datos["Nombre"]) and datetime.strptime(datos["Horario"], '%H:%M'),
                               'profesor': lambda: patrón_nombre.match(datos["Nombre"]),
-                              'nota': lambda: patrón_númerosDecimales.match(datos["Nota_UNO"]) and patrón_númerosDecimales.match["Nota_DOS"]
+                              'nota': lambda: patrón_númerosDecimales.match(datos["Nota_UNO"]) and patrón_númerosDecimales.match(datos["Nota_DOS"])
                             }
     
     if not nombre_de_la_tabla in validaciones:
@@ -151,7 +151,7 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla):
                                                         'materia': ["Nombre", "Horario", "ID_Materia"],
                                                         'profesor': ["Nombre", "HorasTrabajadas", "ID_Profesor"],
                                                         'nota':       ["Nota_UNO", "Nota_DOS", "ID_Nota"]
-                                                     }
+       }
   
   datos = {}
   
@@ -161,7 +161,7 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla):
                               'materia': (txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria),
                               'profesor': (txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor),
                               'nota':       (txBox_NotaCalificadaUNO, txBox_NotaCalificadaDOS, txBox_IDNota), 
-                            }
+        }
 
   #Este for es más escalable que el anterior, ya que esto me solucionó el problema de que no me imprimía la Nota 1 en la listBox
   for i, campo in enumerate(campos_de_la_base_de_datos[nombre_de_la_tabla]):
@@ -174,7 +174,7 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla):
   else:
     return None
 
-#Esta función llamada extraerIDs sirve
+#Esta función llamada extraerIDs y sirve
 #para que pueda modificar y eliminar datos de una tabla dinámicamente
 def extraerIDs(selección):
   partes = selección.split('|')
@@ -188,36 +188,30 @@ def extraerIDs(selección):
 #Esta función me permite obtener el ID 
 #de cualquier tabla que se encuentre en mi base de datos
 def conseguir_campo_ID(nombre_de_la_tabla):
-  nombre_de_la_tabla = nombre_de_la_tabla.strip().lower() 
-  match nombre_de_la_tabla:
-    case 'alumno':
-      return "ID_Alumno"
-    case 'carrera':
-      return "ID_Carrera"
-    case 'materia':
-      return "ID_Materia"
-    case 'profesor':
-      return "ID_Profesor"
-    case 'nota':
-      return "ID_Nota"
-
-def doble_acción():
-  habilitar_botones_e_inputs()
-  
-  seleccionar_y_consultar()
-
-def deseleccionar_RadioButton(Event):
-  opción.set(0)
-  Lista_de_datos.delete(0, TK.END)
-  habilitar_botones_e_inputs()
+  IDs = {
+              'alumno': "ID_Alumno",
+              'carrera': "ID_Carrera",
+              'materia': "ID_Materia",
+              'profesor': "ID_Profesor",
+              'nota': "ID_Nota"
+            }
+  return IDs.get(nombre_de_la_tabla.strip().lower())
 
 #Esta función sirve para actualizar la hora
 def actualizar_la_hora():
   label_Hora.config(text=time.strftime("%I:%M:%S %p"))
   interfaz.after(1000, actualizar_la_hora)
   
-# --- CONFIGURACIÓN DE INTERFAZ Y ELEMENTOS IMPORTANTES DE TKINTER PARA LAS INSTRUCCIONES---
-def pantalla():
+def acción_doble():
+  habilitar_botones_e_inputs()
+  seleccionar_y_consultar()
+
+# --- CONFIGURACIÓN DE INTERFAZ Y ELEMENTOS IMPORTANTES DE TKINTER
+# PARA LAS INSTRUCCIONES GUARDADOS EN LA FUNCIÓN pantalla_principal()---
+def pantalla_principal():
+  
+  # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
+  
   mi_ventana = TK.Tk()
   mi_ventana.title("Sistema Gestor de Asistencia")
   mi_ventana.geometry("1200x600")
@@ -226,142 +220,165 @@ def pantalla():
   mi_ventana.configure(bg=rosado_claro)
   mi_ventana.iconbitmap(ícono)
   mi_ventana.attributes("-alpha", 1)
+  
+  # --- BOTONES NECESARIOS ---
+  #Agregar
+  
+  global botón_agregar, botón_eliminar, botón_modificar
+
+  botón_agregar = TK.Button(text="Agregar Dato", command=lambda:insertar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
+  botón_agregar.config(fg="black", bg=verde, font=("Arial", 8))
+
+  #Modificar
+  botón_modificar = TK.Button(text="Modificar Dato", command=lambda:modificar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
+  botón_modificar.config(fg="black", bg="red", font=("Arial", 8))
+
+  #Eliminar
+  botón_eliminar = TK.Button(text="Eliminar Dato", command=lambda:eliminar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
+  botón_eliminar.config(fg="black", bg="blue", font=("Arial", 8))
+
+
+  # --- ETIQUETAS ---
+  #Etiquetas para la tabla de alumno
+  global label_NombreAlumno, label_FechaNacimiento, label_IDAlumno
+  
+  label_NombreAlumno = TK.Label(mi_ventana, text="Nombre del Alumno *")
+  label_NombreAlumno.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+  label_FechaNacimiento = TK.Label(mi_ventana, text="Fecha que nació: Formato YYYY-MM-DD *")
+  label_FechaNacimiento.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+  label_IDAlumno = TK.Label(mi_ventana, text="ID *")
+  label_IDAlumno.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+  #Etiquetas para la tabla de carrera
+  global label_NombreCarrera, label_Duración, label_IDCarrera
+  
+  label_NombreCarrera = TK.Label(mi_ventana, text="Nombre de la Carrera *")
+  label_NombreCarrera.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+  label_Duración = TK.Label(mi_ventana, text="Duración *")
+  label_Duración.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+  label_IDCarrera = TK.Label(mi_ventana, text="ID *")
+  label_IDCarrera.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+  #Etiquetas para la tabla de materia
+  global label_NombreMateria, label_HorarioCorrespondiente, label_IDMateria
+  
+  label_NombreMateria = TK.Label(mi_ventana, text="Nombre de la Materia *")
+  label_NombreMateria.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+  label_HorarioCorrespondiente = TK.Label(mi_ventana, text="Horario correspondiente: Formato %H:%M *")
+  label_HorarioCorrespondiente.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+  label_IDMateria = TK.Label(mi_ventana, text="ID *")
+  label_IDMateria.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+  #Etiquetas para la tabla de profesor
+  global label_NombreProfesor, label_HorasTrabajadas, label_IDProfesor
+  
+  label_NombreProfesor = TK.Label(mi_ventana, text="Nombre del Profesor *")
+  label_NombreProfesor.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+  label_HorasTrabajadas = TK.Label(mi_ventana, text="Horas trabajadas *")
+  label_HorasTrabajadas.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+  label_IDProfesor = TK.Label(mi_ventana, text="ID *")
+  label_IDProfesor.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+  #Etiquetas para la tabla de nota
+  global label_NotaCalificadaUNO, label_NotaCalificadaDOS, label_IDNota, label_Hora, label_Obligatoriedad
+  
+  label_NotaCalificadaUNO = TK.Label(mi_ventana, text="Calificación 1*")
+  label_NotaCalificadaUNO.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+  label_NotaCalificadaDOS = TK.Label(mi_ventana, text="Calificación 2*")
+  label_NotaCalificadaDOS.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+  label_Promedio = TK.Label(mi_ventana, text="Promedio")
+  label_Promedio.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+  label_IDNota = TK.Label(mi_ventana, text="ID *")
+  label_IDNota.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+
+  #Etiqueta para mostrar la hora
+  label_Hora = TK.Label(mi_ventana, text="")
+  label_Hora.config(fg="Black", bg="Black", font=("Arial", 25))
+  #Etiqueta para indicar que significa el asterisco
+  label_Obligatoriedad = TK.Label(mi_ventana, text="el * significa que son obligatorio seleccionar los datos")
+  label_Obligatoriedad.config(fg="Black",bg=rosado_claro, font=("Arial", 8))
+
+  #--- ENTRIES ---
+  #Tabla alumno
+  global txBox_NombreAlumno, txBox_FechaNacimiento, txBox_IDAlumno
+  
+  txBox_NombreAlumno = TK.Entry(mi_ventana)
+  txBox_FechaNacimiento = TK.Entry(mi_ventana)
+  txBox_IDAlumno = TK.Entry(mi_ventana)
+
+  #Tabla carrera
+  global txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera
+  
+  txBox_NombreCarrera = TK.Entry(mi_ventana)
+  txBox_Duración = TK.Entry(mi_ventana)
+  txBox_IDCarrera = TK.Entry(mi_ventana)
+
+  #Tabla materia
+  global txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria
+  
+  txBox_NombreMateria = TK.Entry(mi_ventana)
+  txBox_HorarioCorrespondiente = TK.Entry(mi_ventana)
+  txBox_IDMateria = TK.Entry(mi_ventana)
+
+  #Tabla profesor
+  global txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor
+  
+  txBox_NombreProfesor = TK.Entry(mi_ventana)
+  txBox_HorasTrabajadas = TK.Entry(mi_ventana)
+  txBox_IDProfesor = TK.Entry(mi_ventana)
+
+  #Tabla nota
+  global txBox_NotaCalificadaUNO, txBox_NotaCalificadaDOS, txBox_IDNota, opción
+  
+  txBox_NotaCalificadaUNO = TK.Entry(mi_ventana)
+  txBox_NotaCalificadaDOS = TK.Entry(mi_ventana)
+  txBox_IDNota = TK.Entry(mi_ventana)
+
+  # --- RADIOBUTTONS ---
+  opción = TK.IntVar()
+
+  Botón_Tabla_de_Alumno = TK.Radiobutton(mi_ventana, text="Alumno", variable=opción, value= 1, command=acción_doble)
+  Botón_Tabla_de_Alumno.config(bg=rosado_claro, font=("Arial", 12))
+
+  Botón_Tabla_de_Carrera = TK.Radiobutton(mi_ventana, text="Carrera", variable=opción, value= 2, command=acción_doble)
+  Botón_Tabla_de_Carrera.config(bg=rosado_claro, font=("Arial", 12))
+
+  Botón_Tabla_de_Materia = TK.Radiobutton(mi_ventana, text="Materia", variable=opción, value= 3, command=acción_doble)
+  Botón_Tabla_de_Materia.config(bg=rosado_claro, font=("Arial", 12))
+
+  Botón_Tabla_de_Profesor = TK.Radiobutton(mi_ventana, text="Profesor", variable=opción, value= 4, command=acción_doble)
+  Botón_Tabla_de_Profesor.config(bg=rosado_claro, font=("Arial", 12))
+
+  Botón_Tabla_de_Notas = TK.Radiobutton(mi_ventana, text="Nota", variable=opción, value= 5, command=acción_doble)
+  Botón_Tabla_de_Notas.config(bg=rosado_claro, font=("Arial", 12))
+
+  Botón_Tabla_de_Alumno.place(x= 60, y = 500)
+  Botón_Tabla_de_Carrera.place(x = 180, y = 500)
+  Botón_Tabla_de_Materia.place(x = 300, y = 500)
+  Botón_Tabla_de_Profesor.place(x = 420, y = 500)
+  Botón_Tabla_de_Notas.place(x = 540, y = 500)
+
+  #--- LISTBOX ---
+  global Lista_de_datos
+  
+  Lista_de_datos = TK.Listbox(mi_ventana, width= 60, height= 40)
+  Lista_de_datos.config(fg="blue",bg=amarillo_claro, font=("Arial", 15))
+  Lista_de_datos.place(x= 750, y= 0)
+  
   return mi_ventana
 
-interfaz = pantalla()
-
-# --- BOTONES NECESARIOS ---
-#Agregar
-botón_agregar = TK.Button(text="Agregar Dato", command=lambda:insertar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
-botón_agregar.config(fg="black", bg=verde, font=("Arial", 8))
-
-#Modificar
-botón_modificar = TK.Button(text="Modificar Dato", command=lambda:modificar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
-botón_modificar.config(fg="black", bg="red", font=("Arial", 8))
-
-#Eliminar
-botón_eliminar = TK.Button(text="Eliminar Dato", command=lambda:eliminar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
-botón_eliminar.config(fg="black", bg="blue", font=("Arial", 8))
-
-
-# --- ETIQUETAS ---
-#Etiquetas para la tabla de alumno
-label_NombreAlumno = TK.Label(interfaz, text="Nombre del Alumno *")
-label_NombreAlumno.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
-
-label_FechaNacimiento = TK.Label(interfaz, text="Fecha que nació: Formato YYYY-MM-DD *")
-label_FechaNacimiento.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
-
-label_IDAlumno = TK.Label(interfaz, text="ID *")
-label_IDAlumno.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
-
-#Etiquetas para la tabla de carrera
-label_NombreCarrera = TK.Label(interfaz, text="Nombre de la Carrera *")
-label_NombreCarrera.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
-
-label_Duración = TK.Label(interfaz, text="Duración *")
-label_Duración.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
-
-label_IDCarrera = TK.Label(interfaz, text="ID *")
-label_IDCarrera.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
-
-#Etiquetas para la tabla de materia
-label_NombreMateria = TK.Label(interfaz, text="Nombre de la Materia *")
-label_NombreMateria.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
-
-label_HorarioCorrespondiente = TK.Label(interfaz, text="Horario correspondiente: Formato %H:%M *")
-label_HorarioCorrespondiente.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
-
-label_IDMateria = TK.Label(interfaz, text="ID *")
-label_IDMateria.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
-
-#Etiquetas para la tabla de profesor
-label_NombreProfesor = TK.Label(interfaz, text="Nombre del Profesor *")
-label_NombreProfesor.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
-
-label_HorasTrabajadas = TK.Label(interfaz, text="Horas trabajadas *")
-label_HorasTrabajadas.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
-
-label_IDProfesor = TK.Label(interfaz, text="ID *")
-label_IDProfesor.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
-
-#Etiquetas para la tabla de nota
-label_NotaCalificadaUNO = TK.Label(interfaz, text="Calificación 1*")
-label_NotaCalificadaUNO.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
-
-label_NotaCalificadaDOS = TK.Label(interfaz, text="Calificación 2*")
-label_NotaCalificadaDOS.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
-
-label_Promedio = TK.Label(interfaz, text="Promedio")
-label_Promedio.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
-
-label_IDNota = TK.Label(interfaz, text="ID *")
-label_IDNota.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
-
-#Etiqueta para mostrar la hora
-label_Hora = TK.Label(interfaz, text="")
-label_Hora.config(fg="Black", bg="Black", font=("Arial", 25))
-#Etiqueta para indicar que significa el asterisco
-label_Obligatoriedad = TK.Label(interfaz, text="el * significa que son obligatorio seleccionar los datos")
-label_Obligatoriedad.config(fg="Black",bg=rosado_claro, font=("Arial", 8))
-
-#--- ENTRIES ---
-
-#Tabla alumno
-txBox_NombreAlumno = TK.Entry(interfaz)
-txBox_FechaNacimiento = TK.Entry(interfaz)
-txBox_IDAlumno = TK.Entry(interfaz)
-
-#Tabla carrera
-txBox_NombreCarrera = TK.Entry(interfaz)
-txBox_Duración = TK.Entry(interfaz)
-txBox_IDCarrera = TK.Entry(interfaz)
-
-#Tabla materia
-txBox_NombreMateria = TK.Entry(interfaz)
-txBox_HorarioCorrespondiente = TK.Entry(interfaz)
-txBox_IDMateria = TK.Entry(interfaz)
-
-#Tabla profesor
-txBox_NombreProfesor = TK.Entry(interfaz)
-txBox_HorasTrabajadas = TK.Entry(interfaz)
-txBox_IDProfesor = TK.Entry(interfaz)
-
-#Tabla nota
-txBox_NotaCalificadaUNO = TK.Entry(interfaz)
-txBox_NotaCalificadaDOS = TK.Entry(interfaz)
-txBox_IDNota = TK.Entry(interfaz)
-
-# --- RADIOBUTTONS ---
-opción = TK.IntVar()
-
-Botón_Tabla_de_Alumno = TK.Radiobutton(interfaz, text="Alumno", variable=opción, value= 1, command=doble_acción)
-Botón_Tabla_de_Alumno.config(bg=rosado_claro, font=("Arial", 12))
-
-Botón_Tabla_de_Carrera = TK.Radiobutton(interfaz, text="Carrera", variable=opción, value= 2, command=doble_acción)
-Botón_Tabla_de_Carrera.config(bg=rosado_claro, font=("Arial", 12))
-
-Botón_Tabla_de_Materia = TK.Radiobutton(interfaz, text="Materia", variable=opción, value= 3, command=doble_acción)
-Botón_Tabla_de_Materia.config(bg=rosado_claro, font=("Arial", 12))
-
-Botón_Tabla_de_Profesor = TK.Radiobutton(interfaz, text="Profesor", variable=opción, value= 4, command=doble_acción)
-Botón_Tabla_de_Profesor.config(bg=rosado_claro, font=("Arial", 12))
-
-Botón_Tabla_de_Notas = TK.Radiobutton(interfaz, text="Nota", variable=opción, value= 5, command=doble_acción)
-Botón_Tabla_de_Notas.config(bg=rosado_claro, font=("Arial", 12))
-
-Botón_Tabla_de_Alumno.place(x= 60, y = 500)
-Botón_Tabla_de_Carrera.place(x = 180, y = 500)
-Botón_Tabla_de_Materia.place(x = 300, y = 500)
-Botón_Tabla_de_Profesor.place(x = 420, y = 500)
-Botón_Tabla_de_Notas.place(x = 540, y = 500)
-
-#--- LISTBOX ---
-Lista_de_datos = TK.Listbox(interfaz, width= 60, height= 40)
-Lista_de_datos.config(fg="blue",bg=amarillo_claro, font=("Arial", 15))
-Lista_de_datos.place(x= 750, y= 0)
-
-# --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
+interfaz = pantalla_principal()
 
 #Mejoré mi función de insertar datos para agregarlo
 #dinámicamente sin tener que entrar a MySQL
@@ -407,17 +424,17 @@ def modificar_datos(nombre_de_la_tabla):
       messagebox.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
       return
   
-  Datos_necesarios = obtener_datos_de_Formulario(nombre_de_la_tabla)
+  datosNecesarios = obtener_datos_de_Formulario(nombre_de_la_tabla)
   CampoID = conseguir_campo_ID(nombre_de_la_tabla)
-  if not Datos_necesarios:
+  if not datosNecesarios:
     messagebox.showwarning("FALTA DE DATOS", "FALTA LOS DATOS NECESARIOS")
     return
   
   try:
     with conectar_base_de_datos() as conexión:
       cursor = conexión.cursor()
-      columnas = ', '.join([f"{k} = %s" for k in Datos_necesarios.keys()])
-      values = list(Datos_necesarios.values()) + [ID_Seleccionado]
+      columnas = ', '.join([f"{k} = %s" for k in datosNecesarios.keys()])
+      values = list(datosNecesarios.values()) + [ID_Seleccionado]
       query = f"UPDATE {nombre_de_la_tabla} SET {columnas} WHERE {CampoID} = %s"
       print("QUERY:",query)
       print("VALUES",values)

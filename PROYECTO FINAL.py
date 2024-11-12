@@ -211,7 +211,6 @@ def acción_doble():
 def pantalla_principal():
   
   # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
-  
   mi_ventana = TK.Tk()
   mi_ventana.title("Sistema Gestor de Asistencia")
   mi_ventana.geometry("1200x600")
@@ -222,10 +221,8 @@ def pantalla_principal():
   mi_ventana.attributes("-alpha", 1)
   
   # --- BOTONES NECESARIOS ---
-  #Agregar
-  
   global botón_agregar, botón_eliminar, botón_modificar
-
+  #Agregar
   botón_agregar = TK.Button(text="Agregar Dato", command=lambda:insertar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
   botón_agregar.config(fg="black", bg=verde, font=("Arial", 8))
 
@@ -239,9 +236,8 @@ def pantalla_principal():
 
 
   # --- ETIQUETAS ---
+  global label_NombreAlumno, label_FechaNacimiento, label_IDAlumno, label_NombreCarrera, label_Duración, label_IDCarrera, label_NombreMateria, label_HorarioCorrespondiente, label_IDMateria, label_NombreProfesor, label_HorasTrabajadas, label_IDProfesor, label_NotaCalificadaUNO, label_NotaCalificadaDOS, label_IDNota, label_Hora, label_Obligatoriedad
   #Etiquetas para la tabla de alumno
-  global label_NombreAlumno, label_FechaNacimiento, label_IDAlumno
-  
   label_NombreAlumno = TK.Label(mi_ventana, text="Nombre del Alumno *")
   label_NombreAlumno.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
@@ -252,8 +248,6 @@ def pantalla_principal():
   label_IDAlumno.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
   #Etiquetas para la tabla de carrera
-  global label_NombreCarrera, label_Duración, label_IDCarrera
-  
   label_NombreCarrera = TK.Label(mi_ventana, text="Nombre de la Carrera *")
   label_NombreCarrera.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
@@ -264,8 +258,6 @@ def pantalla_principal():
   label_IDCarrera.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
   #Etiquetas para la tabla de materia
-  global label_NombreMateria, label_HorarioCorrespondiente, label_IDMateria
-  
   label_NombreMateria = TK.Label(mi_ventana, text="Nombre de la Materia *")
   label_NombreMateria.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
@@ -276,8 +268,6 @@ def pantalla_principal():
   label_IDMateria.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
   #Etiquetas para la tabla de profesor
-  global label_NombreProfesor, label_HorasTrabajadas, label_IDProfesor
-  
   label_NombreProfesor = TK.Label(mi_ventana, text="Nombre del Profesor *")
   label_NombreProfesor.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
@@ -288,8 +278,6 @@ def pantalla_principal():
   label_IDProfesor.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
   #Etiquetas para la tabla de nota
-  global label_NotaCalificadaUNO, label_NotaCalificadaDOS, label_IDNota, label_Hora, label_Obligatoriedad
-  
   label_NotaCalificadaUNO = TK.Label(mi_ventana, text="Calificación 1*")
   label_NotaCalificadaUNO.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
@@ -310,37 +298,28 @@ def pantalla_principal():
   label_Obligatoriedad.config(fg="Black",bg=rosado_claro, font=("Arial", 8))
 
   #--- ENTRIES ---
+  global txBox_NombreAlumno, txBox_FechaNacimiento, txBox_IDAlumno, txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera, txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria, txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor,  txBox_NotaCalificadaUNO, txBox_NotaCalificadaDOS, txBox_IDNota, opción
   #Tabla alumno
-  global txBox_NombreAlumno, txBox_FechaNacimiento, txBox_IDAlumno
-  
   txBox_NombreAlumno = TK.Entry(mi_ventana)
   txBox_FechaNacimiento = TK.Entry(mi_ventana)
   txBox_IDAlumno = TK.Entry(mi_ventana)
 
   #Tabla carrera
-  global txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera
-  
   txBox_NombreCarrera = TK.Entry(mi_ventana)
   txBox_Duración = TK.Entry(mi_ventana)
   txBox_IDCarrera = TK.Entry(mi_ventana)
 
   #Tabla materia
-  global txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria
-  
   txBox_NombreMateria = TK.Entry(mi_ventana)
   txBox_HorarioCorrespondiente = TK.Entry(mi_ventana)
   txBox_IDMateria = TK.Entry(mi_ventana)
 
   #Tabla profesor
-  global txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor
-  
   txBox_NombreProfesor = TK.Entry(mi_ventana)
   txBox_HorasTrabajadas = TK.Entry(mi_ventana)
   txBox_IDProfesor = TK.Entry(mi_ventana)
 
   #Tabla nota
-  global txBox_NotaCalificadaUNO, txBox_NotaCalificadaDOS, txBox_IDNota, opción
-  
   txBox_NotaCalificadaUNO = TK.Entry(mi_ventana)
   txBox_NotaCalificadaDOS = TK.Entry(mi_ventana)
   txBox_IDNota = TK.Entry(mi_ventana)
@@ -383,7 +362,6 @@ interfaz = pantalla_principal()
 #Mejoré mi función de insertar datos para agregarlo
 #dinámicamente sin tener que entrar a MySQL
 def insertar_datos(nombre_de_la_tabla):
-  
   datosNecesarios = obtener_datos_de_Formulario(nombre_de_la_tabla)
   
   if datosNecesarios:
@@ -429,7 +407,6 @@ def modificar_datos(nombre_de_la_tabla):
   if not datosNecesarios:
     messagebox.showwarning("FALTA DE DATOS", "FALTA LOS DATOS NECESARIOS")
     return
-  
   try:
     with conectar_base_de_datos() as conexión:
       cursor = conexión.cursor()

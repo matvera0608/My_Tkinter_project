@@ -70,46 +70,41 @@ def seleccionar_y_consultar():
   except Error as e:
     print(f"Error al consultar toda la tabla: {e}")
 
-def insertar_todos_los_datos():
-  botón_seleccionado = opción.get()
-  try:
-    match botón_seleccionado:
-      case 1:
-        insertar_datos('alumno')
-      case 2:
-        insertar_datos('carrera')
-      case 3:
-        insertar_datos('materia')
-      case 4:
-        insertar_datos('profesor')
-      case 5:
-        insertar_datos('nota')
-  except Exception as e:
-    print(f"Error al insertar datos necesarios: {e}")
-
-
 #Definí una función para poder mostrar 
 #cuando uno de los radioButtons esté seleccionado
 def habilitar_botones_e_inputs():
   #Este for me permite gestionar los texBox con sus respectivos labels
   #para que a la hora de seleccionar un radioButton me muestre lo necesario
-  for widget in [  txBox_NombreAlumno, label_NombreAlumno, txBox_FechaNacimiento, label_FechaNacimiento, txBox_IDAlumno, label_IDAlumno, 
-                   txBox_NombreCarrera, label_NombreCarrera, txBox_Duración, label_Duración, txBox_IDCarrera, label_IDCarrera,
-                   txBox_NombreMateria, label_NombreMateria, txBox_HorarioCorrespondiente, label_HorarioCorrespondiente, txBox_IDMateria, label_IDMateria,
-                   txBox_NombreProfesor, label_NombreProfesor, txBox_HorasTrabajadas, label_HorasTrabajadas, txBox_IDProfesor, label_IDProfesor,
-                   txBox_NotaCalificadaUNO, label_NotaCalificadaUNO, txBox_NotaCalificadaDOS, label_NotaCalificadaDOS, txBox_CantidadNotas, label_CantidadNotas, txBox_Promedio, label_Promedio, txBox_IDNota, label_IDNota,
-                ]:
-          widget.place_forget()
+  txBoxes = [
+                     txBox_NombreAlumno, label_NombreAlumno, txBox_FechaNacimiento, label_FechaNacimiento, txBox_IDAlumno, label_IDAlumno, 
+                     txBox_NombreCarrera, label_NombreCarrera, txBox_Duración, label_Duración, txBox_IDCarrera, label_IDCarrera,
+                     txBox_NombreMateria, label_NombreMateria, txBox_HorarioCorrespondiente, label_HorarioCorrespondiente, txBox_IDMateria, label_IDMateria,
+                     txBox_NombreProfesor, label_NombreProfesor, txBox_HorasTrabajadas, label_HorasTrabajadas, txBox_IDProfesor, label_IDProfesor,
+                     txBox_NotaCalificadaUNO, label_NotaCalificadaUNO, txBox_NotaCalificadaDOS, label_NotaCalificadaDOS, txBox_IDNota, label_IDNota
+                   ]
+
+  for widget in txBoxes:
+    widget.place_forget()
 
   botón_seleccionado = opción.get()
   
-  opciones_del_widget = {1: [(txBox_NombreAlumno,label_NombreAlumno, 100), (txBox_FechaNacimiento, label_FechaNacimiento, 150), (txBox_IDAlumno, label_IDAlumno, 200)],
-                         2: [(txBox_NombreCarrera, label_NombreCarrera, 100), (txBox_Duración, label_Duración, 150), (txBox_IDCarrera, label_IDCarrera, 200)],
-                         3: [(txBox_NombreMateria, label_NombreMateria,100), (txBox_HorarioCorrespondiente, label_HorarioCorrespondiente, 150), (txBox_IDMateria, label_IDMateria, 200)],
-                         4: [(txBox_NombreProfesor, label_NombreProfesor, 100), (txBox_HorasTrabajadas, label_HorasTrabajadas, 150), (txBox_IDProfesor, label_IDProfesor, 200)],
-                         5: [(txBox_NotaCalificadaUNO, label_NotaCalificadaUNO, 50), (txBox_NotaCalificadaDOS, label_NotaCalificadaDOS, 100), (txBox_CantidadNotas, label_CantidadNotas, 150),
-                             (txBox_Promedio, label_Promedio, 200), (txBox_IDNota, label_IDNota, 250)],
-                        }
+  botón_agregar.place(x = 60, y = 100)
+  botón_modificar.place(x = 60, y = 160)
+  botón_eliminar.place(x = 60, y = 220)
+  label_Obligatoriedad.pack(padx= 0, pady= 290)
+  
+  opciones_del_widget = {
+                                         1: [(txBox_NombreAlumno,label_NombreAlumno, 100), (txBox_FechaNacimiento, label_FechaNacimiento, 150), (txBox_IDAlumno, label_IDAlumno, 200)],
+                                         2: [(txBox_NombreCarrera, label_NombreCarrera, 100), (txBox_Duración, label_Duración, 150), (txBox_IDCarrera, label_IDCarrera, 200)],
+                                         3: [(txBox_NombreMateria, label_NombreMateria,100), (txBox_HorarioCorrespondiente, label_HorarioCorrespondiente, 150), (txBox_IDMateria, label_IDMateria, 200)],
+                                         4: [(txBox_NombreProfesor, label_NombreProfesor, 100), (txBox_HorasTrabajadas, label_HorasTrabajadas, 150), (txBox_IDProfesor, label_IDProfesor, 200)],
+                                         5: [(txBox_NotaCalificadaUNO, label_NotaCalificadaUNO, 50), (txBox_NotaCalificadaDOS, label_NotaCalificadaDOS, 100), (txBox_IDNota, label_IDNota, 200)]
+                                       }
+  
+  if botón_seleccionado in opciones_del_widget:
+    for entry, label, y_pos in opciones_del_widget[botón_seleccionado]:
+      entry.place(x=150, y=y_pos)
+      label.place(relx=0.25, rely=0.155 + (y_pos - 100) / 500)
 
 #Este obtiene la tabla a seleccionar cuando voy a seleccionar RadioButton
 def obtener_tabla_seleccionada():
@@ -119,80 +114,61 @@ def obtener_tabla_seleccionada():
 
 #Esta función validar_datos valida los datos para evitar redundancias
 def validar_datos(nombre_de_la_tabla, datos):
-  #El patron_nombre contiene una expresión regular para permitir
+  #El patrón_nombre contiene una expresión regular para permitir
   #letras con acentos y otros caracteres especiales
-  patron_nombre = re.compile(r"^[\w\sáéíóúÁÉÍÓÚñÑüÜ]+$")
+  patrón_nombre = re.compile(r"^[\w\sáéíóúÁÉÍÓÚñÑüÜ]+$")
   patrón_númerosDecimales = re.compile(r'^\d+(,\d+)?$')
   try:
-    match nombre_de_la_tabla:
-      case 'alumno':
-        if not patron_nombre.match(datos["Nombre"]):
-          messagebox.showerror("Error", "El nombre del alumno necesita contener letras")
-          return False
-        datetime.strptime(datos["FechaDeNacimiento"], '%Y-%m-%d')
     
-      case 'carrera':
-        if not patron_nombre.match(datos["Nombre"]):
-          messagebox.showerror("Error", "El nombre de la carrera necesita contener letras")
-          return False
+    validaciones = {
+                              'alumno':lambda: patrón_nombre.match(datos["Nombre"]) and datetime.strptime(datos["FechaDeNacimiento"], '%Y-%m-%d'),
+                              'carrera': lambda: patrón_nombre.match(datos["Nombre"]),
+                              'materia': lambda: patrón_nombre.match(datos["Nombre"]) and datetime.strptime(datos["Horario"], '%H:%M'),
+                              'profesor': lambda: patrón_nombre.match(datos["Nombre"]),
+                              'nota': lambda: patrón_númerosDecimales.match(datos["Nota_UNO"]) and patrón_númerosDecimales.match["Nota_DOS"]
+                            }
     
-      case 'materia':
-        if not patron_nombre.match(datos["Nombre"]):
-          messagebox.showerror("Error", "El nombre de la materia necesita contener letras")
-          return False
-        datetime.strptime(datos["HorarioMateria"], '%H:%M')
+    if not nombre_de_la_tabla in validaciones:
+      messagebox.showerror("Error", "La tabla solicitada no se encuentra")
+      return False
     
-      case 'profesor':
-        if not patron_nombre.match(datos["Nombre"]):
-          messagebox.showerror("Error", "El nombre del profesor necesita contener letras")
-          return False
-    
-      case 'nota':
-        if not patrón_númerosDecimales.match(datos["NúmeroDeNota_UNO"]):
-          messagebox.showerror("Error", "La nota calificada permite sólo números")
-          return False
-        
-        if not patrón_númerosDecimales.match(datos["NúmeroDeNota_DOS"]):
-          messagebox.showerror("Error", "La nota calificada permite sólo números")
-          return False
-
-      case _:
-        messagebox.showerror("Error", "No existe la tabla o la misma es desconocida")
-        return False
-    #Se retorna verdadero cuando las validaciones son correctas
+    if not validaciones[nombre_de_la_tabla]:
+      messagebox.showerror("Error", f"Uno de los datos no están correctos en la tabla {nombre_de_la_tabla}")
+      return False  
     return True
+  
   except ValueError:
     messagebox.showerror("Error", "El formato de uno de los campos es incorrecto")
     return False
 
+#En esta función obtengo todos los datos del formulario de MySQL para agregar, modificar
+#y eliminar algunos datos de la tabla
 def obtener_datos_de_Formulario(nombre_de_la_tabla):
   
-  campos_de_la_base_de_datos = {'alumno': ["Nombre", "FechaDeNacimiento", "ID_Alumno"],
-                                'carrera': ["Nombre", "Duración", "ID_Carrera"],
-                                'materia': ["Nombre", "HorarioMateria", "ID_Materia"],
-                                'profesor': ["Nombre", "HorasTrabajadas", "ID_Profesor"],
-                                'nota': ["NúmeroDeNota_UNO","NúmeroDeNota_DOS", "ID_Nota"]
-                                }
+  campos_de_la_base_de_datos = {
+                                                        'alumno':  ["Nombre", "FechaDeNacimiento", "ID_Alumno"],
+                                                        'carrera':  ["Nombre", "Duración", "ID_Carrera"],
+                                                        'materia': ["Nombre", "Horario", "ID_Materia"],
+                                                        'profesor': ["Nombre", "HorasTrabajadas", "ID_Profesor"],
+                                                        'nota':       ["Nota_UNO", "Nota_DOS", "ID_Nota"]
+                                                     }
   
   datos = {}
   
-  cajasDeTexto = {'alumno': (txBox_NombreAlumno, txBox_FechaNacimiento, txBox_IDAlumno),
-                  'carrera': (txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera),
-                  'materia': (txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria),
-                  'profesor': (txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor),
-                  'nota': (txBox_NotaCalificadaUNO, txBox_NotaCalificadaDOS, txBox_IDNota), 
-                  }
+  cajasDeTexto = {
+                              'alumno':  (txBox_NombreAlumno, txBox_FechaNacimiento, txBox_IDAlumno),
+                              'carrera':  (txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera),
+                              'materia': (txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria),
+                              'profesor': (txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor),
+                              'nota':       (txBox_NotaCalificadaUNO, txBox_NotaCalificadaDOS, txBox_IDNota), 
+                            }
+
+  #Este for es más escalable que el anterior, ya que esto me solucionó el problema de que no me imprimía la Nota 1 en la listBox
+  for i, campo in enumerate(campos_de_la_base_de_datos[nombre_de_la_tabla]):
+   datos[campo] = cajasDeTexto[nombre_de_la_tabla][i].get()
   
-  #Este bucle for controla que tenga todos los campos cargados antes de
-  #poner a la listBox con los datos precargados de mySQL Workbench
-  for campo in campos_de_la_base_de_datos[nombre_de_la_tabla]:
-    if campo == "Nombre":
-      datos[campo] = cajasDeTexto[nombre_de_la_tabla][0].get()
-    elif campo in ["FechaDeNacimiento", "Duración", "HorarioMateria","HorasTrabajadas","NúmeroDeNota_UNO", "NúmeroDeNota_DOS"]:
-      datos[campo] = cajasDeTexto[nombre_de_la_tabla][1].get()
-    elif campo in ["ID_Alumno", "ID_Carrera", "ID_Materia", "ID_Profesor", "ID_Nota"]:
-      datos[campo] = cajasDeTexto[nombre_de_la_tabla][2].get()
-  
+  #En esta condición, valido los datos de la tabla
+  #antes de realizar un alta baja y modificación
   if validar_datos(nombre_de_la_tabla, datos):
     return datos
   else:
@@ -237,22 +213,26 @@ def deseleccionar_RadioButton(Event):
 
 #Esta función sirve para actualizar la hora
 def actualizar_la_hora():
-  label_Hora.config(text=time.strftime("%H:%M:%S"))
-  mi_ventana.after(1000, actualizar_la_hora)
+  label_Hora.config(text=time.strftime("%I:%M:%S %p"))
+  interfaz.after(1000, actualizar_la_hora)
   
 # --- CONFIGURACIÓN DE INTERFAZ Y ELEMENTOS IMPORTANTES DE TKINTER PARA LAS INSTRUCCIONES---
-mi_ventana = TK.Tk()
-mi_ventana.title("Sistema Gestor de Asistencia")
-mi_ventana.geometry("1200x600")
-mi_ventana.minsize(1200, 600)
-mi_ventana.maxsize(1200, 600)
-mi_ventana.configure(bg=rosado_claro)
-mi_ventana.iconbitmap(ícono)
-mi_ventana.attributes("-alpha", 1)
+def pantalla():
+  mi_ventana = TK.Tk()
+  mi_ventana.title("Sistema Gestor de Asistencia")
+  mi_ventana.geometry("1200x600")
+  mi_ventana.minsize(1200, 600)
+  mi_ventana.maxsize(1200, 600)
+  mi_ventana.configure(bg=rosado_claro)
+  mi_ventana.iconbitmap(ícono)
+  mi_ventana.attributes("-alpha", 1)
+  return mi_ventana
+
+interfaz = pantalla()
 
 # --- BOTONES NECESARIOS ---
 #Agregar
-botón_agregar = TK.Button(text="Agregar Dato", command=insertar_todos_los_datos, width= 10,height= 1)
+botón_agregar = TK.Button(text="Agregar Dato", command=lambda:insertar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
 botón_agregar.config(fg="black", bg=verde, font=("Arial", 8))
 
 #Modificar
@@ -266,115 +246,108 @@ botón_eliminar.config(fg="black", bg="blue", font=("Arial", 8))
 
 # --- ETIQUETAS ---
 #Etiquetas para la tabla de alumno
-label_NombreAlumno = TK.Label(mi_ventana, text="Nombre del Alumno *")
+label_NombreAlumno = TK.Label(interfaz, text="Nombre del Alumno *")
 label_NombreAlumno.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-label_FechaNacimiento = TK.Label(mi_ventana, text="Fecha que nació: Formato YYYY-MM-DD *")
+label_FechaNacimiento = TK.Label(interfaz, text="Fecha que nació: Formato YYYY-MM-DD *")
 label_FechaNacimiento.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-label_IDAlumno = TK.Label(mi_ventana, text="ID *")
+label_IDAlumno = TK.Label(interfaz, text="ID *")
 label_IDAlumno.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
 #Etiquetas para la tabla de carrera
-label_NombreCarrera = TK.Label(mi_ventana, text="Nombre de la Carrera *")
+label_NombreCarrera = TK.Label(interfaz, text="Nombre de la Carrera *")
 label_NombreCarrera.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-label_Duración = TK.Label(mi_ventana, text="Duración *")
+label_Duración = TK.Label(interfaz, text="Duración *")
 label_Duración.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-label_IDCarrera = TK.Label(mi_ventana, text="ID *")
+label_IDCarrera = TK.Label(interfaz, text="ID *")
 label_IDCarrera.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
 #Etiquetas para la tabla de materia
-label_NombreMateria = TK.Label(mi_ventana, text="Nombre de la Materia*")
+label_NombreMateria = TK.Label(interfaz, text="Nombre de la Materia *")
 label_NombreMateria.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-label_HorarioCorrespondiente = TK.Label(mi_ventana, text="Horario correspondiente: Formato %H:%M *")
+label_HorarioCorrespondiente = TK.Label(interfaz, text="Horario correspondiente: Formato %H:%M *")
 label_HorarioCorrespondiente.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-label_IDMateria = TK.Label(mi_ventana, text="ID *")
+label_IDMateria = TK.Label(interfaz, text="ID *")
 label_IDMateria.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
 #Etiquetas para la tabla de profesor
-label_NombreProfesor = TK.Label(mi_ventana, text="Nombre del Profesor *")
+label_NombreProfesor = TK.Label(interfaz, text="Nombre del Profesor *")
 label_NombreProfesor.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-label_HorasTrabajadas = TK.Label(mi_ventana, text="Horas trabajadas *")
+label_HorasTrabajadas = TK.Label(interfaz, text="Horas trabajadas *")
 label_HorasTrabajadas.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-label_IDProfesor = TK.Label(mi_ventana, text="ID *")
+label_IDProfesor = TK.Label(interfaz, text="ID *")
 label_IDProfesor.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
 #Etiquetas para la tabla de nota
-label_NotaCalificadaUNO = TK.Label(mi_ventana, text="Calificación 1*")
+label_NotaCalificadaUNO = TK.Label(interfaz, text="Calificación 1*")
 label_NotaCalificadaUNO.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-label_NotaCalificadaDOS = TK.Label(mi_ventana, text="Calificación 2*")
+label_NotaCalificadaDOS = TK.Label(interfaz, text="Calificación 2*")
 label_NotaCalificadaDOS.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-label_CantidadNotas = TK.Label(mi_ventana, text="Cantidad *")
-label_CantidadNotas.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
-
-label_Promedio = TK.Label(mi_ventana, text="Promedio")
+label_Promedio = TK.Label(interfaz, text="Promedio")
 label_Promedio.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-label_IDNota = TK.Label(mi_ventana, text="ID *")
+label_IDNota = TK.Label(interfaz, text="ID *")
 label_IDNota.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
 #Etiqueta para mostrar la hora
-label_Hora = TK.Label(mi_ventana, text=time.strftime("%H:%M:%S"))
-label_Hora.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
-label_Hora.pack()
-
+label_Hora = TK.Label(interfaz, text="")
+label_Hora.config(fg="Black", bg="Black", font=("Arial", 25))
 #Etiqueta para indicar que significa el asterisco
-label_Obligatoriedad = TK.Label(mi_ventana, text="el * significa que son obligatorio seleccionar los datos")
+label_Obligatoriedad = TK.Label(interfaz, text="el * significa que son obligatorio seleccionar los datos")
 label_Obligatoriedad.config(fg="Black",bg=rosado_claro, font=("Arial", 8))
 
 #--- ENTRIES ---
 
 #Tabla alumno
-txBox_NombreAlumno = TK.Entry(mi_ventana)
-txBox_FechaNacimiento = TK.Entry(mi_ventana)
-txBox_IDAlumno = TK.Entry(mi_ventana)
+txBox_NombreAlumno = TK.Entry(interfaz)
+txBox_FechaNacimiento = TK.Entry(interfaz)
+txBox_IDAlumno = TK.Entry(interfaz)
 
 #Tabla carrera
-txBox_NombreCarrera = TK.Entry(mi_ventana)
-txBox_Duración = TK.Entry(mi_ventana)
-txBox_IDCarrera = TK.Entry(mi_ventana)
+txBox_NombreCarrera = TK.Entry(interfaz)
+txBox_Duración = TK.Entry(interfaz)
+txBox_IDCarrera = TK.Entry(interfaz)
 
 #Tabla materia
-txBox_NombreMateria = TK.Entry(mi_ventana)
-txBox_HorarioCorrespondiente = TK.Entry(mi_ventana)
-txBox_IDMateria = TK.Entry(mi_ventana)
+txBox_NombreMateria = TK.Entry(interfaz)
+txBox_HorarioCorrespondiente = TK.Entry(interfaz)
+txBox_IDMateria = TK.Entry(interfaz)
 
 #Tabla profesor
-txBox_NombreProfesor = TK.Entry(mi_ventana)
-txBox_HorasTrabajadas = TK.Entry(mi_ventana)
-txBox_IDProfesor = TK.Entry(mi_ventana)
+txBox_NombreProfesor = TK.Entry(interfaz)
+txBox_HorasTrabajadas = TK.Entry(interfaz)
+txBox_IDProfesor = TK.Entry(interfaz)
 
 #Tabla nota
-txBox_NotaCalificadaUNO = TK.Entry(mi_ventana)
-txBox_NotaCalificadaDOS = TK.Entry(mi_ventana)
-txBox_CantidadNotas = TK.Entry(mi_ventana)
-txBox_Promedio = TK.Entry(mi_ventana)
-txBox_IDNota = TK.Entry(mi_ventana)
+txBox_NotaCalificadaUNO = TK.Entry(interfaz)
+txBox_NotaCalificadaDOS = TK.Entry(interfaz)
+txBox_IDNota = TK.Entry(interfaz)
 
 # --- RADIOBUTTONS ---
 opción = TK.IntVar()
 
-Botón_Tabla_de_Alumno = TK.Radiobutton(mi_ventana, text="Alumno", variable=opción, value= 1, command=doble_acción)
+Botón_Tabla_de_Alumno = TK.Radiobutton(interfaz, text="Alumno", variable=opción, value= 1, command=doble_acción)
 Botón_Tabla_de_Alumno.config(bg=rosado_claro, font=("Arial", 12))
 
-Botón_Tabla_de_Carrera = TK.Radiobutton(mi_ventana, text="Carrera", variable=opción, value= 2, command=doble_acción)
+Botón_Tabla_de_Carrera = TK.Radiobutton(interfaz, text="Carrera", variable=opción, value= 2, command=doble_acción)
 Botón_Tabla_de_Carrera.config(bg=rosado_claro, font=("Arial", 12))
 
-Botón_Tabla_de_Materia = TK.Radiobutton(mi_ventana, text="Materia", variable=opción, value= 3, command=doble_acción)
+Botón_Tabla_de_Materia = TK.Radiobutton(interfaz, text="Materia", variable=opción, value= 3, command=doble_acción)
 Botón_Tabla_de_Materia.config(bg=rosado_claro, font=("Arial", 12))
 
-Botón_Tabla_de_Profesor = TK.Radiobutton(mi_ventana, text="Profesor", variable=opción, value= 4, command=doble_acción)
+Botón_Tabla_de_Profesor = TK.Radiobutton(interfaz, text="Profesor", variable=opción, value= 4, command=doble_acción)
 Botón_Tabla_de_Profesor.config(bg=rosado_claro, font=("Arial", 12))
 
-Botón_Tabla_de_Notas = TK.Radiobutton(mi_ventana, text="Nota", variable=opción, value= 5, command=doble_acción)
+Botón_Tabla_de_Notas = TK.Radiobutton(interfaz, text="Nota", variable=opción, value= 5, command=doble_acción)
 Botón_Tabla_de_Notas.config(bg=rosado_claro, font=("Arial", 12))
 
 Botón_Tabla_de_Alumno.place(x= 60, y = 500)
@@ -384,8 +357,8 @@ Botón_Tabla_de_Profesor.place(x = 420, y = 500)
 Botón_Tabla_de_Notas.place(x = 540, y = 500)
 
 #--- LISTBOX ---
-Lista_de_datos = TK.Listbox(mi_ventana, width= 60, height= 40)
-Lista_de_datos.config(fg="blue",bg=amarillo_claro, font=("Arial", 10))
+Lista_de_datos = TK.Listbox(interfaz, width= 60, height= 40)
+Lista_de_datos.config(fg="blue",bg=amarillo_claro, font=("Arial", 15))
 Lista_de_datos.place(x= 750, y= 0)
 
 # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
@@ -433,6 +406,7 @@ def modificar_datos(nombre_de_la_tabla):
   if ID_Seleccionado is None:
       messagebox.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
       return
+  
   Datos_necesarios = obtener_datos_de_Formulario(nombre_de_la_tabla)
   CampoID = conseguir_campo_ID(nombre_de_la_tabla)
   if not Datos_necesarios:
@@ -473,10 +447,10 @@ def eliminar_datos(nombre_de_la_tabla):
               values = (ID_Seleccionado,)
               query = f"DELETE FROM {nombre_de_la_tabla} where {CampoID} = %s"
               cursor.execute(query, values)
+              conexión.commit()
               messagebox.showinfo("ÉXITOS", f"Una columna ha sido eliminada exitosamente con id {ID_Seleccionado}")
             else:
               messagebox.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
-            conexión.commit()
             consultar_tabla(nombre_de_la_tabla)
       except Error as e:
          messagebox.showerror("ERROR", f"ERROR INESPERADO AL ELIMINAR: {e}")
@@ -484,4 +458,4 @@ def eliminar_datos(nombre_de_la_tabla):
     messagebox.showwarning("ADVERTENCIA", "NO SELECCIONASTE NINGUNA COLUMNA")
 
 actualizar_la_hora()
-mi_ventana.mainloop()
+interfaz.mainloop()

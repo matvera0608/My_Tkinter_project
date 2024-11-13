@@ -43,32 +43,31 @@ def consultar_tabla(nombre_de_la_tabla):
     cursor.execute(f"SELECT * FROM {nombre_de_la_tabla};")
     resultado = cursor.fetchall()
     Lista_de_datos.delete(0, TK.END)
-    
-    #Este for muestra toda la tabla completa en la Lista_de_datos de MySQL
+
     for fila in resultado:
-      filas_formateadas = " | \t".join(map(str, fila))
+      filas_formateadas = " | ".join(map(str, fila))
       Lista_de_datos.insert(TK.END, filas_formateadas)
     
     desconectar_base_de_datos(conexión)
 
 def seleccionar_y_consultar():
   botón_seleccionado = opción.get()
+  tabla = {
+               1: 'alumno',
+               2: 'carrera',
+               3: 'materia',
+               4: 'profesor',
+               5: 'nota'
+              }
   try:
-    match botón_seleccionado:
-      case 1:
-        consultar_tabla('alumno')
-      case 2:
-        consultar_tabla('carrera')
-      case 3:
-        consultar_tabla('materia')
-      case 4:
-        consultar_tabla('profesor')
-      case 5:
-        consultar_tabla('nota')
-      case _:
-        print("LA OPCIÓN NO ES VÁLIDA")
-  except Error as e:
-    print(f"Error al consultar toda la tabla: {e}")
+    nombre_de_la_tabla = tabla.get(botón_seleccionado)
+    if nombre_de_la_tabla is None:
+      raise ValueError("Selección inválida. Los valores están entre el 1 y 5")
+    else:
+      consultar_tabla(nombre_de_la_tabla)
+  except Exception as e:
+    messagebox.showerror(f"Error al consultar la tabla: {e}")
+    return None
 
 #Definí una función para poder mostrar 
 #cuando uno de los radioButtons esté seleccionado
@@ -203,8 +202,8 @@ def actualizar_la_hora():
   interfaz.after(1000, actualizar_la_hora)
   
 def acción_doble():
-  habilitar_botones_e_inputs()
   seleccionar_y_consultar()
+  habilitar_botones_e_inputs()
 
 # --- CONFIGURACIÓN DE INTERFAZ Y ELEMENTOS IMPORTANTES DE TKINTER
 # PARA LAS INSTRUCCIONES GUARDADOS EN LA FUNCIÓN pantalla_principal()---
@@ -298,7 +297,7 @@ def pantalla_principal():
   label_Obligatoriedad.config(fg="Black",bg=rosado_claro, font=("Arial", 8))
 
   #--- ENTRIES ---
-  global txBox_NombreAlumno, txBox_FechaNacimiento, txBox_IDAlumno, txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera, txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria, txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor,  txBox_NotaCalificadaUNO, txBox_NotaCalificadaDOS, txBox_IDNota, opción
+  global txBox_NombreAlumno, txBox_FechaNacimiento, txBox_IDAlumno, txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera, txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria, txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor,  txBox_NotaCalificadaUNO, txBox_NotaCalificadaDOS, txBox_IDNota, opción, Lista_de_datos
   #Tabla alumno
   txBox_NombreAlumno = TK.Entry(mi_ventana)
   txBox_FechaNacimiento = TK.Entry(mi_ventana)
@@ -349,8 +348,6 @@ def pantalla_principal():
   Botón_Tabla_de_Notas.place(x = 540, y = 500)
 
   #--- LISTBOX ---
-  global Lista_de_datos
-  
   Lista_de_datos = TK.Listbox(mi_ventana, width= 60, height= 40)
   Lista_de_datos.config(fg="blue",bg=amarillo_claro, font=("Arial", 15))
   Lista_de_datos.place(x= 750, y= 0)

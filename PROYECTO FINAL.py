@@ -182,12 +182,16 @@ def validar_datos(nombre_de_la_tabla, datos):
       elif campo == "Estado" and valor.lower() not in ["presente", "ausente"]:
          messagebox.showerror("Error", "La asistencia sólo permite poner presente o ausente")
          return False
-      elif campo in ["Nota_UNO", "Nota_DOS"] and float(valor) < 1 or float(valor) > 10:
-        messagebox.showerror("Error", f"El campo que tiene una nota menor que 1 o mayor que 10 es {campo}")
-        return False
+      elif campo in ["Nota_UNO", "Nota_DOS"]:
+        if not patrón_númerosDecimales.match(valor):
+          messagebox.showerror("Error", f"El campo {campo} tiene que ser un número válido")
+          return False
+        elif (float(valor) < 1 or float(valor) > 10):
+          messagebox.showerror("Error", f"El campo que tiene una nota menor que 1 o mayor que 10 es {campo}")
+          return False
          
-  except ValueError:
-    messagebox.showerror("Error", "El formato de uno de los campos es incorrecto")
+  except ValueError as vE:
+    messagebox.showerror("Error", F"El formato de uno de los campos es incorrecto: {str(vE)}")
     return False
   return True
 
@@ -535,16 +539,16 @@ def comparar_datos(nombre_de_la_tabla):
     cursor = conexión.cursor()
     
     #Este query he simplificado para ahorrarme líneas de código, en lugar de match utilizo un diccionario de datos
-    query = { 
+    query = {
                   'alumno': """
                   SELECT a.Nombre, b.Estado
                   FROM alumno a
                   JOIN asistencia b ON a.ID_Alumno = b.ID_Asistencia; 
                   """,
                  'nota': """
-                  SELECT a.Nombre, n.Promedio
+                  SELECT  n.Promedio, a.Nombre
                   FROM alumno a
-                  JOIN nota n ON a.ID_Alumno = n.Promedio;
+                  JOIN nota n ON a.ID_Alumno = n.ID_Nota;
                  """
                 }
     
@@ -552,14 +556,14 @@ def comparar_datos(nombre_de_la_tabla):
     
     #Controlo que la tabla seleccionada coincida con el diccionario de query
     if sql_query is None:
-      messagebox.showerror("ERROR", "NO SE ENCONTRÓ LA TABLA ESPECIFICADA")
+      messagebox.showerror("ERROR", "NO SE ENCONTRÓ LA TABLA ESPECIFICADA, SÓLO SE PUEDE COMPARAR LA TABLA alumno Y nota")
       return
     
     
     cursor.execute(sql_query)
     resultado = cursor.fetchall()
 
-    
+    #Controlo que haya resultados, en caso contrario, me imprime un mensaje de que no hay resultados para criterios específicos
     if not resultado:
       messagebox.showinfo("SIN RESULTADOS", "NO SE ENCONTRARON REGISTROS PARA LOS CRITERIOS ESPECÍFICOS")
       return

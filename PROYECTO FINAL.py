@@ -104,7 +104,7 @@ def habilitar_botones_e_inputs():
                                          3: [(txBox_NombreCarrera, label_NombreCarrera, 100), (txBox_Duración, label_Duración, 150), (txBox_IDCarrera, label_IDCarrera, 200)],
                                          4: [(txBox_NombreMateria, label_NombreMateria,100), (txBox_HorarioCorrespondiente, label_HorarioCorrespondiente, 150), (txBox_IDMateria, label_IDMateria, 200)],
                                          5: [(txBox_NombreProfesor, label_NombreProfesor, 100), (txBox_HorasTrabajadas, label_HorasTrabajadas, 150), (txBox_IDProfesor, label_IDProfesor, 200)],
-                                         6: [(txBox_NotaCalificadaUNO, label_NotaCalificadaUNO, 50), (txBox_NotaCalificadaDOS, label_NotaCalificadaDOS, 100), (txBox_IDNota, label_IDNota, 250)]
+                                         6: [(txBox_NotaCalificadaUNO, label_NotaCalificadaUNO, 100), (txBox_NotaCalificadaDOS, label_NotaCalificadaDOS, 150), (txBox_IDNota, label_IDNota, 200)]
                                        }
   
   if botón_seleccionado in opciones_del_widget:
@@ -125,35 +125,71 @@ def obtener_tabla_seleccionada():
   nombre = tabla.get(opción.get(), None)
   return nombre
 
-#Esta función validar_datos valida los datos para evitar redundancias
+#Esta función validar_datos valida los datos antes de agregarlo a la listbox para evitar redundancias
 def validar_datos(nombre_de_la_tabla, datos):
   #El patrón_nombre contiene una expresión regular para permitir
   #letras con acentos y otros caracteres especiales
   patrón_nombre = re.compile(r"^[\w\sáéíóúÁÉÍÓÚñÑüÜ]+$")
-  patrón_númerosDecimales = re.compile(r'^\d+(,\d+)?$')
+  patrón_númerosDecimales = re.compile(r'^\d+([.,]\d+)?$')
   try:
     
-    validaciones = {
-                              'alumno':lambda: patrón_nombre.match(datos["Nombre"]) and datetime.strptime(datos["FechaDeNacimiento"], '%Y-%m-%d'),
-                              'asistencia':lambda:patrón_nombre.match(datos["Estado"]),
-                              'carrera': lambda: patrón_nombre.match(datos["Nombre"]),
-                              'materia': lambda: patrón_nombre.match(datos["Nombre"]) and datetime.strptime(datos["Horario"], '%H:%M'),
-                              'profesor': lambda: patrón_nombre.match(datos["Nombre"]),
-                              'nota': lambda: patrón_númerosDecimales.match(datos["Nota_UNO"]) and patrón_númerosDecimales.match(datos["Nota_DOS"])
-                            }
+    validaciones =  {
+      'alumno': {
+              "Nombre": lambda valor:patrón_nombre.match(valor),
+              "FechaDeNacimiento": lambda valor:datetime.strptime(valor, '%Y-%m-%d'),
+              "ID_Alumno": lambda valor: valor.isdigit()
+      },
+      'asistencia': {
+              "Estado": lambda valor: valor.isalpha(),
+              "ID_Asistencia": lambda valor: valor.isdigit()
+      },
+      'carrera': {
+              "Nombre": lambda valor :patrón_nombre.match(valor),
+              "Duración": lambda valor :patrón_nombre.match(valor),
+              "ID_Carrera": lambda valor: valor.isdigit()
+      },
+      'materia': {
+              "Nombre": lambda valor :patrón_nombre.match(valor),
+              "Horario": lambda valor :datetime.strptime(valor, '%H:%M'),
+              "ID_Materia": lambda valor: valor.isdigit()
+      },
+      'profesor': {
+              "Nombre": lambda valor :patrón_nombre.match(valor),
+              "HorasTrabajadas": lambda valor :patrón_númerosDecimales.match(valor),
+              "ID_Profesor": lambda valor: valor.isdigit()
+      },
+      'nota': {
+              "Nota_UNO": lambda valor :patrón_númerosDecimales.match(valor),
+              "Nota_DOS": lambda valor :patrón_númerosDecimales.match(valor),
+              "ID_Nota": lambda valor: valor.isdigit()
+      }
+    }
     
     if not nombre_de_la_tabla in validaciones:
       messagebox.showerror("Error", "La tabla solicitada no se encuentra")
       return False
-    
-    if not validaciones[nombre_de_la_tabla]:
-      messagebox.showerror("Error", f"Uno de los datos no están correctos en la tabla {nombre_de_la_tabla}")
-      return False  
-    return True
-  
+    #en este for controlo que los datos estén puestos correctamente, en caso contrario
+    #no me agregan o modifican. Condiciones a llevar en cuenta:
+    #no se puede agregar con campos totalmente vacíos
+    #el formato debe cumplir estrictamente con las validaciones, que es un diccionario para control
+    for campo, valor in datos.items():
+      if campo in validaciones[nombre_de_la_tabla] and not valor.strip():
+        messagebox.showerror("Error", "Los campos no pueden estar vacíos")
+        return False
+      elif campo in validaciones[nombre_de_la_tabla] and not validaciones[nombre_de_la_tabla][campo](valor):
+        messagebox.showerror("Error", f"El campo {campo} tiene un formato inválido con valor {valor}")
+        return False
+      elif campo == "Estado" and valor.lower() not in ["presente", "ausente"]:
+         messagebox.showerror("Error", "La asistencia sólo permite poner presente o ausente")
+         return False
+      elif campo in ["Nota_UNO", "Nota_DOS"] and float(valor) < 1 or float(valor) > 10:
+        messagebox.showerror("Error", f"El campo que tiene una nota menor que 1 o mayor que 10 es {campo}")
+        return False
+         
   except ValueError:
     messagebox.showerror("Error", "El formato de uno de los campos es incorrecto")
     return False
+  return True
 
 #En esta función obtengo todos los datos del formulario de MySQL para agregar, modificar
 #y eliminar algunos datos de la tabla
@@ -166,7 +202,7 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla):
                                                         'materia': ["Nombre", "Horario", "ID_Materia"],
                                                         'profesor': ["Nombre", "HorasTrabajadas", "ID_Profesor"],
                                                         'nota':       ["Nota_UNO", "Nota_DOS", "ID_Nota"]
-       }
+                                                      }
   
   datos = {}
   
@@ -177,9 +213,9 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla):
                               'materia': (txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria),
                               'profesor': (txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor),
                               'nota':       (txBox_NotaCalificadaUNO, txBox_NotaCalificadaDOS, txBox_IDNota), 
-        }
+                           }
 
-  #Este for es más escalable que el anterior, ya que esto me solucionó el problema de que no me imprimía la Nota 1 en la listBox
+  #Este for es más escalable, ya que esto me solucionó el problema de que no me imprimía la Nota 1 en la listBox
   for i, campo in enumerate(campos_de_la_base_de_datos[nombre_de_la_tabla]):
    datos[campo] = cajasDeTexto[nombre_de_la_tabla][i].get()
   
@@ -253,7 +289,7 @@ def pantalla_principal():
   botón_eliminar.config(fg="black", bg="blue", font=("Arial", 8))
 
   #Comparar
-  botón_comparar = TK.Button(text="Comparar", width= 10,height= 1)
+  botón_comparar = TK.Button(text="Comparar",command=lambda:comparar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
   botón_comparar.config(fg="black", bg=dorado, font=("Arial", 8))
 
   # --- ETIQUETAS ---
@@ -403,7 +439,7 @@ def insertar_datos(nombre_de_la_tabla):
     try:
       conexión = conectar_base_de_datos()
       if conexión is None:
-        messagebox.showerror("ERROR", "NO SE HA PODIDO CONECTAR A LA BASE DE DATOS")
+        messagebox.showerror("ERROR DE CONEXIÓN", "NO SE HA PODIDO CONECTAR A LA BASE DE DATOS")
         return
         
       cursor = conexión.cursor()
@@ -449,8 +485,8 @@ def modificar_datos(nombre_de_la_tabla):
       query = f"UPDATE {nombre_de_la_tabla} SET {columnas} WHERE {CampoID} = %s"
       cursor.execute(query, values)
       conexión.commit()
-      messagebox.showinfo("CORRECTO", "SE MODIFICÓ EXITOSAMENTE")
       consultar_tabla(nombre_de_la_tabla)
+      messagebox.showinfo("CORRECTO", "SE MODIFICÓ EXITOSAMENTE")
   except Error as e:
     messagebox.showerror("ERROR", f"ERROR INESPERADO AL MODIFICAR: {e}")
   
@@ -487,5 +523,56 @@ def eliminar_datos(nombre_de_la_tabla):
   else:
     messagebox.showwarning("ADVERTENCIA", "NO SELECCIONASTE NINGUNA COLUMNA")
 
+#En esta función comparar relaciono una tabla con la otra
+#pero coincidiendo cada valor para que se pueda leer con facilidad
+#y saber si uno de los alumnos están presentes o no
+def comparar_datos(nombre_de_la_tabla):
+  try:
+    conexión = conectar_base_de_datos()
+    if conexión is None:
+      messagebox.showerror("ERROR DE CONEXIÓN", "NO SE PUDO CONECTAR A LA BASE DE DATOS")
+      return
+    cursor = conexión.cursor()
+    
+    #Este query he simplificado para ahorrarme líneas de código, en lugar de match utilizo un diccionario de datos
+    query = { 
+                  'alumno': """
+                  SELECT a.Nombre, b.Estado
+                  FROM alumno a
+                  JOIN asistencia b ON a.ID_Alumno = b.ID_Asistencia; 
+                  """,
+                 'nota': """
+                  SELECT a.Nombre, n.Promedio
+                  FROM alumno a
+                  JOIN nota n ON a.ID_Alumno = n.Promedio;
+                 """
+                }
+    
+    sql_query = query.get(nombre_de_la_tabla, None)
+    
+    #Controlo que la tabla seleccionada coincida con el diccionario de query
+    if sql_query is None:
+      messagebox.showerror("ERROR", "NO SE ENCONTRÓ LA TABLA ESPECIFICADA")
+      return
+    
+    
+    cursor.execute(sql_query)
+    resultado = cursor.fetchall()
+
+    
+    if not resultado:
+      messagebox.showinfo("SIN RESULTADOS", "NO SE ENCONTRARON REGISTROS PARA LOS CRITERIOS ESPECÍFICOS")
+      return
+    
+    Lista_de_datos.delete(0, TK.END)
+    
+    for fila in resultado:
+      Lista_de_datos.insert(TK.END, " | ".join(map(lambda x: str(x) if x is not None else "", fila )))
+    
+  except Error as e:
+     messagebox.showerror("ERROR", f"HA OCURRIDO UN ERROR AL RELACIONAR LA TABLA CON LA OTRA: {str(e)}")
+  finally:
+    desconectar_base_de_datos(conexión)
+    
 actualizar_la_hora()
 interfaz.mainloop()

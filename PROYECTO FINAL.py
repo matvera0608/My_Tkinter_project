@@ -1,16 +1,23 @@
 import os
 from mysql.connector import Error
 from datetime import datetime
-from tkinter import messagebox
+from tkinter import messagebox,  filedialog
+from reportlab.pdfgen import canvas
+import tkinter as TK, re
 import mysql.connector as MySql
 import time
-import tkinter as TK, re
+from reportlab.lib.pagesizes import letter
 
 # --- COLORES EN HEXADECIMALES ---
 rosado_claro = "#FEE"
+rojo_claro= "#FFAEAE"
 verde = "#00FF00"
+verde_claro = "#AEFFAE"
+azul_claro = "#8932FF"
 amarillo_claro = "#FBFFBF"
 dorado = "#FFDF00"
+dorado_claro = "#FFF1A9"
+agua = "#00FDFD"
 
 # --- CONEXIÓN CON LA BASE DE DATOS MySQL WORKBENCH
 # --- Y UN ÍCONO PARA LA IMPLEMENTACIÓN---
@@ -94,7 +101,7 @@ def habilitar_botones_e_inputs():
   botón_modificar.place(x = 40, y = 160)
   botón_eliminar.place(x = 40, y = 220)
   botón_comparar.place(x = 40, y = 280)
-  
+  botón_exportar.place(x= 20, y= 50)
   
   label_Obligatoriedad.pack(padx= 0, pady= 200)
   
@@ -126,12 +133,26 @@ def obtener_tabla_seleccionada():
   return nombre
 
 #Esta función validar_datos valida los datos antes de agregarlo a la listbox para evitar redundancias
-def validar_datos(nombre_de_la_tabla, datos):
+def validar_datos(nombre_de_la_tabla, datos, campo=None, valor=None):
   #El patrón_nombre contiene una expresión regular para permitir
   #letras con acentos y otros caracteres especiales
-  patrón_nombre = re.compile(r"^[\w\sáéíóúÁÉÍÓÚñÑüÜ]+$")
+  conexión = conectar_base_de_datos()
+  cursor = conexión.cursor()
+  patrón_nombre = re.compile(r"^[A-Za-záéíóúÁÉÍÓÚñÑüÜ\s]+$")
   patrón_númerosDecimales = re.compile(r'^\d+([.,]\d+)?$')
   try:
+    if campo is not None:
+      if valor is None:
+        consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campo} IS NULL"
+        cursor.execute(consulta)
+      else:
+        consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campo} = %s"
+        cursor.execute(consulta, (valor,))
+    resultado = cursor.fetchone()
+    
+    if resultado and resultado[0] > 0:
+      messagebox.showwarning("Advertencia", f"El valor '{valor}' en '{campo}' ya existe en la base de datos")
+      return False
     
     validaciones =  {
       'alumno': {
@@ -193,6 +214,9 @@ def validar_datos(nombre_de_la_tabla, datos):
   except ValueError as vE:
     messagebox.showerror("Error", F"El formato de uno de los campos es incorrecto: {str(vE)}")
     return False
+  finally:
+    desconectar_base_de_datos(conexión)
+
   return True
 
 #En esta función obtengo todos los datos del formulario de MySQL para agregar, modificar
@@ -225,7 +249,7 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla):
   
   #En esta condición, valido los datos de la tabla
   #antes de realizar un alta baja y modificación
-  if validar_datos(nombre_de_la_tabla, datos):
+  if validar_datos(nombre_de_la_tabla, datos, campo):
     return datos
   else:
     return None
@@ -279,22 +303,25 @@ def pantalla_principal():
   mi_ventana.attributes("-alpha", 1)
   
   # --- BOTONES NECESARIOS ---
-  global botón_agregar, botón_eliminar, botón_modificar, botón_comparar
+  global botón_agregar, botón_eliminar, botón_modificar, botón_comparar, botón_exportar
   #Agregar
   botón_agregar = TK.Button(text="Agregar Dato", command=lambda:insertar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
-  botón_agregar.config(fg="black", bg=verde, font=("Arial", 8))
+  botón_agregar.config(fg="black", bg=verde, font=("Arial", 8), cursor='hand2', activebackground=verde_claro)
 
   #Modificar
   botón_modificar = TK.Button(text="Modificar Dato", command=lambda:modificar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
-  botón_modificar.config(fg="black", bg="red", font=("Arial", 8))
+  botón_modificar.config(fg="black", bg="red", font=("Arial", 8), cursor='hand2', activebackground=rojo_claro)
 
   #Eliminar
   botón_eliminar = TK.Button(text="Eliminar Dato", command=lambda:eliminar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
-  botón_eliminar.config(fg="black", bg="blue", font=("Arial", 8))
+  botón_eliminar.config(fg="black", bg="blue", font=("Arial", 8), cursor='hand2', activebackground=azul_claro)
 
   #Comparar
   botón_comparar = TK.Button(text="Comparar",command=lambda:comparar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
-  botón_comparar.config(fg="black", bg=dorado, font=("Arial", 8))
+  botón_comparar.config(fg="black", bg=dorado, font=("Arial", 8), cursor='hand2', activebackground=dorado_claro)
+  
+  botón_exportar = TK.Button(text="Exportar",command=lambda:exportar_en_PDF(), width=10, height=1)
+  botón_exportar.config(fg="black", bg=agua, font=("Arial", 8), cursor='hand2', activebackground=agua)
 
   # --- ETIQUETAS ---
   global label_NombreAlumno, label_FechaNacimiento, label_IDAlumno, label_EstadoDeAsistencia, label_IDAsistencia, label_NombreCarrera, label_Duración, label_IDCarrera, label_NombreMateria, label_HorarioCorrespondiente, label_IDMateria, label_NombreProfesor, label_HorasTrabajadas, label_IDProfesor, label_NotaCalificadaUNO, label_NotaCalificadaDOS, label_IDNota, label_Hora, label_Obligatoriedad
@@ -302,7 +329,7 @@ def pantalla_principal():
   label_NombreAlumno = TK.Label(mi_ventana, text="Nombre del Alumno *")
   label_NombreAlumno.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-  label_FechaNacimiento = TK.Label(mi_ventana, text="Fecha que nació: Formato YYYY-MM-DD *")
+  label_FechaNacimiento = TK.Label(mi_ventana, text="Fecha que nació: Formato Año-Mes-Día *")
   label_FechaNacimiento.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
   label_IDAlumno = TK.Label(mi_ventana, text="ID *")
@@ -401,22 +428,22 @@ def pantalla_principal():
   opción = TK.IntVar()
 
   Botón_Tabla_de_Alumno = TK.Radiobutton(mi_ventana, text="Alumno", variable=opción, value= 1, command=acción_doble)
-  Botón_Tabla_de_Alumno.config(bg=rosado_claro, font=("Arial", 12))
+  Botón_Tabla_de_Alumno.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
   Botón_Tabla_de_Asistencia = TK.Radiobutton(mi_ventana, text="Asistencia", variable=opción, value= 2, command=acción_doble)
-  Botón_Tabla_de_Asistencia.config(bg=rosado_claro, font=("Arial", 12))
+  Botón_Tabla_de_Asistencia.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
   Botón_Tabla_de_Carrera = TK.Radiobutton(mi_ventana, text="Carrera", variable=opción, value= 3, command=acción_doble)
-  Botón_Tabla_de_Carrera.config(bg=rosado_claro, font=("Arial", 12))
+  Botón_Tabla_de_Carrera.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
   Botón_Tabla_de_Materia = TK.Radiobutton(mi_ventana, text="Materia", variable=opción, value= 4, command=acción_doble)
-  Botón_Tabla_de_Materia.config(bg=rosado_claro, font=("Arial", 12))
+  Botón_Tabla_de_Materia.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
   Botón_Tabla_de_Profesor = TK.Radiobutton(mi_ventana, text="Profesor", variable=opción, value= 5, command=acción_doble)
-  Botón_Tabla_de_Profesor.config(bg=rosado_claro, font=("Arial", 12))
+  Botón_Tabla_de_Profesor.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
   Botón_Tabla_de_Notas = TK.Radiobutton(mi_ventana, text="Nota", variable=opción, value= 6, command=acción_doble)
-  Botón_Tabla_de_Notas.config(bg=rosado_claro, font=("Arial", 12))
+  Botón_Tabla_de_Notas.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
   Botón_Tabla_de_Alumno.place(x= 40, y = 350)
   Botón_Tabla_de_Asistencia.place(x = 150, y = 350)
@@ -549,14 +576,35 @@ def comparar_datos(nombre_de_la_tabla):
                   SELECT  n.Promedio, a.Nombre
                   FROM alumno a
                   JOIN nota n ON a.ID_Alumno = n.ID_Nota;
-                 """
+                 """,
+                 'carrera': """
+                  SELECT  c.Nombre, a.Nombre
+                  FROM alumno a
+                  JOIN carrera c ON a.ID_Alumno = c.ID_Carrera;
+                 """,
+                  'profesor': """
+                  SELECT  p.Nombre, m.Nombre
+                  FROM materia m
+                  JOIN profesor p ON m.ID_Materia = p.ID_Profesor;
+                 """,
+                  'asistencia': """
+                  SELECT  a.Estado, p.Nombre
+                  FROM profesor p
+                  JOIN asistencia a ON p.ID_Profesor = a.ID_Asistencia;
+                 """,
+                  'materia': """
+                  SELECT  m.Nombre, m.Horario, a.Nombre
+                  FROM alumno a
+                  JOIN materia m ON a.ID_Alumno = m.ID_Materia;
+                 """,
                 }
+    
     
     sql_query = query.get(nombre_de_la_tabla, None)
     
     #Controlo que la tabla seleccionada coincida con el diccionario de query
     if sql_query is None:
-      messagebox.showerror("ERROR", "NO SE ENCONTRÓ LA TABLA ESPECIFICADA, SÓLO SE PUEDE COMPARAR LA TABLA alumno Y nota")
+      messagebox.showerror("ERROR", "NO SE ENCONTRÓ LA TABLA ESPECIFICADA")
       return
     
     
@@ -577,6 +625,52 @@ def comparar_datos(nombre_de_la_tabla):
      messagebox.showerror("ERROR", f"HA OCURRIDO UN ERROR AL RELACIONAR LA TABLA CON LA OTRA: {str(e)}")
   finally:
     desconectar_base_de_datos(conexión)
+
+#En este código voy a exportar en PDF el archivo de datos Tkinter
+def exportar_en_PDF():
+  try:
+    conexión = conectar_base_de_datos()
+    if conexión is None:
+      return
+
+    cursor = conexión.cursor()
+    consulta = "SELECT * FROM alumno"
+    cursor.execute(consulta)
+    fila = cursor.fetchall()
     
+    
+    datos = Lista_de_datos.get(0, TK.END)
+    
+    ventana_exportar = filedialog.asksaveasfilename(
+      defaultextension=".pdf",
+      filetypes=[("Archivo PDF","*.pdf")],
+      initialfile="Sistema Gestor de Asistencia",
+      title="Exportar archivo PDF"
+    )
+    
+    #Cuando presione cancelar, se ejecuta este código
+    if not ventana_exportar:
+      return
+    
+    #aquí empiezo a crear el archivo PDF para exportar la información del Sistema Gestor de Asistencias 
+    canva = canvas.Canvas(ventana_exportar)
+    canva.setFont("Helvetica", 20)
+    y = 780
+    
+    canva = canvas.Canvas(ventana_exportar, pagesize=letter)
+    y -= 20
+    #Aquí empiezo a iterar los datos para luego imprimir el reporte
+    for fila in datos:
+      canva.drawString(100, y, f"{fila}")
+      y -= 20
+      
+    canva.save()
+    
+    messagebox.showwarning("ÉXITOS", "EXPORTADO CORRECTAMENTE")
+    
+  except Error as e:
+    messagebox.showerror("OCURRIÓ UN ERROR", f"Error al exportar en PDF la información detallada: {str(e)}")
+  
+  
 actualizar_la_hora()
 interfaz.mainloop()

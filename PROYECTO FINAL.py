@@ -81,8 +81,7 @@ def seleccionar_y_consultar():
 #Definí una función para poder mostrar 
 #cuando uno de los radioButtons esté seleccionado
 def habilitar_botones_e_inputs():
-  #Este for me permite gestionar los texBox con sus respectivos labels
-  #para que a la hora de seleccionar un radioButton me muestre lo necesario
+
   txBoxes = [
                      txBox_NombreAlumno, label_NombreAlumno, txBox_FechaNacimiento, label_FechaNacimiento, txBox_IDAlumno, label_IDAlumno,
                      txBox_EstadoDeAsistencia, label_EstadoDeAsistencia ,txBox_IDAsistencia, label_IDAsistencia,
@@ -133,7 +132,7 @@ def obtener_tabla_seleccionada():
   return nombre
 
 #Esta función validar_datos valida los datos antes de agregarlo a la listbox para evitar redundancias
-def validar_datos(nombre_de_la_tabla, datos, campo=None, valor=None):
+def validar_datos(nombre_de_la_tabla, datos):
   #El patrón_nombre contiene una expresión regular para permitir
   #letras con acentos y otros caracteres especiales
   conexión = conectar_base_de_datos()
@@ -141,20 +140,30 @@ def validar_datos(nombre_de_la_tabla, datos, campo=None, valor=None):
   patrón_nombre = re.compile(r"^[A-Za-záéíóúÁÉÍÓÚñÑüÜ\s]+$")
   patrón_númerosDecimales = re.compile(r'^\d+([.,]\d+)?$')
   try:
-    if campo is not None:
-      if valor is None:
-        consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campo} IS NULL"
-        cursor.execute(consulta)
-      else:
-        consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campo} = %s"
-        cursor.execute(consulta, (valor,))
-    resultado = cursor.fetchone()
+    tabla_a_validar = {"alumno" : ["Nombre", "FechaDeNacimiento"],
+                                  "materia": ["Nombre", "Horario"],
+                                  "profesor": ["Nombre", "HorasTrabajadas"],
+                                  "nota" : ["Nota_UNO", "Nota_DOS"],
+                                  "asistencia": ["ID_Asistencia"],
+                                  "carrera" : ["Nombre", "Duración"]
+                                  }
     
-    if resultado and resultado[0] > 0:
-      messagebox.showwarning("Advertencia", f"El valor '{valor}' en '{campo}' ya existe en la base de datos")
+    if nombre_de_la_tabla in tabla_a_validar:
+      campo = tabla_a_validar[nombre_de_la_tabla]
+      
+      if len(campo) == 1:
+        consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campo[0]} = %s"
+        cursor.execute(consulta, (datos[campo[0]],))
+      elif len(campo) == 2:
+        consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campo[0]} = %s AND {campo[1]} = %s"
+        cursor.execute(consulta, (datos[campo[0]], datos[campo[1]],))
+      resultado = cursor.fetchone()
+    else:
+      messagebox.showerror("Error", "La tabla solicitada no se encuentra")
       return False
+  
     
-    validaciones =  {
+    validaciones = {
       'alumno': {
               "Nombre": lambda valor:patrón_nombre.match(valor),
               "FechaDeNacimiento": lambda valor:datetime.strptime(valor, '%Y-%m-%d'),
@@ -211,6 +220,10 @@ def validar_datos(nombre_de_la_tabla, datos, campo=None, valor=None):
           messagebox.showerror("Error", f"El campo que tiene una nota menor que 1 o mayor que 10 es {campo}")
           return False
          
+      if resultado and resultado[0] > 0:
+        messagebox.showwarning("Advertencia", f"El valor '{valor}' en '{campo}' ya existe en la base de datos")
+        return False
+         
   except ValueError as vE:
     messagebox.showerror("Error", F"El formato de uno de los campos es incorrecto: {str(vE)}")
     return False
@@ -249,7 +262,7 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla):
   
   #En esta condición, valido los datos de la tabla
   #antes de realizar un alta baja y modificación
-  if validar_datos(nombre_de_la_tabla, datos, campo):
+  if validar_datos(nombre_de_la_tabla, datos):
     return datos
   else:
     return None

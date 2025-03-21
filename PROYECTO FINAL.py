@@ -140,12 +140,12 @@ def validar_datos(nombre_de_la_tabla, datos):
   patrón_nombre = re.compile(r"^[A-Za-záéíóúÁÉÍÓÚñÑüÜ\s]+$")
   patrón_númerosDecimales = re.compile(r'^\d+([.,]\d+)?$')
   try:
-    tabla_a_validar = {"alumno" : ["Nombre", "FechaDeNacimiento"],
-                                  "materia": ["Nombre", "Horario"],
-                                  "profesor": ["Nombre", "HorasTrabajadas"],
-                                  "nota" : ["Nota_UNO", "Nota_DOS"],
+    tabla_a_validar = {"alumno" : ["Nombre", "FechaDeNacimiento", "ID_Alumno"],
+                                  "materia": ["Nombre", "Horario", "ID_Materia"],
+                                  "profesor": ["Nombre", "HorasTrabajadas", "ID_Profesor"],
+                                  "nota" : ["ID_Nota"],
                                   "asistencia": ["ID_Asistencia"],
-                                  "carrera" : ["Nombre", "Duración"]
+                                  "carrera" : ["Nombre", "Duración", "ID_Carrera"]
                                   }
     
     if nombre_de_la_tabla in tabla_a_validar:
@@ -154,9 +154,9 @@ def validar_datos(nombre_de_la_tabla, datos):
       if len(campo) == 1:
         consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campo[0]} = %s"
         cursor.execute(consulta, (datos[campo[0]],))
-      elif len(campo) == 2:
-        consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campo[0]} = %s AND {campo[1]} = %s"
-        cursor.execute(consulta, (datos[campo[0]], datos[campo[1]],))
+      elif len(campo) > 1:
+        consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campo[0]} = %s AND {campo[1]} = %s AND {campo[2]} = %s"
+        cursor.execute(consulta, (datos[campo[0]], datos[campo[1]], datos[campo[2]]))
       resultado = cursor.fetchone()
     else:
       messagebox.showerror("Error", "La tabla solicitada no se encuentra")
@@ -219,7 +219,8 @@ def validar_datos(nombre_de_la_tabla, datos):
         elif (float(valor) < 1 or float(valor) > 10):
           messagebox.showerror("Error", f"El campo que tiene una nota menor que 1 o mayor que 10 es {campo}")
           return False
-         
+        
+      #en esta condición verifico si el valor ya existe en la base de datos o si un registro se repite o no
       if resultado and resultado[0] > 0:
         messagebox.showwarning("Advertencia", f"El valor '{valor}' en '{campo}' ya existe en la base de datos")
         return False
@@ -279,7 +280,8 @@ def extraerIDs(selección):
   return None
 
 #Esta función me permite obtener el ID 
-#de cualquier tabla que se encuentre en mi base de datos
+#de cualquier tabla que se encuentre en mi base de datos antes de eliminar
+#ya que SQL obliga poner una condición antes de ejecutar una tarea
 def conseguir_campo_ID(nombre_de_la_tabla):
   IDs = {
               'alumno': "ID_Alumno",
@@ -513,8 +515,8 @@ def modificar_datos(nombre_de_la_tabla):
   selección = Lista_de_datos.get(columna_seleccionada[0])
   ID_Seleccionado = extraerIDs(selección)
   if ID_Seleccionado is None:
-      messagebox.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
-      return
+    messagebox.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
+    return
   
   datosNecesarios = obtener_datos_de_Formulario(nombre_de_la_tabla)
   CampoID = conseguir_campo_ID(nombre_de_la_tabla)

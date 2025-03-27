@@ -20,7 +20,7 @@ dorado_claro = "#FFF1A9"
 agua = "#00FDFD"
 
 # --- CONEXIÓN CON LA BASE DE DATOS MySQL WORKBENCH
-# --- Y UN ÍCONO PARA LA IMPLEMENTACIÓN---
+# --- Y UN ÍCONO PARA LA IMPLEMENTACIÓN ---
 ícono = os.path.join(os.path.dirname(__file__),"escuela.ico")
 
 def conectar_base_de_datos():
@@ -102,7 +102,7 @@ def habilitar_botones_e_inputs():
   botón_comparar.place(x = 40, y = 280)
   botón_exportar.place(x= 20, y= 50)
   
-  label_Obligatoriedad.pack(padx= 0, pady= 200)
+  label_Obligatoriedad.pack(padx= 0, pady= 150)
   
   opciones_del_widget = {
                                          1: [(txBox_NombreAlumno,label_NombreAlumno, 100), (txBox_FechaNacimiento, label_FechaNacimiento, 150), (txBox_IDAlumno, label_IDAlumno, 200)],
@@ -335,7 +335,7 @@ def pantalla_principal():
   botón_comparar = TK.Button(text="Comparar",command=lambda:comparar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
   botón_comparar.config(fg="black", bg=dorado, font=("Arial", 8), cursor='hand2', activebackground=dorado_claro)
   
-  botón_exportar = TK.Button(text="Exportar",command=lambda:exportar_en_PDF(), width=10, height=1)
+  botón_exportar = TK.Button(text="Exportar",command=lambda:exportar_en_PDF(obtener_tabla_seleccionada()), width=10, height=1)
   botón_exportar.config(fg="black", bg=agua, font=("Arial", 8), cursor='hand2', activebackground=agua)
 
   # --- ETIQUETAS ---
@@ -613,15 +613,13 @@ def comparar_datos(nombre_de_la_tabla):
                   JOIN materia m ON a.ID_Alumno = m.ID_Materia;
                  """,
                 }
-    
-    
     sql_query = query.get(nombre_de_la_tabla, None)
     
     #Controlo que la tabla seleccionada coincida con el diccionario de query
+    
     if sql_query is None:
       messagebox.showerror("ERROR", "NO SE ENCONTRÓ LA TABLA ESPECIFICADA")
       return
-    
     
     cursor.execute(sql_query)
     resultado = cursor.fetchall()
@@ -642,17 +640,33 @@ def comparar_datos(nombre_de_la_tabla):
     desconectar_base_de_datos(conexión)
 
 #En este código voy a exportar en PDF el archivo de datos Tkinter
-def exportar_en_PDF():
+def exportar_en_PDF(nombre_de_la_tabla):
   try:
     conexión = conectar_base_de_datos()
     if conexión is None:
       return
 
     cursor = conexión.cursor()
-    consulta = "SELECT * FROM alumno"
+    
+    match nombre_de_la_tabla:
+      case 'alumno':
+        consulta = "SELECT * FROM alumno"
+      case 'asistencia':
+        consulta = "SELECT * FROM asistencia"
+      case 'carrera':
+        consulta = "SELECT * FROM carrera"
+      case 'materia':
+        consulta = "SELECT * FROM materia"
+      case 'profesor':
+        consulta = "SELECT * FROM profesor"
+      case 'nota':
+        consulta = "SELECT * FROM nota"
+      case _:
+        messagebox.showerror("ERROR", "NO SE ENCONTRÓ LA TABLA ESPECIFICADA")
+        return
+      
     cursor.execute(consulta)
     fila = cursor.fetchall()
-    
     
     datos = Lista_de_datos.get(0, TK.END)
     
@@ -685,7 +699,6 @@ def exportar_en_PDF():
     
   except Error as e:
     messagebox.showerror("OCURRIÓ UN ERROR", f"Error al exportar en PDF la información detallada: {str(e)}")
-  
   
 actualizar_la_hora()
 interfaz.mainloop()

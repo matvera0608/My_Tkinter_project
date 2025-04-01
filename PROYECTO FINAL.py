@@ -237,6 +237,8 @@ def validar_datos(nombre_de_la_tabla, datos):
 #y eliminar algunos datos de la tabla
 def obtener_datos_de_Formulario(nombre_de_la_tabla):
   
+  global cajasDeTexto, datos
+  
   campos_de_la_base_de_datos = {
                                                         'alumno':  ["Nombre", "FechaDeNacimiento", "ID_Alumno"],
                                                         'asistencia': ["Estado", "ID_Asistencia"],
@@ -247,7 +249,7 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla):
                                                       }
   
   datos = {}
-  
+
   cajasDeTexto = {
                               'alumno':  (txBox_NombreAlumno, txBox_FechaNacimiento, txBox_IDAlumno),
                               'asistencia': (txBox_EstadoDeAsistencia , txBox_IDAsistencia),
@@ -468,8 +470,8 @@ def pantalla_principal():
   Botón_Tabla_de_Notas.place(x = 590, y = 350)
 
   #--- LISTBOX ---
-  Lista_de_datos = TK.Listbox(mi_ventana, width= 40, height= 30)
-  Lista_de_datos.config(fg="blue",bg=amarillo_claro, font=("Arial", 15))
+  Lista_de_datos = TK.Listbox(mi_ventana, width= 90, height= 30)
+  Lista_de_datos.config(fg="blue",bg=amarillo_claro, font=("Arial", 8))
   Lista_de_datos.place(x= 800, y= 0)
   
   return mi_ventana
@@ -489,7 +491,6 @@ def insertar_datos(nombre_de_la_tabla):
         return
         
       cursor = conexión.cursor()
-        
       campos = ', '.join(datosNecesarios.keys())
       values = ', '.join([f"'{valor}'" for valor in datosNecesarios.values()])
       query = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({values})"
@@ -497,8 +498,12 @@ def insertar_datos(nombre_de_la_tabla):
       conexión.commit()
       consultar_tabla(nombre_de_la_tabla)
       messagebox.showinfo("CORRECTO", "SE AGREGÓ LOS DATOS NECESARIOS")
+      #Este for me limpia los campos de texto después de agregarlo
+      #para que no quede el último valor que se agregó y se repita continuamente
+      for i, (campo, valor) in enumerate(datosNecesarios.items()):
+        entry = cajasDeTexto[nombre_de_la_tabla][i]
+        entry.delete(0, TK.END)
       desconectar_base_de_datos(conexión)
-      
     except Error as e:
       messagebox.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {e}")
 
@@ -533,6 +538,12 @@ def modificar_datos(nombre_de_la_tabla):
       conexión.commit()
       consultar_tabla(nombre_de_la_tabla)
       messagebox.showinfo("CORRECTO", "SE MODIFICÓ EXITOSAMENTE")
+      #Este for me limpia los campos de texto después de agregarlo
+      #para que no quede el último valor que se agregó y se repita continuamente
+      for i, (campo, valor) in enumerate(datosNecesarios.items()):
+        entry = cajasDeTexto[nombre_de_la_tabla][i]
+        entry.delete(0, TK.END)
+      desconectar_base_de_datos(conexión)
   except Error as e:
     messagebox.showerror("ERROR", f"ERROR INESPERADO AL MODIFICAR: {e}")
   
@@ -608,9 +619,9 @@ def comparar_datos(nombre_de_la_tabla):
                   JOIN asistencia a ON p.ID_Profesor = a.ID_Asistencia;
                  """,
                   'materia': """
-                  SELECT  m.Nombre, m.Horario, a.Nombre
-                  FROM alumno a
-                  JOIN materia m ON a.ID_Alumno = m.ID_Materia;
+                  SELECT  m.Nombre, m.Horario, p.Nombre
+                  FROM profesor p
+                  JOIN materia m ON p.ID_Profesor = m.ID_Materia;
                  """,
                 }
     sql_query = query.get(nombre_de_la_tabla, None)
@@ -699,6 +710,11 @@ def exportar_en_PDF(nombre_de_la_tabla):
     
   except Error as e:
     messagebox.showerror("OCURRIÓ UN ERROR", f"Error al exportar en PDF la información detallada: {str(e)}")
+    
+#def seleccionar_y_modificar(nombre_de_la_tabla):
+#  if nombre_de_la_tabla == "alumno":
+#    consulta = "SELECT * FROM alumno"
+  
   
 actualizar_la_hora()
 interfaz.mainloop()

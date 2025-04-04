@@ -175,7 +175,7 @@ def validar_datos(nombre_de_la_tabla, datos):
       },
       'carrera': {
               "Nombre": lambda valor :patrón_nombre.match(valor),
-              "Duración": lambda valor : re.match(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$', valor),
+              "Duración": lambda valor : re.match(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$', valor), #en Duración cambié la expresión regular para que acepte letras, números y espacios.
               "ID_Carrera": lambda valor: valor.isdigit()
       },
       'materia': {
@@ -304,6 +304,40 @@ def actualizar_la_hora():
 def acción_doble():
   seleccionar_y_consultar()
   habilitar_botones_e_inputs()
+
+#Esta función me permite seleccionar datos dentro de la listBox para modificarlo 
+#sin tener que presionar botón Modificar constantemente
+def seleccionar_registro(nombre_de_la_tabla):
+  conexión = conectar_base_de_datos()
+  if conexión:
+    try:  
+      cursor = conexión.cursor()
+      cursor.execute(f"SELECT * FROM {nombre_de_la_tabla};")
+      selección = Lista_de_datos.curselection()
+      resultado = cursor.fetchall()
+    
+      if not resultado:
+        messagebox.showwarning("ADVERTENCIA", "NO HAY DATOS EN LA TABLA")
+        return
+    
+      if selección:
+        fila_seleccionada = resultado[selección[0]]
+        #Este for permite seleccionar todos los registros de la tabla
+        #para modificar sin presionar el botón constantemente
+        for caja, valor in zip(cajasDeTexto[nombre_de_la_tabla], fila_seleccionada):
+            caja.delete(0, TK.END)
+            caja.insert(0, valor)
+      else:
+        messagebox.showwarning("ADVERTENCIA", "FALTA SELECCIONAR UNA COLUMNA")
+    except Error as error:
+      messagebox.showerror("ERROR", f"ERROR INESPERADO AL SELECCIONAR: {str(error)}")
+    finally:
+      cursor.close()
+      desconectar_base_de_datos(conexión)
+        
+  
+  
+    
 
 # --- CONFIGURACIÓN DE INTERFAZ Y ELEMENTOS IMPORTANTES DE TKINTER
 # PARA LAS INSTRUCCIONES GUARDADOS EN LA FUNCIÓN pantalla_principal()---
@@ -444,22 +478,22 @@ def pantalla_principal():
   # --- RADIOBUTTONS ---
   opción = TK.IntVar()
 
-  Botón_Tabla_de_Alumno = TK.Radiobutton(mi_ventana, text="Alumno", variable=opción, value= 1, command=acción_doble)
+  Botón_Tabla_de_Alumno = TK.Radiobutton(mi_ventana, text="Alumno", variable=opción, value= 1, command=acción_doble, command=seleccionar_registro)
   Botón_Tabla_de_Alumno.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
-  Botón_Tabla_de_Asistencia = TK.Radiobutton(mi_ventana, text="Asistencia", variable=opción, value= 2, command=acción_doble)
+  Botón_Tabla_de_Asistencia = TK.Radiobutton(mi_ventana, text="Asistencia", variable=opción, value= 2, command=acción_doble, command=seleccionar_registro)
   Botón_Tabla_de_Asistencia.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
-  Botón_Tabla_de_Carrera = TK.Radiobutton(mi_ventana, text="Carrera", variable=opción, value= 3, command=acción_doble)
+  Botón_Tabla_de_Carrera = TK.Radiobutton(mi_ventana, text="Carrera", variable=opción, value= 3, command=acción_doble, command=seleccionar_registro)
   Botón_Tabla_de_Carrera.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
-  Botón_Tabla_de_Materia = TK.Radiobutton(mi_ventana, text="Materia", variable=opción, value= 4, command=acción_doble)
+  Botón_Tabla_de_Materia = TK.Radiobutton(mi_ventana, text="Materia", variable=opción, value= 4, command=acción_doble, command=seleccionar_registro)
   Botón_Tabla_de_Materia.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
-  Botón_Tabla_de_Profesor = TK.Radiobutton(mi_ventana, text="Profesor", variable=opción, value= 5, command=acción_doble)
+  Botón_Tabla_de_Profesor = TK.Radiobutton(mi_ventana, text="Profesor", variable=opción, value= 5, command=acción_doble, command=seleccionar_registro)
   Botón_Tabla_de_Profesor.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
-  Botón_Tabla_de_Notas = TK.Radiobutton(mi_ventana, text="Nota", variable=opción, value= 6, command=acción_doble)
+  Botón_Tabla_de_Notas = TK.Radiobutton(mi_ventana, text="Nota", variable=opción, value= 6, command=acción_doble, command=seleccionar_registro)
   Botón_Tabla_de_Notas.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
   Botón_Tabla_de_Alumno.place(x= 40, y = 350)
@@ -710,11 +744,6 @@ def exportar_en_PDF(nombre_de_la_tabla):
     
   except Error as e:
     messagebox.showerror("OCURRIÓ UN ERROR", f"Error al exportar en PDF la información detallada: {str(e)}")
-    
-#def seleccionar_y_modificar(nombre_de_la_tabla):
-#  if nombre_de_la_tabla == "alumno":
-#    consulta = "SELECT * FROM alumno"
-  
   
 actualizar_la_hora()
 interfaz.mainloop()

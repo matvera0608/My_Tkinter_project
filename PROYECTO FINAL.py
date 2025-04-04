@@ -137,7 +137,7 @@ def validar_datos(nombre_de_la_tabla, datos):
   #letras con acentos y otros caracteres especiales
   conexión = conectar_base_de_datos()
   cursor = conexión.cursor()
-  patrón_nombre = re.compile(r"^[A-Za-záéíóúÁÉÍÓÚñÑüÜ\s]+$")
+  patrón_nombre = re.compile(r"^[A-Za-záéíóúÁÉÍÓÚñÑüÜ\s]+$") #Esta variable regular contiene la expresión de solo para letras
   patrón_númerosDecimales = re.compile(r'^\d+([.,]\d+)?$')
   try:
     tabla_a_validar = {"alumno" : ["Nombre", "FechaDeNacimiento", "ID_Alumno"],
@@ -175,7 +175,7 @@ def validar_datos(nombre_de_la_tabla, datos):
       },
       'carrera': {
               "Nombre": lambda valor :patrón_nombre.match(valor),
-              "Duración": lambda valor :patrón_nombre.match(valor),
+              "Duración": lambda valor : re.match(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$', valor),
               "ID_Carrera": lambda valor: valor.isdigit()
       },
       'materia': {

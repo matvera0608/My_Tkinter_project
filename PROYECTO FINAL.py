@@ -18,6 +18,7 @@ amarillo_claro = "#FBFFBF"
 dorado = "#FFDF00"
 dorado_claro = "#FFF1A9"
 agua = "#00FDFD"
+agua_claro = "#A9FFFF"
 
 # --- CONEXIÓN CON LA BASE DE DATOS MySQL WORKBENCH
 # --- Y UN ÍCONO PARA LA IMPLEMENTACIÓN ---
@@ -138,6 +139,7 @@ def validar_datos(nombre_de_la_tabla, datos):
   conexión = conectar_base_de_datos()
   cursor = conexión.cursor()
   patrón_nombre = re.compile(r"^[A-Za-záéíóúÁÉÍÓÚñÑüÜ\s]+$") #Esta variable regular contiene la expresión de solo para letras
+  patrón_fecha = re.compile(r'^\d{4}-\d{2}-\d{2}$') #Formato de fecha YYYY-MM-DD
   patrón_númerosDecimales = re.compile(r'^\d+([.,]\d+)?$')
   try:
     tabla_a_validar = {"alumno" : ["Nombre", "FechaDeNacimiento", "ID_Alumno"],
@@ -166,7 +168,7 @@ def validar_datos(nombre_de_la_tabla, datos):
     validaciones = {
       'alumno': {
               "Nombre": lambda valor:patrón_nombre.match(valor),
-              "FechaDeNacimiento": lambda valor:datetime.strptime(valor, '%Y-%m-%d'),
+              "FechaDeNacimiento": lambda valor: valor.strip() and re.match(patrón_fecha, valor),
               "ID_Alumno": lambda valor: valor.isdigit()
       },
       'asistencia': {
@@ -175,7 +177,7 @@ def validar_datos(nombre_de_la_tabla, datos):
       },
       'carrera': {
               "Nombre": lambda valor :patrón_nombre.match(valor),
-              "Duración": lambda valor : re.match(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$', valor), #en Duración cambié la expresión regular para que acepte letras, números y espacios.
+              "Duración": lambda valor :re.match(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$', valor), #en Duración cambié la expresión regular para que acepte letras, números y espacios.
               "ID_Carrera": lambda valor: valor.isdigit()
       },
       'materia': {
@@ -235,8 +237,8 @@ def validar_datos(nombre_de_la_tabla, datos):
 
 #En esta función obtengo todos los datos del formulario de MySQL para agregar, modificar
 #y eliminar algunos datos de la tabla
+
 def obtener_datos_de_Formulario(nombre_de_la_tabla):
-  
   global cajasDeTexto, datos
   
   campos_de_la_base_de_datos = {
@@ -301,16 +303,22 @@ def actualizar_la_hora():
   label_Hora.pack()
   interfaz.after(1000, actualizar_la_hora)
   
+#acción_doble es una función que me muestra cada registro de la tabla
+#y a la vez habiltar los botones y entrys
 def acción_doble():
   seleccionar_y_consultar()
   habilitar_botones_e_inputs()
 
 #Esta función me permite seleccionar datos dentro de la listBox para modificarlo 
 #sin tener que presionar botón Modificar constantemente
-def seleccionar_registro(nombre_de_la_tabla):
+
+def seleccionar_registro():
+  global cajasDeTexto
+  nombre_de_la_tabla = obtener_tabla_seleccionada()
   conexión = conectar_base_de_datos()
+  obtener_datos_de_Formulario(nombre_de_la_tabla)
   if conexión:
-    try:  
+    try:
       cursor = conexión.cursor()
       cursor.execute(f"SELECT * FROM {nombre_de_la_tabla};")
       selección = Lista_de_datos.curselection()
@@ -322,22 +330,22 @@ def seleccionar_registro(nombre_de_la_tabla):
     
       if selección:
         fila_seleccionada = resultado[selección[0]]
-        #Este for permite seleccionar todos los registros de la tabla
-        #para modificar sin presionar el botón constantemente
-        for caja, valor in zip(cajasDeTexto[nombre_de_la_tabla], fila_seleccionada):
+        #Este if me permite controlar que nombre de la tabla no exista en la caja de textos pueda llamar a la función obtener_datos_de_Formulario
+        #y no me tire error de que no existe la tabla en la base de datos, además para que pueda agregarlo a la listBox.
+        if nombre_de_la_tabla not in cajasDeTexto:
+          obtener_datos_de_Formulario(nombre_de_la_tabla)
+          for caja in cajasDeTexto[nombre_de_la_tabla]:
             caja.delete(0, TK.END)
+          
+          for caja, valor in zip(cajasDeTexto[nombre_de_la_tabla], fila_seleccionada):
             caja.insert(0, valor)
-      else:
-        messagebox.showwarning("ADVERTENCIA", "FALTA SELECCIONAR UNA COLUMNA")
+           
     except Error as error:
       messagebox.showerror("ERROR", f"ERROR INESPERADO AL SELECCIONAR: {str(error)}")
     finally:
-      cursor.close()
+      if cursor:
+        cursor.close()
       desconectar_base_de_datos(conexión)
-        
-  
-  
-    
 
 # --- CONFIGURACIÓN DE INTERFAZ Y ELEMENTOS IMPORTANTES DE TKINTER
 # PARA LAS INSTRUCCIONES GUARDADOS EN LA FUNCIÓN pantalla_principal()---
@@ -372,7 +380,7 @@ def pantalla_principal():
   botón_comparar.config(fg="black", bg=dorado, font=("Arial", 8), cursor='hand2', activebackground=dorado_claro)
   
   botón_exportar = TK.Button(text="Exportar",command=lambda:exportar_en_PDF(obtener_tabla_seleccionada()), width=10, height=1)
-  botón_exportar.config(fg="black", bg=agua, font=("Arial", 8), cursor='hand2', activebackground=agua)
+  botón_exportar.config(fg="black", bg=agua, font=("Arial", 8), cursor='hand2', activebackground=agua_claro)
 
   # --- ETIQUETAS ---
   global label_NombreAlumno, label_FechaNacimiento, label_IDAlumno, label_EstadoDeAsistencia, label_IDAsistencia, label_NombreCarrera, label_Duración, label_IDCarrera, label_NombreMateria, label_HorarioCorrespondiente, label_IDMateria, label_NombreProfesor, label_HorasTrabajadas, label_IDProfesor, label_NotaCalificadaUNO, label_NotaCalificadaDOS, label_IDNota, label_Hora, label_Obligatoriedad
@@ -478,22 +486,22 @@ def pantalla_principal():
   # --- RADIOBUTTONS ---
   opción = TK.IntVar()
 
-  Botón_Tabla_de_Alumno = TK.Radiobutton(mi_ventana, text="Alumno", variable=opción, value= 1, command=acción_doble, command=seleccionar_registro)
+  Botón_Tabla_de_Alumno = TK.Radiobutton(mi_ventana, text="Alumno", variable=opción, value= 1, command=lambda:acción_doble())
   Botón_Tabla_de_Alumno.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
-  Botón_Tabla_de_Asistencia = TK.Radiobutton(mi_ventana, text="Asistencia", variable=opción, value= 2, command=acción_doble, command=seleccionar_registro)
+  Botón_Tabla_de_Asistencia = TK.Radiobutton(mi_ventana, text="Asistencia", variable=opción, value= 2, command=lambda: acción_doble())
   Botón_Tabla_de_Asistencia.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
-  Botón_Tabla_de_Carrera = TK.Radiobutton(mi_ventana, text="Carrera", variable=opción, value= 3, command=acción_doble, command=seleccionar_registro)
+  Botón_Tabla_de_Carrera = TK.Radiobutton(mi_ventana, text="Carrera", variable=opción, value= 3, command=lambda:acción_doble())
   Botón_Tabla_de_Carrera.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
-  Botón_Tabla_de_Materia = TK.Radiobutton(mi_ventana, text="Materia", variable=opción, value= 4, command=acción_doble, command=seleccionar_registro)
+  Botón_Tabla_de_Materia = TK.Radiobutton(mi_ventana, text="Materia", variable=opción, value= 4, command=lambda:acción_doble())
   Botón_Tabla_de_Materia.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
-  Botón_Tabla_de_Profesor = TK.Radiobutton(mi_ventana, text="Profesor", variable=opción, value= 5, command=acción_doble, command=seleccionar_registro)
+  Botón_Tabla_de_Profesor = TK.Radiobutton(mi_ventana, text="Profesor", variable=opción, value= 5, command=lambda:acción_doble())
   Botón_Tabla_de_Profesor.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
-  Botón_Tabla_de_Notas = TK.Radiobutton(mi_ventana, text="Nota", variable=opción, value= 6, command=acción_doble, command=seleccionar_registro)
+  Botón_Tabla_de_Notas = TK.Radiobutton(mi_ventana, text="Nota", variable=opción, value= 6, command=lambda:acción_doble())
   Botón_Tabla_de_Notas.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
   Botón_Tabla_de_Alumno.place(x= 40, y = 350)
@@ -507,6 +515,8 @@ def pantalla_principal():
   Lista_de_datos = TK.Listbox(mi_ventana, width= 90, height= 30)
   Lista_de_datos.config(fg="blue",bg=amarillo_claro, font=("Arial", 8))
   Lista_de_datos.place(x= 800, y= 0)
+  Lista_de_datos.bind("<Button-1>", lambda event: seleccionar_registro())
+  #--- SCROLLBAR ---
   
   return mi_ventana
 

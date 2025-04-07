@@ -139,7 +139,6 @@ def validar_datos(nombre_de_la_tabla, datos):
   conexión = conectar_base_de_datos()
   cursor = conexión.cursor()
   patrón_nombre = re.compile(r"^[A-Za-záéíóúÁÉÍÓÚñÑüÜ\s]+$") #Esta variable regular contiene la expresión de solo para letras
-  patrón_fecha = re.compile(r'^\d{4}-\d{2}-\d{2}$') #Formato de fecha YYYY-MM-DD
   patrón_númerosDecimales = re.compile(r'^\d+([.,]\d+)?$')
   try:
     tabla_a_validar = {"alumno" : ["Nombre", "FechaDeNacimiento", "ID_Alumno"],
@@ -168,7 +167,7 @@ def validar_datos(nombre_de_la_tabla, datos):
     validaciones = {
       'alumno': {
               "Nombre": lambda valor:patrón_nombre.match(valor),
-              "FechaDeNacimiento": lambda valor: valor.strip() and re.match(patrón_fecha, valor),
+              "FechaDeNacimiento": lambda valor: valor.strip() and time.strptime(valor, '%Y-%m-%d'),
               "ID_Alumno": lambda valor: valor.isdigit()
       },
       'asistencia': {
@@ -238,7 +237,7 @@ def validar_datos(nombre_de_la_tabla, datos):
 #En esta función obtengo todos los datos del formulario de MySQL para agregar, modificar
 #y eliminar algunos datos de la tabla
 
-def obtener_datos_de_Formulario(nombre_de_la_tabla):
+def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
   global cajasDeTexto, datos
   
   campos_de_la_base_de_datos = {
@@ -262,15 +261,20 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla):
                            }
 
   #Este for es más escalable, ya que esto me solucionó el problema de que no me imprimía la Nota 1 en la listBox
-  for i, campo in enumerate(campos_de_la_base_de_datos[nombre_de_la_tabla]):
-   datos[campo] = cajasDeTexto[nombre_de_la_tabla][i].get()
+  for índice, campo in enumerate(campos_de_la_base_de_datos[nombre_de_la_tabla]):
+   datos[campo] = cajasDeTexto[nombre_de_la_tabla][índice].get()
   
   #En esta condición, valido los datos de la tabla
-  #antes de realizar un alta baja y modificación
-  if validar_datos(nombre_de_la_tabla, datos):
-    return datos
+  #antes de agregarlo a la listBox. Puse un condicional
+  #donde si las entrys de cada registro, no me tiren error. Además validarDatos
+  #como variable me sirve para que no me tire error de que no existe la tabla antes de indicar un registro de la listBox
+  if validarDatos:
+    if validar_datos(nombre_de_la_tabla, datos):
+      return datos
+    else:
+      return None
   else:
-    return None
+    return datos
 
 #Esta función llamada extraerIDs y sirve
 #para que pueda modificar y eliminar datos de una tabla dinámicamente
@@ -311,12 +315,10 @@ def acción_doble():
 
 #Esta función me permite seleccionar datos dentro de la listBox para modificarlo 
 #sin tener que presionar botón Modificar constantemente
-
 def seleccionar_registro():
-  global cajasDeTexto
   nombre_de_la_tabla = obtener_tabla_seleccionada()
   conexión = conectar_base_de_datos()
-  obtener_datos_de_Formulario(nombre_de_la_tabla)
+  obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos= False)
   if conexión:
     try:
       cursor = conexión.cursor()
@@ -332,13 +334,14 @@ def seleccionar_registro():
         fila_seleccionada = resultado[selección[0]]
         #Este if me permite controlar que nombre de la tabla no exista en la caja de textos pueda llamar a la función obtener_datos_de_Formulario
         #y no me tire error de que no existe la tabla en la base de datos, además para que pueda agregarlo a la listBox.
-        if nombre_de_la_tabla not in cajasDeTexto:
-          obtener_datos_de_Formulario(nombre_de_la_tabla)
-          for caja in cajasDeTexto[nombre_de_la_tabla]:
-            caja.delete(0, TK.END)
+        obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=False)
           
-          for caja, valor in zip(cajasDeTexto[nombre_de_la_tabla], fila_seleccionada):
-            caja.insert(0, valor)
+        #Este for me limpia los campos de texto después de agregarlo
+        for caja in cajasDeTexto[nombre_de_la_tabla]:
+          caja.delete(0, TK.END)
+          
+        for caja, valor in zip(cajasDeTexto[nombre_de_la_tabla], fila_seleccionada):
+          caja.insert(0, valor)
            
     except Error as error:
       messagebox.showerror("ERROR", f"ERROR INESPERADO AL SELECCIONAR: {str(error)}")
@@ -515,25 +518,28 @@ def pantalla_principal():
   Lista_de_datos = TK.Listbox(mi_ventana, width= 90, height= 30)
   Lista_de_datos.config(fg="blue",bg=amarillo_claro, font=("Arial", 8))
   Lista_de_datos.place(x= 800, y= 0)
-  Lista_de_datos.bind("<Button-1>", lambda event: seleccionar_registro())
+  Lista_de_datos.bind("<<ListboxSelect>>", manejar_selección)
   #--- SCROLLBAR ---
   
   return mi_ventana
+def manejar_selección(event):
+  seleccionar_registro()
 
 interfaz = pantalla_principal()
 
 #Mejoré mi función de insertar datos para agregarlo
 #dinámicamente sin tener que entrar a MySQL
 def insertar_datos(nombre_de_la_tabla):
-  datosNecesarios = obtener_datos_de_Formulario(nombre_de_la_tabla)
-  
-  if datosNecesarios:
+  conexión = conectar_base_de_datos()
+  if conexión is None:
+    messagebox.showerror("ERROR DE CONEXIÓN", "NO SE HA PODIDO CONECTAR A LA BASE DE DATOS")
+    return
+  else:
+    print("CONEXIÓN EXITOSA", "SE HA CONECTADO A LA BASE DE DATOS")
+    datosNecesarios = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
+    if not datosNecesarios:
+      return
     try:
-      conexión = conectar_base_de_datos()
-      if conexión is None:
-        messagebox.showerror("ERROR DE CONEXIÓN", "NO SE HA PODIDO CONECTAR A LA BASE DE DATOS")
-        return
-        
       cursor = conexión.cursor()
       campos = ', '.join(datosNecesarios.keys())
       values = ', '.join([f"'{valor}'" for valor in datosNecesarios.values()])
@@ -560,17 +566,16 @@ def modificar_datos(nombre_de_la_tabla):
   if not columna_seleccionada:
     messagebox.showwarning("ADVERTENCIA", "FALTA SELECCIONAR UNA COLUMNA")
     return
-
-  selección = Lista_de_datos.get(columna_seleccionada[0])
-  ID_Seleccionado = extraerIDs(selección)
-  if ID_Seleccionado is None:
-    messagebox.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
-    return
+  else:
+    selección = Lista_de_datos.get(columna_seleccionada[0])
+    ID_Seleccionado = extraerIDs(selección)
+    if ID_Seleccionado is None:
+      messagebox.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
+      return
   
-  datosNecesarios = obtener_datos_de_Formulario(nombre_de_la_tabla)
+  datosNecesarios = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
   CampoID = conseguir_campo_ID(nombre_de_la_tabla)
   if not datosNecesarios:
-    messagebox.showwarning("FALTA DE DATOS", "FALTA LOS DATOS NECESARIOS")
     return
   try:
     with conectar_base_de_datos() as conexión:

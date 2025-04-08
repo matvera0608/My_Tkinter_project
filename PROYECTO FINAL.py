@@ -318,11 +318,13 @@ def acción_doble():
 def seleccionar_registro():
   nombre_de_la_tabla = obtener_tabla_seleccionada()
   conexión = conectar_base_de_datos()
-  obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos= False)
+  consulta = {
+    f"{nombre_de_la_tabla}": f"SELECT * FROM {nombre_de_la_tabla};"
+    }
   if conexión:
     try:
       cursor = conexión.cursor()
-      cursor.execute(f"SELECT * FROM {nombre_de_la_tabla};")
+      cursor.execute(consulta[nombre_de_la_tabla])
       selección = Lista_de_datos.curselection()
       resultado = cursor.fetchall()
     
@@ -337,12 +339,9 @@ def seleccionar_registro():
         obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=False)
           
         #Este for me limpia los campos de texto después de agregarlo
-        for caja in cajasDeTexto[nombre_de_la_tabla]:
-          caja.delete(0, TK.END)
-          
         for caja, valor in zip(cajasDeTexto[nombre_de_la_tabla], fila_seleccionada):
-          caja.insert(0, valor)
-           
+          caja.delete(0, TK.END)
+          caja.insert(0, str(valor))
     except Error as error:
       messagebox.showerror("ERROR", f"ERROR INESPERADO AL SELECCIONAR: {str(error)}")
     finally:
@@ -522,6 +521,7 @@ def pantalla_principal():
   #--- SCROLLBAR ---
   
   return mi_ventana
+
 def manejar_selección(event):
   seleccionar_registro()
 
@@ -602,6 +602,7 @@ def modificar_datos(nombre_de_la_tabla):
 #no siempre tiene un valor fijo
 def eliminar_datos(nombre_de_la_tabla):
   columna_seleccionada = Lista_de_datos.curselection()
+  datosNecesarios = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=False)
   CampoID = conseguir_campo_ID(nombre_de_la_tabla)
   
   if not CampoID:
@@ -624,6 +625,11 @@ def eliminar_datos(nombre_de_la_tabla):
             conexión.commit()
             consultar_tabla(nombre_de_la_tabla)
             messagebox.showinfo("ÉXITOS", "Ha sido eliminada exitosamente")
+            #Este for me limpia los campos de texto después de agregarlo
+            #para que no quede el último valor que se agregó y se repita continuamente
+            for i, (campo, valor) in enumerate(datosNecesarios.items()):
+              entry = cajasDeTexto[nombre_de_la_tabla][i]
+              entry.delete(0, TK.END)
       except Error as e:
          messagebox.showerror("ERROR", f"ERROR INESPERADO AL ELIMINAR: {e}")
   else:
@@ -640,48 +646,70 @@ def comparar_datos(nombre_de_la_tabla):
       return
     cursor = conexión.cursor()
     
-    #Este query he simplificado para ahorrarme líneas de código, en lugar de match utilizo un diccionario de datos
-    query = {
-                  'alumno': """
-                  SELECT a.Nombre, b.Estado
-                  FROM alumno a
-                  JOIN asistencia b ON a.ID_Alumno = b.ID_Asistencia; 
-                  """,
-                 'nota': """
-                  SELECT  n.Promedio, a.Nombre
-                  FROM alumno a
-                  JOIN nota n ON a.ID_Alumno = n.ID_Nota;
-                 """,
-                 'carrera': """
-                  SELECT  c.Nombre, a.Nombre
-                  FROM alumno a
-                  JOIN carrera c ON a.ID_Alumno = c.ID_Carrera;
-                 """,
-                  'profesor': """
-                  SELECT  p.Nombre, m.Nombre
-                  FROM materia m
-                  JOIN profesor p ON m.ID_Materia = p.ID_Profesor;
-                 """,
-                  'asistencia': """
-                  SELECT  a.Estado, p.Nombre
-                  FROM profesor p
-                  JOIN asistencia a ON p.ID_Profesor = a.ID_Asistencia;
-                 """,
-                  'materia': """
-                  SELECT  m.Nombre, m.Horario, p.Nombre
-                  FROM profesor p
-                  JOIN materia m ON p.ID_Profesor = m.ID_Materia;
-                 """,
-                }
-    sql_query = query.get(nombre_de_la_tabla, None)
+    #Ahora actualicé más la función para que pueda elegir la tabla a comparar.
+    #Puse una ventana que dispare un cuadro de texto para que el usuario pueda elegir la tabla a comparar escribiendo el nombre de la tabla.
+    elegir_Tabla = TK.simpledialog.askstring("Comparar", "Ingrese el nombre de la tabla a comparar: ")
+    if elegir_Tabla is None:
+      return None
+    else:
+      match elegir_Tabla:
+        case "alumno":
+          consulta = "SELECT alumno.Nombre, asistencia.Estado FROM alumno JOIN asistencia on alumno.ID_Alumno = asistencia.ID_Asistencia;"
+        case "asistencia":
+          consulta = "SELECT asistencia.Estado, alumno.Nombre FROM asistencia JOIN alumno on asistencia.ID_Asistencia = alumno.ID_Alumno;"
+        case "carrera":
+          consulta = "SELECT carrera.Nombre, alumno.Nombre FROM carrera JOIN alumno on carrera.ID_Carrera = alumno.ID_Alumno;"
+        case "profesor":
+          consulta = "SELECT profesor.Nombre, materia.Nombre FROM profesor JOIN materia on profesor.ID_Profesor = materia.ID_Materia;"
+        case "materia":
+          consulta = "SELECT materia.Nombre, materia.Horario, profesor.Nombre FROM materia JOIN profesor on materia.ID_Materia = profesor.ID_Profesor;"
+        case "nota":
+          consulta = "SELECT nota.Promedio, nota.Estado, alumno.Nombre FROM nota JOIN alumno on nota.ID_Nota = alumno.ID_Alumno;"
+        case _:
+          messagebox.showerror("ERROR", "LA TABLA NO EXISTE EN LA BASE DE DATOS")
+          return
     
-    #Controlo que la tabla seleccionada coincida con el diccionario de query
+    # query = {
+    #               'alumno': """
+    #               SELECT a.Nombre, b.Estado
+    #               FROM alumno a
+    #               JOIN asistencia b ON a.ID_Alumno = b.ID_Asistencia; 
+    #               """,
+    #              'nota': """
+    #               SELECT  n.Promedio, a.Nombre
+    #               FROM alumno a
+    #               JOIN nota n ON a.ID_Alumno = n.ID_Nota;
+    #              """,
+    #              'carrera': """
+    #               SELECT  c.Nombre, a.Nombre
+    #               FROM alumno a
+    #               JOIN carrera c ON a.ID_Alumno = c.ID_Carrera;
+    #              """,
+    #               'profesor': """
+    #               SELECT  p.Nombre, m.Nombre
+    #               FROM materia m
+    #               JOIN profesor p ON m.ID_Materia = p.ID_Profesor;
+    #              """,
+    #               'asistencia': """
+    #               SELECT  a.Estado, p.Nombre
+    #               FROM profesor p
+    #               JOIN asistencia a ON p.ID_Profesor = a.ID_Asistencia;
+    #              """,
+    #               'materia': """
+    #               SELECT  m.Nombre, m.Horario, p.Nombre
+    #               FROM profesor p
+    #               JOIN materia m ON p.ID_Profesor = m.ID_Materia;
+    #              """,
+    #             }
+    # sql_query = query.get(nombre_de_la_tabla, None)
     
-    if sql_query is None:
-      messagebox.showerror("ERROR", "NO SE ENCONTRÓ LA TABLA ESPECIFICADA")
-      return
+    # #Controlo que la tabla seleccionada coincida con el diccionario de query
     
-    cursor.execute(sql_query)
+    # if sql_query is None:
+    #   messagebox.showerror("ERROR", "NO SE ENCONTRÓ LA TABLA ESPECIFICADA")
+    #   return
+    
+    cursor.execute(consulta)
     resultado = cursor.fetchall()
 
     #Controlo que haya resultados, en caso contrario, me imprime un mensaje de que no hay resultados para criterios específicos

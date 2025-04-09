@@ -84,7 +84,7 @@ def seleccionar_y_consultar():
 def habilitar_botones_e_inputs():
 
   txBoxes = [
-                     txBox_NombreAlumno, label_NombreAlumno, txBox_FechaNacimiento, label_FechaNacimiento, txBox_IDAlumno, label_IDAlumno,
+                     txBox_FechaNacimiento, label_FechaNacimiento, txBox_NombreAlumno, label_NombreAlumno, txBox_IDAlumno, label_IDAlumno,
                      txBox_EstadoDeAsistencia, label_EstadoDeAsistencia ,txBox_IDAsistencia, label_IDAsistencia,
                      txBox_NombreCarrera, label_NombreCarrera, txBox_Duración, label_Duración, txBox_IDCarrera, label_IDCarrera,
                      txBox_NombreMateria, label_NombreMateria, txBox_HorarioCorrespondiente, label_HorarioCorrespondiente, txBox_IDMateria, label_IDMateria,
@@ -106,7 +106,7 @@ def habilitar_botones_e_inputs():
   label_Obligatoriedad.pack(padx= 0, pady= 150)
   
   opciones_del_widget = {
-                                         1: [(txBox_NombreAlumno,label_NombreAlumno, 100), (txBox_FechaNacimiento, label_FechaNacimiento, 150), (txBox_IDAlumno, label_IDAlumno, 200)],
+                                         1: [(txBox_FechaNacimiento, label_FechaNacimiento, 100), (txBox_NombreAlumno,label_NombreAlumno, 150), (txBox_IDAlumno, label_IDAlumno, 200)],
                                          2: [(txBox_EstadoDeAsistencia, label_EstadoDeAsistencia, 100), (txBox_IDAsistencia, label_IDAsistencia, 150)],
                                          3: [(txBox_NombreCarrera, label_NombreCarrera, 100), (txBox_Duración, label_Duración, 150), (txBox_IDCarrera, label_IDCarrera, 200)],
                                          4: [(txBox_NombreMateria, label_NombreMateria,100), (txBox_HorarioCorrespondiente, label_HorarioCorrespondiente, 150), (txBox_IDMateria, label_IDMateria, 200)],
@@ -115,6 +115,7 @@ def habilitar_botones_e_inputs():
                                        }
   
   if botón_seleccionado in opciones_del_widget:
+    #Este for me permite dinámicamente agregar los entrys y labels dependiendo de la tabla seleccionada
     for entry, label, y_pos in opciones_del_widget[botón_seleccionado]:
       entry.place(x=150, y=y_pos)
       label.place(relx=0.25, rely=0.15 + (y_pos - 50) / 500)
@@ -144,8 +145,8 @@ def validar_datos(nombre_de_la_tabla, datos):
     tabla_a_validar = {"alumno" : ["Nombre", "FechaDeNacimiento", "ID_Alumno"],
                                   "materia": ["Nombre", "Horario", "ID_Materia"],
                                   "profesor": ["Nombre", "HorasTrabajadas", "ID_Profesor"],
-                                  "nota" : ["ID_Nota"],
                                   "asistencia": ["ID_Asistencia"],
+                                  "nota": ["Nota_UNO", "Nota_DOS", "ID_Nota"],
                                   "carrera" : ["Nombre", "Duración", "ID_Carrera"]
                                   }
     
@@ -236,12 +237,11 @@ def validar_datos(nombre_de_la_tabla, datos):
 
 #En esta función obtengo todos los datos del formulario de MySQL para agregar, modificar
 #y eliminar algunos datos de la tabla
-
 def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
   global cajasDeTexto, datos
   
   campos_de_la_base_de_datos = {
-                                                        'alumno':  ["Nombre", "FechaDeNacimiento", "ID_Alumno"],
+                                                        'alumno':  [ "FechaDeNacimiento", "Nombre", "ID_Alumno"],
                                                         'asistencia': ["Estado", "ID_Asistencia"],
                                                         'carrera':  ["Nombre", "Duración", "ID_Carrera"],
                                                         'materia': ["Nombre", "Horario", "ID_Materia"],
@@ -252,7 +252,7 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
   datos = {}
 
   cajasDeTexto = {
-                              'alumno':  (txBox_NombreAlumno, txBox_FechaNacimiento, txBox_IDAlumno),
+                              'alumno':  (txBox_FechaNacimiento, txBox_NombreAlumno,  txBox_IDAlumno),
                               'asistencia': (txBox_EstadoDeAsistencia , txBox_IDAsistencia),
                               'carrera':  (txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera),
                               'materia': (txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria),
@@ -319,11 +319,11 @@ def seleccionar_registro():
   nombre_de_la_tabla = obtener_tabla_seleccionada()
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=False)
   conexión = conectar_base_de_datos()
+  #Esta variable consulta me permite obtener los datos de la tabla de forma ordenada dependiendo del orden de la caja de texto
+  #{', '.join([campo for campo in datos.keys()])} este es un método que me permite agregar los campos en las cajas de texto de forma dinámica
   consulta = {
     nombre_de_la_tabla: f"SELECT {', '.join([campo for campo in datos.keys()])} FROM {nombre_de_la_tabla};"
     }
-
-
   if conexión:
     try:
       cursor = conexión.cursor()
@@ -489,6 +489,8 @@ def pantalla_principal():
   txBox_IDNota = TK.Entry(mi_ventana)
 
   # --- RADIOBUTTONS ---
+  global Botón_Tabla_de_Alumno, Botón_Tabla_de_Asistencia, Botón_Tabla_de_Carrera, Botón_Tabla_de_Materia, Botón_Tabla_de_Profesor, Botón_Tabla_de_Notas
+  
   opción = TK.IntVar()
 
   Botón_Tabla_de_Alumno = TK.Radiobutton(mi_ventana, text="Alumno", variable=opción, value= 1, command=lambda:acción_doble())
@@ -534,31 +536,26 @@ interfaz = pantalla_principal()
 #dinámicamente sin tener que entrar a MySQL
 def insertar_datos(nombre_de_la_tabla):
   conexión = conectar_base_de_datos()
-  if conexión is None:
-    messagebox.showerror("ERROR DE CONEXIÓN", "NO SE HA PODIDO CONECTAR A LA BASE DE DATOS")
+  datosNecesarios = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
+  if not datosNecesarios:
     return
-  else:
-    print("CONEXIÓN EXITOSA", "SE HA CONECTADO A LA BASE DE DATOS")
-    datosNecesarios = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
-    if not datosNecesarios:
-      return
-    try:
-      cursor = conexión.cursor()
-      campos = ', '.join(datosNecesarios.keys())
-      values = ', '.join([f"'{valor}'" for valor in datosNecesarios.values()])
-      query = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({values})"
-      cursor.execute(query)
-      conexión.commit()
-      consultar_tabla(nombre_de_la_tabla)
-      messagebox.showinfo("CORRECTO", "SE AGREGÓ LOS DATOS NECESARIOS")
-      #Este for me limpia los campos de texto después de agregarlo
-      #para que no quede el último valor que se agregó y se repita continuamente
-      for i, (campo, valor) in enumerate(datosNecesarios.items()):
-        entry = cajasDeTexto[nombre_de_la_tabla][i]
-        entry.delete(0, TK.END)
-      desconectar_base_de_datos(conexión)
-    except Error as e:
-      messagebox.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {e}")
+  try:
+    cursor = conexión.cursor()
+    campos = ', '.join(datosNecesarios.keys())
+    values = ', '.join([f"'{valor}'" for valor in datosNecesarios.values()])
+    query = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({values})"
+    cursor.execute(query)
+    conexión.commit()
+    consultar_tabla(nombre_de_la_tabla)
+    messagebox.showinfo("CORRECTO", "SE AGREGÓ LOS DATOS NECESARIOS")
+    #Este for me limpia los campos de texto después de agregarlo
+    #para que no quede el último valor que se agregó y se repita continuamente
+    for i, (campo, valor) in enumerate(datosNecesarios.items()):
+      entry = cajasDeTexto[nombre_de_la_tabla][i]
+      entry.delete(0, TK.END)
+    desconectar_base_de_datos(conexión)
+  except Error as e:
+    messagebox.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {e}")
 
 #Mejoré mi función de insertar datos para modificarlo
 #dinámicamente sin tener que entrar a MySQL y puse una
@@ -607,7 +604,6 @@ def eliminar_datos(nombre_de_la_tabla):
   columna_seleccionada = Lista_de_datos.curselection()
   datosNecesarios = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=False)
   CampoID = conseguir_campo_ID(nombre_de_la_tabla)
-  
   if not CampoID:
     messagebox.showerror("ERROR", "No se ha podido determinar el campo ID para esta tabla")
     return
@@ -652,9 +648,31 @@ def comparar_datos(nombre_de_la_tabla):
     #Ahora actualicé más la función para que pueda elegir la tabla a comparar.
     #Puse una ventana que dispare un cuadro de texto para que el usuario pueda elegir la tabla a comparar escribiendo el nombre de la tabla.
     elegir_Tabla = TK.simpledialog.askstring("Comparar", "Ingrese el nombre de la tabla a comparar: ")
+
     if elegir_Tabla is None:
-      return None
+      return None #Ocurre cuando el usuario presiona cancelar en el cuadro de texto
     else:
+      elegir_Tabla = elegir_Tabla.strip().lower() #Acá verifico que el usuario no ingrese espacios en blanco al principio o al final del nombre de la tabla, 
+                                                                          #si por casualidad el mismo lo pone corta los espacios y lo convierte a minúscula.
+      tabla_a_seleccionar = {
+        "alumno": Botón_Tabla_de_Alumno,
+        "asistencia": Botón_Tabla_de_Asistencia,
+        "carrera": Botón_Tabla_de_Carrera,
+        "profesor": Botón_Tabla_de_Profesor,
+        "materia": Botón_Tabla_de_Materia,
+        "nota": Botón_Tabla_de_Notas
+      }
+      
+      #Esta variable guarda el botón seleccionado dependiendo de la tabla que elija el usuario
+      #y si no existe, me tira un error de que no se ha ingresado ninguna tabla
+      botónSeleccionado = tabla_a_seleccionar.get(elegir_Tabla)
+      
+      if not botónSeleccionado:
+        messagebox.showerror("ERROR", "NO SE HA INGRESADO NINGUNA TABLA")
+        return
+      
+      botónSeleccionado.select() #Esto selecciona el botón correspondiente a la tabla elegida por el usuario
+      
       match elegir_Tabla:
         case "alumno":
           consulta = "SELECT alumno.Nombre, asistencia.Estado FROM alumno JOIN asistencia on alumno.ID_Alumno = asistencia.ID_Asistencia;"

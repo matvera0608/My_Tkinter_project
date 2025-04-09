@@ -317,10 +317,13 @@ def acción_doble():
 #sin tener que presionar botón Modificar constantemente
 def seleccionar_registro():
   nombre_de_la_tabla = obtener_tabla_seleccionada()
+  datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=False)
   conexión = conectar_base_de_datos()
   consulta = {
-    f"{nombre_de_la_tabla}": f"SELECT * FROM {nombre_de_la_tabla};"
+    nombre_de_la_tabla: f"SELECT {', '.join([campo for campo in datos.keys()])} FROM {nombre_de_la_tabla};"
     }
+
+
   if conexión:
     try:
       cursor = conexión.cursor()
@@ -668,47 +671,7 @@ def comparar_datos(nombre_de_la_tabla):
         case _:
           messagebox.showerror("ERROR", "LA TABLA NO EXISTE EN LA BASE DE DATOS")
           return
-    
-    # query = {
-    #               'alumno': """
-    #               SELECT a.Nombre, b.Estado
-    #               FROM alumno a
-    #               JOIN asistencia b ON a.ID_Alumno = b.ID_Asistencia; 
-    #               """,
-    #              'nota': """
-    #               SELECT  n.Promedio, a.Nombre
-    #               FROM alumno a
-    #               JOIN nota n ON a.ID_Alumno = n.ID_Nota;
-    #              """,
-    #              'carrera': """
-    #               SELECT  c.Nombre, a.Nombre
-    #               FROM alumno a
-    #               JOIN carrera c ON a.ID_Alumno = c.ID_Carrera;
-    #              """,
-    #               'profesor': """
-    #               SELECT  p.Nombre, m.Nombre
-    #               FROM materia m
-    #               JOIN profesor p ON m.ID_Materia = p.ID_Profesor;
-    #              """,
-    #               'asistencia': """
-    #               SELECT  a.Estado, p.Nombre
-    #               FROM profesor p
-    #               JOIN asistencia a ON p.ID_Profesor = a.ID_Asistencia;
-    #              """,
-    #               'materia': """
-    #               SELECT  m.Nombre, m.Horario, p.Nombre
-    #               FROM profesor p
-    #               JOIN materia m ON p.ID_Profesor = m.ID_Materia;
-    #              """,
-    #             }
-    # sql_query = query.get(nombre_de_la_tabla, None)
-    
-    # #Controlo que la tabla seleccionada coincida con el diccionario de query
-    
-    # if sql_query is None:
-    #   messagebox.showerror("ERROR", "NO SE ENCONTRÓ LA TABLA ESPECIFICADA")
-    #   return
-    
+        
     cursor.execute(consulta)
     resultado = cursor.fetchall()
 

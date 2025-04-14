@@ -30,8 +30,7 @@ def conectar_base_de_datos():
         host = 'localhost',
         user = 'root',
         password = 'aHQfu3.4JW8rX/cd!K',
-        database = 'escuela',
-    )
+        database = 'escuela', )
     conexión_exitosa = cadena_de_conexión.is_connected()
     if conexión_exitosa:
       return cadena_de_conexión
@@ -302,10 +301,11 @@ def conseguir_campo_ID(nombre_de_la_tabla):
   return IDs.get(nombre_de_la_tabla.strip().lower())
 
 #Esta función sirve para actualizar la hora
-def actualizar_la_hora():
+def actualizar_la_hora(interfaz):
+  
   label_Hora.config(text=time.strftime("%I:%M:%S %p"))
   label_Hora.pack()
-  interfaz.after(1000, actualizar_la_hora)
+  interfaz.after(1000, actualizar_la_hora, interfaz)
   
 #acción_doble es una función que me muestra cada registro de la tabla
 #y a la vez habiltar los botones y entrys
@@ -371,21 +371,26 @@ def pantalla_principal():
   #Agregar
   botón_agregar = TK.Button(text="Agregar Dato", command=lambda:insertar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
   botón_agregar.config(fg="black", bg=verde, font=("Arial", 8), cursor='hand2', activebackground=verde_claro)
+  botón_agregar.bind("<Return>",ejecutar_acción_presionando_Enter)
 
   #Modificar
   botón_modificar = TK.Button(text="Modificar Dato", command=lambda:modificar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
   botón_modificar.config(fg="black", bg="red", font=("Arial", 8), cursor='hand2', activebackground=rojo_claro)
+  botón_modificar.bind("<Return>",ejecutar_acción_presionando_Enter)
 
   #Eliminar
   botón_eliminar = TK.Button(text="Eliminar Dato", command=lambda:eliminar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
   botón_eliminar.config(fg="black", bg="blue", font=("Arial", 8), cursor='hand2', activebackground=azul_claro)
+  botón_eliminar.bind("<Return>",ejecutar_acción_presionando_Enter)
 
   #Comparar
   botón_comparar = TK.Button(text="Comparar",command=lambda:comparar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
   botón_comparar.config(fg="black", bg=dorado, font=("Arial", 8), cursor='hand2', activebackground=dorado_claro)
+  botón_comparar.bind("<Return>",ejecutar_acción_presionando_Enter)
   
   botón_exportar = TK.Button(text="Exportar",command=lambda:exportar_en_PDF(obtener_tabla_seleccionada()), width=10, height=1)
   botón_exportar.config(fg="black", bg=agua, font=("Arial", 8), cursor='hand2', activebackground=agua_claro)
+  
 
   # --- ETIQUETAS ---
   global label_NombreAlumno, label_FechaNacimiento, label_IDAlumno, label_EstadoDeAsistencia, label_IDAsistencia, label_NombreCarrera, label_Duración, label_IDCarrera, label_NombreMateria, label_HorarioCorrespondiente, label_IDMateria, label_NombreProfesor, label_HorasTrabajadas, label_IDProfesor, label_NotaCalificadaUNO, label_NotaCalificadaDOS, label_IDNota, label_Hora, label_Obligatoriedad
@@ -452,7 +457,7 @@ def pantalla_principal():
 
   #Etiqueta para mostrar la hora
   label_Hora = TK.Label(mi_ventana, text="")
-  label_Hora.config(fg="Black", bg=rosado_claro, font=("Arial", 25))
+  label_Hora.config(fg="Black", bg=rosado_claro, font=("Arial", 10))
   #Etiqueta para indicar que significa el asterisco
   label_Obligatoriedad = TK.Label(mi_ventana, text="el * significa que son obligatorio seleccionar los datos")
   label_Obligatoriedad.config(fg="Black",bg=rosado_claro, font=("Arial", 8))
@@ -519,18 +524,14 @@ def pantalla_principal():
   Botón_Tabla_de_Notas.place(x = 590, y = 350)
 
   #--- LISTBOX ---
-  Lista_de_datos = TK.Listbox(mi_ventana, width= 90, height= 30)
+  Lista_de_datos = TK.Listbox(mi_ventana, exportselection=0, width= 90, height= 30)
   Lista_de_datos.config(fg="blue",bg=amarillo_claro, font=("Arial", 8))
   Lista_de_datos.place(x= 800, y= 0)
   Lista_de_datos.bind("<<ListboxSelect>>", manejar_selección)
-  #--- SCROLLBAR ---
+
+  actualizar_la_hora(mi_ventana)
   
   return mi_ventana
-
-def manejar_selección(event):
-  seleccionar_registro()
-
-interfaz = pantalla_principal()
 
 #Mejoré mi función de insertar datos para agregarlo
 #dinámicamente sin tener que entrar a MySQL
@@ -768,6 +769,65 @@ def exportar_en_PDF(nombre_de_la_tabla):
     
   except Error as e:
     messagebox.showerror("OCURRIÓ UN ERROR", f"Error al exportar en PDF la información detallada: {str(e)}")
+
+# --- EVENTOS PARA BOTONES ---
+
+modo = None
+
+def enter_agregar():
+  global modo
+  modo = "agregar"
+  insertar_datos(obtener_tabla_seleccionada())
+
+def enter_modificar():
+  global modo
+  modo = "modificar"
+  modificar_datos(obtener_tabla_seleccionada())
   
-actualizar_la_hora()
+def enter_eliminar():
+  global modo
+  modo = "eliminar"
+  eliminar_datos(obtener_tabla_seleccionada())
+  
+def enter_comparar():
+  global modo
+  modo = "comparar"
+  comparar_datos(obtener_tabla_seleccionada())
+
+#Esta función maneja la selección de la ListBox con todos los registros de la base de datos
+#y me permite seleccionar un registro para modificarlo o eliminarlo más facilemnte
+def manejar_selección(event=None):
+  índice_seleccionado = Lista_de_datos.curselection()
+  if índice_seleccionado:
+    Lista_de_datos.activate(índice_seleccionado[0])
+    Lista_de_datos.selection_set(índice_seleccionado[0])
+    seleccionar_registro()
+  else:
+    for txBox in cajasDeTexto.values():
+      txBox.delete(0, TK.END)
+
+#Este evento me sirve para agregar, modificar y eliminar un registro de la tabla
+#sin la necesidad de tener que presionar el botón cada vez que quiero agregar, modificar o eliminar un registro haciendo click en la ListBox
+def ejecutar_acción_presionando_Enter(event=None):
+  global modo
+  NopresionarEnter = event.keysym != 'Return'
+  if NopresionarEnter:
+    return
+  else:
+    match modo:
+      case "agregar":
+        insertar_datos(obtener_tabla_seleccionada())
+      case "modificar":
+        modificar_datos(obtener_tabla_seleccionada())
+      case "eliminar":
+        eliminar_datos(obtener_tabla_seleccionada())
+      case "comparar":
+        comparar_datos(obtener_tabla_seleccionada())
+      case _ :
+        messagebox.showerror("ERROR", "NO SE HA SELECCIONADO NINGUNA TABLA")
+    
+
+# --- INICIO DEL SISTEMA ---
+interfaz = pantalla_principal()
+
 interfaz.mainloop()

@@ -58,6 +58,7 @@ def consultar_tabla(nombre_de_la_tabla):
     
     desconectar_base_de_datos(conexión)
 
+
 def seleccionar_y_consultar():
   botón_seleccionado = opción.get()
   tabla = {
@@ -356,6 +357,7 @@ def seleccionar_registro():
 # PARA LAS INSTRUCCIONES GUARDADOS EN LA FUNCIÓN pantalla_principal()---
 def pantalla_principal():
   
+  global mi_ventana
   # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
   mi_ventana = TK.Tk()
   mi_ventana.title("Sistema Gestor de Asistencia")
@@ -528,6 +530,7 @@ def pantalla_principal():
   Lista_de_datos.config(fg="blue",bg=amarillo_claro, font=("Arial", 8))
   Lista_de_datos.place(x= 800, y= 0)
   Lista_de_datos.bind("<<ListboxSelect>>", manejar_selección)
+  barraDesplazadora()
 
   actualizar_la_hora(mi_ventana)
   
@@ -793,6 +796,16 @@ def enter_comparar():
   global modo
   modo = "comparar"
   comparar_datos(obtener_tabla_seleccionada())
+
+#Esta función me permite desplazar con barra verticalmente
+#la ListBox para que se pueda ver muchos registros en la tabla
+def barraDesplazadora():
+  barra = TK.Scrollbar(mi_ventana, orient = TK.VERTICAL)
+  Lista_de_datos.config(yscrollcommand=barra.set)
+  barra.config(command=Lista_de_datos.yview)
+  #Esta función desplaza la ListBox hacia la derecha
+  #y me permite ver los registros que no se ven en la pantalla
+  barra.pack(side=TK.RIGHT, fill=TK.Y)
 
 #Esta función maneja la selección de la ListBox con todos los registros de la base de datos
 #y me permite seleccionar un registro para modificarlo o eliminarlo más facilemnte

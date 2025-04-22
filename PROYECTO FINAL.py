@@ -58,7 +58,6 @@ def consultar_tabla(nombre_de_la_tabla):
     
     desconectar_base_de_datos(conexión)
 
-
 def seleccionar_y_consultar():
   botón_seleccionado = opción.get()
   tabla = {
@@ -130,8 +129,14 @@ def obtener_tabla_seleccionada():
                 5: 'profesor',
                 6: 'nota'
               }
+  print("Valor: ", opción)
+  print("Valor con get: ",opción.get())
   nombre = tabla.get(opción.get(), None)
-  return nombre
+  if nombre is None:
+    messagebox.showerror("Error", "Selección inválida. Los valores están entre el 1 y 6")
+    return None
+  else:
+    return nombre
 
 #Esta función validar_datos valida los datos antes de agregarlo a la listbox para evitar redundancias
 def validar_datos(nombre_de_la_tabla, datos):
@@ -496,7 +501,7 @@ def pantalla_principal():
   txBox_IDNota = TK.Entry(mi_ventana)
 
   # --- RADIOBUTTONS ---
-  global Botón_Tabla_de_Alumno, Botón_Tabla_de_Asistencia, Botón_Tabla_de_Carrera, Botón_Tabla_de_Materia, Botón_Tabla_de_Profesor, Botón_Tabla_de_Notas
+  global Botón_Tabla_de_Alumno, Botón_Tabla_de_Asistencia, Botón_Tabla_de_Carrera, Botón_Tabla_de_Materia, Botón_Tabla_de_Profesor, Botón_Tabla_de_Notas, opción
   
   opción = TK.IntVar()
 
@@ -527,7 +532,7 @@ def pantalla_principal():
 
   #--- LISTBOX ---
   Lista_de_datos = TK.Listbox(mi_ventana, exportselection=0, width= 90, height= 30)
-  Lista_de_datos.config(fg="blue",bg=amarillo_claro, font=("Arial", 8))
+  Lista_de_datos.config(fg="blue",bg=amarillo_claro, font=("Arial", 12))
   Lista_de_datos.place(x= 800, y= 0)
   Lista_de_datos.bind("<<ListboxSelect>>", manejar_selección)
   barraDesplazadora()
@@ -806,7 +811,7 @@ def barraDesplazadora():
   #Esta función desplaza la ListBox hacia la derecha
   #y me permite ver los registros que no se ven en la pantalla
   barra.pack(side=TK.RIGHT, fill=TK.Y)
-
+  
 #Esta función maneja la selección de la ListBox con todos los registros de la base de datos
 #y me permite seleccionar un registro para modificarlo o eliminarlo más facilemnte
 def manejar_selección(event=None):
@@ -823,22 +828,46 @@ def manejar_selección(event=None):
 #sin la necesidad de tener que presionar el botón cada vez que quiero agregar, modificar o eliminar un registro haciendo click en la ListBox
 def ejecutar_acción_presionando_Enter(event=None):
   global modo
+  table = obtener_tabla_seleccionada()
   NopresionarEnter = event.keysym != 'Return'
-  if NopresionarEnter:
+  if NopresionarEnter or modo is None:
+    return
+  if modo is None:
     return
   else:
     match modo:
       case "agregar":
-        insertar_datos(obtener_tabla_seleccionada())
+        insertar_datos(table)
       case "modificar":
-        modificar_datos(obtener_tabla_seleccionada())
+        modificar_datos(table)
       case "eliminar":
-        eliminar_datos(obtener_tabla_seleccionada())
+        eliminar_datos(table)
       case "comparar":
-        comparar_datos(obtener_tabla_seleccionada())
+        comparar_datos(table)
       case _ :
         messagebox.showerror("ERROR", "NO SE HA SELECCIONADO NINGUNA TABLA")
-    
+
+#Esta función sirve para mover con flechas cuando es necesario en vez de depender de usar el mouse
+def mover_con_flechas(event):
+  evento = event.keysym
+  
+  match evento:
+    case "Up":
+      if Lista_de_datos.curselection():
+        índice_seleccionado = Lista_de_datos.curselection()[0]
+        if índice_seleccionado > 0:
+          Lista_de_datos.selection_clear(índice_seleccionado)
+          Lista_de_datos.selection_set(índice_seleccionado - 1)
+          Lista_de_datos.activate(índice_seleccionado - 1)
+          seleccionar_registro()
+    case "Down":
+      if Lista_de_datos.curselection():
+        índice_seleccionado = Lista_de_datos.curselection()[0]
+        if índice_seleccionado < Lista_de_datos.size() - 1:
+          Lista_de_datos.selection_clear(índice_seleccionado)
+          Lista_de_datos.selection_set(índice_seleccionado + 1)
+          Lista_de_datos.activate(índice_seleccionado + 1)
+          seleccionar_registro()
 
 # --- INICIO DEL SISTEMA ---
 interfaz = pantalla_principal()

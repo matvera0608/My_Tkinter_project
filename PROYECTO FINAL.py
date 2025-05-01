@@ -129,8 +129,6 @@ def obtener_tabla_seleccionada():
                 5: 'profesor',
                 6: 'nota'
               }
-  print("Valor: ", opción)
-  print("Valor con get: ",opción.get())
   nombre = tabla.get(opción.get(), None)
   if nombre is None:
     messagebox.showerror("Error", "Selección inválida. Los valores están entre el 1 y 6")
@@ -531,12 +529,8 @@ def pantalla_principal():
   Botón_Tabla_de_Notas.place(x = 590, y = 350)
 
   #--- LISTBOX ---
-  Lista_de_datos = TK.Listbox(mi_ventana, exportselection=0, width= 90, height= 30)
-  Lista_de_datos.config(fg="blue",bg=amarillo_claro, font=("Arial", 12))
-  Lista_de_datos.place(x= 800, y= 0)
-  Lista_de_datos.bind("<<ListboxSelect>>", manejar_selección)
   barraDesplazadora()
-
+  
   actualizar_la_hora(mi_ventana)
   
   return mi_ventana
@@ -805,24 +799,39 @@ def enter_comparar():
 #Esta función me permite desplazar con barra verticalmente
 #la ListBox para que se pueda ver muchos registros en la tabla
 def barraDesplazadora():
-  barra = TK.Scrollbar(mi_ventana, orient = TK.VERTICAL)
-  Lista_de_datos.config(yscrollcommand=barra.set)
-  barra.config(command=Lista_de_datos.yview)
+  global Lista_de_datos, Frame_Lista
+  
+  Frame_Lista = TK.Frame(mi_ventana, width= 450, height= 500)
+  Frame_Lista.pack(side=TK.RIGHT, fill=TK.BOTH)
+  
+  barra = TK.Scrollbar(Frame_Lista, orient="vertical")
+  barra.pack(side=TK.RIGHT, fill=TK.Y)
+  
+  Lista_de_datos = TK.Listbox(Frame_Lista, exportselection=0, width= 90, height= 30)
+  Lista_de_datos.config(fg="blue",bg=amarillo_claro, font=("Arial", 12))
+  Lista_de_datos.pack(side=TK.LEFT, fill=TK.BOTH, expand=True)
   #Esta función desplaza la ListBox hacia la derecha
   #y me permite ver los registros que no se ven en la pantalla
-  barra.pack(side=TK.RIGHT, fill=TK.Y)
+  Lista_de_datos.config(yscrollcommand=barra.set)
+  barra.config(command=Lista_de_datos.yview)
+  
+  Lista_de_datos.bind("<<ListboxSelect>>", manejar_selección)
   
 #Esta función maneja la selección de la ListBox con todos los registros de la base de datos
 #y me permite seleccionar un registro para modificarlo o eliminarlo más facilemnte
 def manejar_selección(event=None):
+  global cajasDeTexto
   índice_seleccionado = Lista_de_datos.curselection()
   if índice_seleccionado:
     Lista_de_datos.activate(índice_seleccionado[0])
     Lista_de_datos.selection_set(índice_seleccionado[0])
     seleccionar_registro()
   else:
-    for txBox in cajasDeTexto.values():
-      txBox.delete(0, TK.END)
+    try:
+      for txBox in cajasDeTexto.values():
+        txBox.delete(0, TK.END)
+    except:
+      return
 
 #Este evento me sirve para agregar, modificar y eliminar un registro de la tabla
 #sin la necesidad de tener que presionar el botón cada vez que quiero agregar, modificar o eliminar un registro haciendo click en la ListBox
@@ -848,9 +857,8 @@ def ejecutar_acción_presionando_Enter(event=None):
         messagebox.showerror("ERROR", "NO SE HA SELECCIONADO NINGUNA TABLA")
 
 #Esta función sirve para mover con flechas cuando es necesario en vez de depender de usar el mouse
-def mover_con_flechas(event):
+def mover_con_flechas(event=None):
   evento = event.keysym
-  
   match evento:
     case "Up":
       if Lista_de_datos.curselection():

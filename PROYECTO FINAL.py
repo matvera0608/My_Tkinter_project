@@ -102,7 +102,7 @@ def habilitar_botones_e_inputs():
   botón_comparar.place(x = 40, y = 280)
   botón_exportar.place(x= 20, y= 50)
   
-  label_Obligatoriedad.pack(padx= 0, pady= 150)
+  label_Obligatoriedad.pack(padx= 100, pady= 50)
   
   opciones_del_widget = {
                                          1: [(txBox_FechaNacimiento, label_FechaNacimiento, 100), (txBox_NombreAlumno,label_NombreAlumno, 150), (txBox_IDAlumno, label_IDAlumno, 200)],
@@ -142,7 +142,7 @@ def validar_datos(nombre_de_la_tabla, datos):
   #letras con acentos y otros caracteres especiales
   conexión = conectar_base_de_datos()
   cursor = conexión.cursor()
-  patrón_nombre = re.compile(r"^[A-Za-záéíóúÁÉÍÓÚñÑüÜ\s]+$") #Esta variable regular contiene la expresión de solo para letras
+  patrón_nombre = re.compile(r'^[A-Za-záéíóúÁÉÍÓÚñÑüÜ\s]+$') #Esta variable regular contiene la expresión de solo para letras
   patrón_númerosDecimales = re.compile(r'^\d+([.,]\d+)?$')
   try:
     tabla_a_validar = {"alumno" : ["Nombre", "FechaDeNacimiento", "ID_Alumno"],
@@ -376,25 +376,37 @@ def pantalla_principal():
   #Agregar
   botón_agregar = TK.Button(text="Agregar Dato", command=lambda:insertar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
   botón_agregar.config(fg="black", bg=verde, font=("Arial", 8), cursor='hand2', activebackground=verde_claro)
-  botón_agregar.bind("<Return>",ejecutar_acción_presionando_Enter)
+  botón_agregar.bind("<Up>",mover_con_flechas)
+  botón_agregar.bind("<Down>",mover_con_flechas)
+  botón_agregar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
   #Modificar
   botón_modificar = TK.Button(text="Modificar Dato", command=lambda:modificar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
   botón_modificar.config(fg="black", bg="red", font=("Arial", 8), cursor='hand2', activebackground=rojo_claro)
+  botón_modificar.bind("<Up>",mover_con_flechas)
+  botón_modificar.bind("<Down>",mover_con_flechas)
   botón_modificar.bind("<Return>",ejecutar_acción_presionando_Enter)
 
   #Eliminar
   botón_eliminar = TK.Button(text="Eliminar Dato", command=lambda:eliminar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
   botón_eliminar.config(fg="black", bg="blue", font=("Arial", 8), cursor='hand2', activebackground=azul_claro)
-  botón_eliminar.bind("<Return>",ejecutar_acción_presionando_Enter)
+  botón_eliminar.bind("<Up>",mover_con_flechas)
+  botón_eliminar.bind("<Down>",mover_con_flechas)
+  botón_eliminar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
   #Comparar
   botón_comparar = TK.Button(text="Comparar",command=lambda:comparar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
   botón_comparar.config(fg="black", bg=dorado, font=("Arial", 8), cursor='hand2', activebackground=dorado_claro)
-  botón_comparar.bind("<Return>",ejecutar_acción_presionando_Enter)
+  botón_comparar.bind("<Up>",mover_con_flechas)
+  botón_comparar.bind("<Down>",mover_con_flechas)
+  botón_comparar.bind("<Return>", ejecutar_acción_presionando_Enter)
   
+  #Exportar como PDF
   botón_exportar = TK.Button(text="Exportar",command=lambda:exportar_en_PDF(obtener_tabla_seleccionada()), width=10, height=1)
   botón_exportar.config(fg="black", bg=agua, font=("Arial", 8), cursor='hand2', activebackground=agua_claro)
+  botón_exportar.bind("<Up>",mover_con_flechas)
+  botón_exportar.bind("<Down>",mover_con_flechas)
+  botón_exportar.bind("<Return>", ejecutar_acción_presionando_Enter)
   
 
   # --- ETIQUETAS ---
@@ -530,6 +542,7 @@ def pantalla_principal():
 
   #--- LISTBOX ---
   barraDesplazadora()
+  Lista_de_datos.focus_set()
   
   actualizar_la_hora(mi_ventana)
   
@@ -800,22 +813,32 @@ def enter_comparar():
 #la ListBox para que se pueda ver muchos registros en la tabla
 def barraDesplazadora():
   global Lista_de_datos, Frame_Lista
+  # Definimos un frame con tamaño fijo y evitamos que se redimensione automáticamente
+  Frame_Lista = TK.Frame(mi_ventana, width=400, height=500)
+  Frame_Lista.pack(side=TK.RIGHT, padx=10, pady=10)
+  Frame_Lista.pack_propagate(False)
   
-  Frame_Lista = TK.Frame(mi_ventana, width= 450, height= 500)
-  Frame_Lista.pack(side=TK.RIGHT, fill=TK.BOTH)
+  barraVertical = TK.Scrollbar(Frame_Lista, orient="vertical")
+  barraVertical.pack(side=TK.RIGHT, fill=TK.Y)
   
-  barra = TK.Scrollbar(Frame_Lista, orient="vertical")
-  barra.pack(side=TK.RIGHT, fill=TK.Y)
+  #Acá creé una barra de desplazamiento horizontal para desplazar
+  #en la tabla donde dice materias cuando son largas
+  barraHorizontal = TK.Scrollbar(Frame_Lista, orient="horizontal")
+  barraHorizontal.pack(side=TK.BOTTOM, fill=TK.X)
   
-  Lista_de_datos = TK.Listbox(Frame_Lista, exportselection=0, width= 90, height= 30)
-  Lista_de_datos.config(fg="blue",bg=amarillo_claro, font=("Arial", 12))
-  Lista_de_datos.pack(side=TK.LEFT, fill=TK.BOTH, expand=True)
-  #Esta función desplaza la ListBox hacia la derecha
-  #y me permite ver los registros que no se ven en la pantalla
-  Lista_de_datos.config(yscrollcommand=barra.set)
-  barra.config(command=Lista_de_datos.yview)
+  # La ListBox se define con dimensiones menores para no ocupar toda la pantalla
+  Lista_de_datos = TK.Listbox(Frame_Lista, exportselection=0, width=90, height=30)
+  Lista_de_datos.config(fg="blue", bg=amarillo_claro, font=("Arial", 15))
+  Lista_de_datos.pack(side=TK.LEFT, fill=TK.BOTH, expand=False)
+  
+  Lista_de_datos.config(yscrollcommand=barraVertical.set)
+  Lista_de_datos.config(xscrollcommand=barraHorizontal.set)
+  barraVertical.config(command=Lista_de_datos.yview)
+  barraHorizontal.config(command=Lista_de_datos.xview)
   
   Lista_de_datos.bind("<<ListboxSelect>>", manejar_selección)
+  Lista_de_datos.bind("<Down>", mover_con_flechas)
+  Lista_de_datos.bind("<Up>", mover_con_flechas)
   
 #Esta función maneja la selección de la ListBox con todos los registros de la base de datos
 #y me permite seleccionar un registro para modificarlo o eliminarlo más facilemnte
@@ -856,26 +879,65 @@ def ejecutar_acción_presionando_Enter(event=None):
       case _ :
         messagebox.showerror("ERROR", "NO SE HA SELECCIONADO NINGUNA TABLA")
 
-#Esta función sirve para mover con flechas cuando es necesario en vez de depender de usar el mouse
+#Esta función sirve para mover con flechas tanto en la ListBox, entre los RadioButtons y entre los 5 botones funcionales.
 def mover_con_flechas(event=None):
+  global Lista_de_datos
   evento = event.keysym
-  match evento:
-    case "Up":
-      if Lista_de_datos.curselection():
-        índice_seleccionado = Lista_de_datos.curselection()[0]
-        if índice_seleccionado > 0:
-          Lista_de_datos.selection_clear(índice_seleccionado)
-          Lista_de_datos.selection_set(índice_seleccionado - 1)
-          Lista_de_datos.activate(índice_seleccionado - 1)
-          seleccionar_registro()
-    case "Down":
-      if Lista_de_datos.curselection():
-        índice_seleccionado = Lista_de_datos.curselection()[0]
-        if índice_seleccionado < Lista_de_datos.size() - 1:
-          Lista_de_datos.selection_clear(índice_seleccionado)
-          Lista_de_datos.selection_set(índice_seleccionado + 1)
-          Lista_de_datos.activate(índice_seleccionado + 1)
-          seleccionar_registro()
+  # Si el foco está en la ListBox, navegamos sus elementos.
+  if event.widget == Lista_de_datos:
+    match evento:
+      case "Up":
+        if Lista_de_datos.curselection():
+          índice_seleccionado = Lista_de_datos.curselection()[0]
+          if índice_seleccionado > 0:
+            Lista_de_datos.selection_clear(índice_seleccionado)
+            Lista_de_datos.selection_set(índice_seleccionado - 1)
+            Lista_de_datos.activate(índice_seleccionado - 1)
+            seleccionar_registro()
+            return "break"
+      case "Down":
+        if Lista_de_datos.curselection():
+          índice_seleccionado = Lista_de_datos.curselection()[0]
+          if índice_seleccionado < Lista_de_datos.size() - 1:
+            Lista_de_datos.selection_clear(índice_seleccionado)
+            Lista_de_datos.selection_set(índice_seleccionado + 1)
+            Lista_de_datos.activate(índice_seleccionado + 1)
+            seleccionar_registro()
+            return "break"
+  # Si el foco está en alguno de los RadioButtons, navegamos entre ellos.
+  elif event.widget in [
+      Botón_Tabla_de_Alumno, Botón_Tabla_de_Asistencia, Botón_Tabla_de_Carrera,
+      Botón_Tabla_de_Materia, Botón_Tabla_de_Profesor, Botón_Tabla_de_Notas
+    ]:
+    botones = [
+      Botón_Tabla_de_Alumno, Botón_Tabla_de_Asistencia, Botón_Tabla_de_Carrera,
+      Botón_Tabla_de_Materia, Botón_Tabla_de_Profesor, Botón_Tabla_de_Notas
+    ]
+    índice_actual = botones.index(event.widget)
+    match evento:
+      case "Up":
+        if índice_actual > 0:
+          botones[índice_actual - 1].focus_set()
+          botones[índice_actual - 1].select()
+          return "break"
+      case "Down":
+        if índice_actual < len(botones) - 1:
+          botones[índice_actual + 1].focus_set()
+          botones[índice_actual + 1].select()
+          return "break"
+  # Si el foco está en alguno de los 5 botones funcionales, navegamos entre ellos.
+  elif event.widget in [botón_agregar, botón_modificar, botón_eliminar, botón_comparar, botón_exportar]:
+    botones_funcionales = [botón_agregar, botón_modificar, botón_eliminar, botón_comparar, botón_exportar]
+    índice_actual = botones_funcionales.index(event.widget)
+    match evento:
+      case "Left":
+        if índice_actual > 0:
+          botones_funcionales[índice_actual - 1].focus_set()
+          return "break"
+      case "Right":
+        if índice_actual < len(botones_funcionales) - 1:
+          botones_funcionales[índice_actual + 1].focus_set()
+          return "break"
 
 # --- INICIO DEL SISTEMA ---
 interfaz = pantalla_principal()

@@ -370,42 +370,59 @@ def pantalla_principal():
   mi_ventana.configure(bg=rosado_claro)
   mi_ventana.iconbitmap(ícono)
   mi_ventana.attributes("-alpha", 1)
+  mi_ventana.bind_all("<Key>", mover_con_flechas)
+  mi_ventana.bind_all("<Return>", ejecutar_acción_presionando_Enter)
   
   # --- BOTONES NECESARIOS ---
   global botón_agregar, botón_eliminar, botón_modificar, botón_comparar, botón_exportar
+  
+  # for botón in [botón_agregar, botón_modificar, botón_eliminar, botón_comparar, botón_exportar]:
+    
+  
   #Agregar
-  botón_agregar = TK.Button(text="Agregar Dato", command=lambda:insertar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
+  botón_agregar = TK.Button(mi_ventana, text="Agregar Dato", command=lambda:insertar_datos(obtener_tabla_seleccionada()), width=10, height=1, takefocus=True)
   botón_agregar.config(fg="black", bg=verde, font=("Arial", 8), cursor='hand2', activebackground=verde_claro)
-  botón_agregar.bind("<Up>",mover_con_flechas)
-  botón_agregar.bind("<Down>",mover_con_flechas)
+  botón_agregar.focus_set()
+  botón_agregar.bind("<Up>", mover_con_flechas)
+  botón_agregar.bind("<Down>", mover_con_flechas)
+  botón_agregar.bind("<Left>", mover_con_flechas)
+  botón_agregar.bind("<Right>", mover_con_flechas)
   botón_agregar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
   #Modificar
-  botón_modificar = TK.Button(text="Modificar Dato", command=lambda:modificar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
+  botón_modificar = TK.Button(mi_ventana, text="Modificar Dato", command=lambda:modificar_datos(obtener_tabla_seleccionada()), width=10, height=1, takefocus=True)
   botón_modificar.config(fg="black", bg="red", font=("Arial", 8), cursor='hand2', activebackground=rojo_claro)
-  botón_modificar.bind("<Up>",mover_con_flechas)
-  botón_modificar.bind("<Down>",mover_con_flechas)
-  botón_modificar.bind("<Return>",ejecutar_acción_presionando_Enter)
+  botón_modificar.bind("<Up>", mover_con_flechas)
+  botón_modificar.bind("<Down>", mover_con_flechas)
+  botón_modificar.bind("<Left>", mover_con_flechas)
+  botón_modificar.bind("<Right>", mover_con_flechas)
+  botón_modificar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
   #Eliminar
-  botón_eliminar = TK.Button(text="Eliminar Dato", command=lambda:eliminar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
+  botón_eliminar = TK.Button(mi_ventana, text="Eliminar Dato", command=lambda:eliminar_datos(obtener_tabla_seleccionada()), width=10, height=1, takefocus=True)
   botón_eliminar.config(fg="black", bg="blue", font=("Arial", 8), cursor='hand2', activebackground=azul_claro)
-  botón_eliminar.bind("<Up>",mover_con_flechas)
-  botón_eliminar.bind("<Down>",mover_con_flechas)
+  botón_eliminar.bind("<Up>", mover_con_flechas)
+  botón_eliminar.bind("<Down>", mover_con_flechas)
+  botón_eliminar.bind("<Left>", mover_con_flechas)
+  botón_eliminar.bind("<Right>", mover_con_flechas)
   botón_eliminar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
   #Comparar
-  botón_comparar = TK.Button(text="Comparar",command=lambda:comparar_datos(obtener_tabla_seleccionada()), width= 10,height= 1)
+  botón_comparar = TK.Button(mi_ventana, text="Comparar", command=lambda:comparar_datos(obtener_tabla_seleccionada()), width=10, height=1, takefocus=True)
   botón_comparar.config(fg="black", bg=dorado, font=("Arial", 8), cursor='hand2', activebackground=dorado_claro)
-  botón_comparar.bind("<Up>",mover_con_flechas)
-  botón_comparar.bind("<Down>",mover_con_flechas)
+  botón_comparar.bind("<Up>", mover_con_flechas)
+  botón_comparar.bind("<Down>", mover_con_flechas)
+  botón_comparar.bind("<Left>", mover_con_flechas)
+  botón_comparar.bind("<Right>", mover_con_flechas)
   botón_comparar.bind("<Return>", ejecutar_acción_presionando_Enter)
   
   #Exportar como PDF
-  botón_exportar = TK.Button(text="Exportar",command=lambda:exportar_en_PDF(obtener_tabla_seleccionada()), width=10, height=1)
+  botón_exportar = TK.Button(mi_ventana, text="Exportar", command=lambda:exportar_en_PDF(obtener_tabla_seleccionada()), width=10, height=1, takefocus=True)
   botón_exportar.config(fg="black", bg=agua, font=("Arial", 8), cursor='hand2', activebackground=agua_claro)
-  botón_exportar.bind("<Up>",mover_con_flechas)
-  botón_exportar.bind("<Down>",mover_con_flechas)
+  botón_exportar.bind("<Up>", mover_con_flechas)
+  botón_exportar.bind("<Down>", mover_con_flechas)
+  botón_exportar.bind("<Left>", mover_con_flechas)
+  botón_exportar.bind("<Right>", mover_con_flechas)
   botón_exportar.bind("<Return>", ejecutar_acción_presionando_Enter)
   
 
@@ -518,20 +535,27 @@ def pantalla_principal():
   Botón_Tabla_de_Alumno = TK.Radiobutton(mi_ventana, text="Alumno", variable=opción, value= 1, command=lambda:acción_doble())
   Botón_Tabla_de_Alumno.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
+
+
   Botón_Tabla_de_Asistencia = TK.Radiobutton(mi_ventana, text="Asistencia", variable=opción, value= 2, command=lambda: acción_doble())
   Botón_Tabla_de_Asistencia.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
+
 
   Botón_Tabla_de_Carrera = TK.Radiobutton(mi_ventana, text="Carrera", variable=opción, value= 3, command=lambda:acción_doble())
   Botón_Tabla_de_Carrera.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
+
   Botón_Tabla_de_Materia = TK.Radiobutton(mi_ventana, text="Materia", variable=opción, value= 4, command=lambda:acción_doble())
   Botón_Tabla_de_Materia.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
+
 
   Botón_Tabla_de_Profesor = TK.Radiobutton(mi_ventana, text="Profesor", variable=opción, value= 5, command=lambda:acción_doble())
   Botón_Tabla_de_Profesor.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
+
   Botón_Tabla_de_Notas = TK.Radiobutton(mi_ventana, text="Nota", variable=opción, value= 6, command=lambda:acción_doble())
   Botón_Tabla_de_Notas.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
+
 
   Botón_Tabla_de_Alumno.place(x= 40, y = 350)
   Botón_Tabla_de_Asistencia.place(x = 150, y = 350)
@@ -539,7 +563,8 @@ def pantalla_principal():
   Botón_Tabla_de_Materia.place(x = 370, y = 350)
   Botón_Tabla_de_Profesor.place(x = 480, y = 350)
   Botón_Tabla_de_Notas.place(x = 590, y = 350)
-
+  Botón_Tabla_de_Alumno.focus_set()
+  
   #--- LISTBOX ---
   barraDesplazadora()
   Lista_de_datos.focus_set()
@@ -787,24 +812,6 @@ def exportar_en_PDF(nombre_de_la_tabla):
 
 # --- EVENTOS PARA BOTONES ---
 
-modo = None
-
-def enter_agregar():
-  global modo
-  modo = "agregar"
-  insertar_datos(obtener_tabla_seleccionada())
-
-def enter_modificar():
-  global modo
-  modo = "modificar"
-  modificar_datos(obtener_tabla_seleccionada())
-  
-def enter_eliminar():
-  global modo
-  modo = "eliminar"
-  eliminar_datos(obtener_tabla_seleccionada())
-  
-def enter_comparar():
   global modo
   modo = "comparar"
   comparar_datos(obtener_tabla_seleccionada())
@@ -858,26 +865,19 @@ def manejar_selección(event=None):
 
 #Este evento me sirve para agregar, modificar y eliminar un registro de la tabla
 #sin la necesidad de tener que presionar el botón cada vez que quiero agregar, modificar o eliminar un registro haciendo click en la ListBox
-def ejecutar_acción_presionando_Enter(event=None):
-  global modo
-  table = obtener_tabla_seleccionada()
-  NopresionarEnter = event.keysym != 'Return'
-  if NopresionarEnter or modo is None:
-    return
-  if modo is None:
-    return
-  else:
-    match modo:
-      case "agregar":
-        insertar_datos(table)
-      case "modificar":
-        modificar_datos(table)
-      case "eliminar":
-        eliminar_datos(table)
-      case "comparar":
-        comparar_datos(table)
-      case _ :
-        messagebox.showerror("ERROR", "NO SE HA SELECCIONADO NINGUNA TABLA")
+def ejecutar_acción_presionando_Enter(event):
+  if event.widget == botón_agregar:
+    insertar_datos(obtener_tabla_seleccionada())
+  elif event.widget == botón_modificar:
+    modificar_datos(obtener_tabla_seleccionada())
+  elif event.widget == botón_eliminar:
+    eliminar_datos(obtener_tabla_seleccionada())
+  elif event.widget == botón_comparar:
+    comparar_datos(obtener_tabla_seleccionada())
+  elif event.widget == botón_exportar:
+    exportar_en_PDF(obtener_tabla_seleccionada())
+  return "break"
+  
 
 #Esta función sirve para mover con flechas tanto en la ListBox, entre los RadioButtons y entre los 5 botones funcionales.
 def mover_con_flechas(event=None):

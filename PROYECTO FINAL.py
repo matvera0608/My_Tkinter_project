@@ -382,7 +382,7 @@ def pantalla_principal():
   #Agregar
   botón_agregar = TK.Button(mi_ventana, text="Agregar Dato", command=lambda:insertar_datos(obtener_tabla_seleccionada()), width=10, height=1, takefocus=True)
   botón_agregar.config(fg="black", bg=verde, font=("Arial", 8), cursor='hand2', activebackground=verde_claro)
-  botón_agregar.focus_set()
+  
   botón_agregar.bind("<Up>", mover_con_flechas)
   botón_agregar.bind("<Down>", mover_con_flechas)
   botón_agregar.bind("<Left>", mover_con_flechas)
@@ -534,7 +534,6 @@ def pantalla_principal():
 
   Botón_Tabla_de_Alumno = TK.Radiobutton(mi_ventana, text="Alumno", variable=opción, value= 1, command=lambda:acción_doble())
   Botón_Tabla_de_Alumno.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
-
 
 
   Botón_Tabla_de_Asistencia = TK.Radiobutton(mi_ventana, text="Asistencia", variable=opción, value= 2, command=lambda: acción_doble())
@@ -882,10 +881,12 @@ def ejecutar_acción_presionando_Enter(event):
 #Esta función sirve para mover con flechas tanto en la ListBox, entre los RadioButtons y entre los 5 botones funcionales.
 def mover_con_flechas(event=None):
   global Lista_de_datos
-  evento = event.keysym
+  widget = event.widget
+  tecla = event.keysym
+  botones_funcionales = [botón_agregar, botón_modificar, botón_eliminar, botón_comparar, botón_exportar]
   # Si el foco está en la ListBox, navegamos sus elementos.
   if event.widget == Lista_de_datos:
-    match evento:
+    match tecla:
       case "Up":
         if Lista_de_datos.curselection():
           índice_seleccionado = Lista_de_datos.curselection()[0]
@@ -905,7 +906,7 @@ def mover_con_flechas(event=None):
             seleccionar_registro()
             return "break"
   # Si el foco está en alguno de los RadioButtons, navegamos entre ellos.
-  elif event.widget in [
+  elif widget in [
       Botón_Tabla_de_Alumno, Botón_Tabla_de_Asistencia, Botón_Tabla_de_Carrera,
       Botón_Tabla_de_Materia, Botón_Tabla_de_Profesor, Botón_Tabla_de_Notas
     ]:
@@ -914,30 +915,30 @@ def mover_con_flechas(event=None):
       Botón_Tabla_de_Materia, Botón_Tabla_de_Profesor, Botón_Tabla_de_Notas
     ]
     índice_actual = botones.index(event.widget)
-    match evento:
-      case "Up":
-        if índice_actual > 0:
-          botones[índice_actual - 1].focus_set()
-          botones[índice_actual - 1].select()
-          return "break"
-      case "Down":
-        if índice_actual < len(botones) - 1:
-          botones[índice_actual + 1].focus_set()
-          botones[índice_actual + 1].select()
-          return "break"
+    
+    if tecla == "Up" and índice_actual > 0:
+      botones[índice_actual - 1].focus_set()
+      botones[índice_actual - 1].select()
+      return "break"
+    elif tecla == "Down" and índice_actual < len(botones) - 1:
+      botones[índice_actual + 1].focus_set()
+      botones[índice_actual + 1].select()
+      return "break"
+    
   # Si el foco está en alguno de los 5 botones funcionales, navegamos entre ellos.
-  elif event.widget in [botón_agregar, botón_modificar, botón_eliminar, botón_comparar, botón_exportar]:
-    botones_funcionales = [botón_agregar, botón_modificar, botón_eliminar, botón_comparar, botón_exportar]
+  
+  elif widget in botones_funcionales:
     índice_actual = botones_funcionales.index(event.widget)
-    match evento:
-      case "Left":
-        if índice_actual > 0:
-          botones_funcionales[índice_actual - 1].focus_set()
-          return "break"
-      case "Right":
-        if índice_actual < len(botones_funcionales) - 1:
-          botones_funcionales[índice_actual + 1].focus_set()
-          return "break"
+    if tecla == "Left" and índice_actual > 0:
+      botones_funcionales[índice_actual - 1].focus_set()
+      return "break"
+    elif tecla == "Right" and  índice_actual < len(botones_funcionales) - 1:
+      botones_funcionales[índice_actual + 1].focus_set()
+      return "break"
+    elif widget == Lista_de_datos and tecla == "Right":
+      botón_agregar.focus_set()
+      return "break"
+    print("widget actual:", widget)
 
 # --- INICIO DEL SISTEMA ---
 interfaz = pantalla_principal()

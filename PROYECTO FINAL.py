@@ -858,23 +858,20 @@ def ejecutar_acción_presionando_Enter(event):
   
 #Esta función sirve para mover con flechas tanto en la ListBox, entre los RadioButtons y entre los 5 botones funcionales.
 def mover_con_flechas(event=None):
-  global Lista_de_datos
+  global Lista_de_datos, caja_activa
+  
+  #En lugar de sólo crear condiciones con expresiones lógicas, lo que hago es guardar en una variable
+  #para ser más entendible y que mi programa esté más castellanizado
+  
   widget = event.widget
   tecla = event.keysym
-  tecla_hacia_arriba = tecla == "Up"
-  tecla_hacia_abajo = tecla == "Down"
-  tecla_hacia_derecha = tecla == "Right"
-  tecla_hacia_izquierda = tecla == "Left"
-  
-  en_la_lista = widget == Lista_de_datos
-  
   
   botones_funcionales = [ botón_agregar,
-                                         botón_modificar, 
-                                         botón_eliminar, 
-                                         botón_comparar, 
-                                         botón_exportar
-                                       ]
+                                        botón_modificar, 
+                                        botón_eliminar, 
+                                        botón_comparar, 
+                                        botón_exportar
+                                      ]
   
   botones_excluyentes = [  Botón_Tabla_de_Alumno, 
                                           Botón_Tabla_de_Asistencia, 
@@ -892,6 +889,30 @@ def mover_con_flechas(event=None):
                              txBox_NotaCalificadaUNO, txBox_NotaCalificadaDOS, txBox_IDNota
                             ]
   
+  caja_activa = [
+    
+                        ]
+  
+  
+  desde_lista_izquierda_hacia_caja = widget == Lista_de_datos and tecla == "Left"
+  
+  tabla_de_alumno = opción.get() == 1
+  tabla_de_asistencia = opción.get() == 2
+  tabla_de_carrera = opción.get() == 3
+  tabla_de_materia = opción.get() == 4
+  tabla_de_profesor = opción.get() == 5
+  tabla_de_nota = opción.get() == 6
+  
+  tecla_hacia_arriba = tecla == "Up"
+  tecla_hacia_abajo = tecla == "Down"
+  tecla_hacia_derecha = tecla == "Right"
+  tecla_hacia_izquierda = tecla == "Left"
+  
+  en_la_lista = widget == Lista_de_datos
+  en_los_botonesExcluyentes = widget in botones_excluyentes
+  en_las_cajasDeTexto = widget in cajasDeTexto
+  en_los_botonesCRUD = widget in botones_funcionales
+  
   # Si el foco está en la ListBox, navegamos sus elementos. Pero esta sección es sólo para mover los registros
   if en_la_lista:
     if tecla_hacia_arriba and Lista_de_datos.curselection():
@@ -899,7 +920,7 @@ def mover_con_flechas(event=None):
       if índice_seleccionado > 0:
         Lista_de_datos.selection_clear(índice_seleccionado)
         Lista_de_datos.selection_set(índice_seleccionado - 1)
-        cajasDeTexto[0].focus_set()
+        Lista_de_datos.activate(índice_seleccionado - 1)
         seleccionar_registro()
         return "break"
     elif tecla_hacia_abajo and Lista_de_datos.curselection():
@@ -907,37 +928,33 @@ def mover_con_flechas(event=None):
       if índice_seleccionado < Lista_de_datos.size() - 1:
         Lista_de_datos.selection_clear(índice_seleccionado)
         Lista_de_datos.selection_set(índice_seleccionado + 1)
+        Lista_de_datos.activate(índice_seleccionado + 1)
         seleccionar_registro()
         return "break"
     
-    #En lugar de sólo crear condiciones con descripciones complicadas, lo que hago es guardar en una variable
-    #para ser más entendible y que mi programa esté más castellanizado
-    desde_lista_izquierda_hacia_caja = widget == Lista_de_datos and tecla == "Left"
-    
-    tabla_de_alumno = opción.get() == 1
-    tabla_de_asistencia = opción.get() == 2
-    tabla_de_carrera = opción.get() == 3
-    tabla_de_materia = opción.get() == 4
-    tabla_de_profesor = opción.get() == 5
-    tabla_de_nota = opción.get() == 6
-    
     if desde_lista_izquierda_hacia_caja:
       if tabla_de_alumno:
-        txBox_NombreAlumno.focus_set()
+          txBox_NombreAlumno.focus_set()
+          caja_activa = [txBox_NombreAlumno, txBox_FechaNacimiento, txBox_IDAlumno]
       elif tabla_de_asistencia:
-        txBox_EstadoDeAsistencia.focus_set()
+          txBox_EstadoDeAsistencia.focus_set()
+          caja_activa = [txBox_EstadoDeAsistencia, txBox_IDAsistencia]
       elif tabla_de_carrera:
-        txBox_NombreCarrera.focus_set()
+          txBox_NombreCarrera.focus_set()
+          caja_activa = [txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera]
       elif tabla_de_materia:
-        txBox_NombreMateria.focus_set()
+          txBox_NombreMateria.focus_set()
+          caja_activa = [txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria]
       elif tabla_de_profesor:
-        txBox_NombreProfesor.focus_set()
+          txBox_NombreProfesor.focus_set()
+          caja_activa = [txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor]
       elif tabla_de_nota:
-        txBox_NotaCalificadaUNO.focus_set()
+          txBox_NotaCalificadaUNO.focus_set()
+          caja_activa = [txBox_NotaCalificadaUNO, txBox_NotaCalificadaDOS, txBox_IDNota]
       return "break"
     
   # Si el foco está en alguno de los RadioButtons, navegamos entre ellos.
-  elif widget in botones_excluyentes:
+  elif en_los_botonesExcluyentes:
     índice_actual = botones_excluyentes.index(widget)
     if tecla_hacia_izquierda:
       nuevo_índice =  (índice_actual - 1) % len(botones_excluyentes)
@@ -949,7 +966,7 @@ def mover_con_flechas(event=None):
       return "break"
     
   # Si el foco está en alguno de los 5 botones funcionales, navegamos entre ellos.
-  elif widget in botones_funcionales:
+  elif en_los_botonesCRUD:
     índice_actual = botones_funcionales.index(widget)
     if tecla_hacia_arriba:
       botones_funcionales[índice_actual - 1].focus_set()
@@ -958,9 +975,18 @@ def mover_con_flechas(event=None):
       botones_funcionales[índice_actual + 1].focus_set()
       return "break"
     
-  # Estando en el foco de cajas de texto
-  elif widget in cajasDeTexto:
-    índice_actual = cajasDeTexto.index(widget)
+  # Estando en el foco de cajas de texto, lo que haré es activar el evento
+  # que suba sin depender sólamente del mouse
+  elif en_las_cajasDeTexto:
+    índice_actual = caja_activa.index(widget)
+    if tecla_hacia_arriba:
+      nuevo_índice =  (índice_actual - 1) % len(caja_activa)
+      caja_activa[nuevo_índice].focus_set()
+      return "break"
+    elif tecla_hacia_abajo:
+      nuevo_índice =  (índice_actual + 1) % len(caja_activa)
+      caja_activa[nuevo_índice].focus_set()
+      return "break"
 
 
 # --- INICIO DEL SISTEMA ---

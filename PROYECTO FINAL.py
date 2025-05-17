@@ -9,7 +9,7 @@ import time
 from reportlab.lib.pagesizes import letter
 
 # --- COLORES EN HEXADECIMALES ---
-rosado_claro = "#FEE"
+rosado_claro = "#FFECEC"
 rojo_claro= "#FFAEAE"
 verde = "#00FF00"
 verde_claro = "#AEFFAE"
@@ -46,19 +46,42 @@ def desconectar_base_de_datos(conexión):
 
 #--- FUNCIONES DEL ABM (ALTA, BAJA Y MODIFICACIÓN) ---
 def consultar_tabla(nombre_de_la_tabla):
-  conexión = conectar_base_de_datos()
-  if conexión:
-    cursor = conexión.cursor()
-    cursor.execute(f"SELECT * FROM {nombre_de_la_tabla};")
-    resultado = cursor.fetchall()
-    Lista_de_datos.delete(0, TK.END)
-
-    for fila in resultado:
-      filas_formateadas = " | ".join(map(str, fila))
-      Lista_de_datos.insert(TK.END, filas_formateadas)
+  try:
+    conexión = conectar_base_de_datos()
+    if conexión:
+        cursor = conexión.cursor()
+        cursor.execute(f"SELECT * FROM {nombre_de_la_tabla};")
+        resultado = cursor.fetchall()
+        Lista_de_datos.delete(0, TK.END)
+    
+        #Creé una variable para alinear bien los registros
+        ancho_de_tablas = [0] * len(resultado[0])
+        
+        
+        #Se modificó el for para que cada valor se convierta en string
+        #así evitar cualquier error o excepción
+        for fila in resultado:
+          for i, valor in enumerate(fila):
+            valorTipoCadena = str(valor)
+            ancho_de_tablas[i] = max(ancho_de_tablas[i], len(valorTipoCadena))
+        
+        separaciónAdicional = 2
+        ancho_de_tablas = [ancho + separaciónAdicional for ancho in ancho_de_tablas]
+    
+        formato = "|".join(f"{{:<{ancho}}}" for ancho in ancho_de_tablas)
+        
+        #Lo mismo se formateó las filas para que muestre la listBox
+        #con todos los registros emparejados para facilitar al usuario
+        #el orden de cada cosa
+        for fila in resultado:
+          filaTipoCadena = [str(valor) for valor in fila]
+          filas_formateadas = (formato.format(*filaTipoCadena))
+          Lista_de_datos.insert(TK.END, filas_formateadas)
     
     desconectar_base_de_datos(conexión)
-
+  except Exception as Exc:
+    messagebox.showerror("ERROR", f"Algo no está correcto: {Exc}")
+  
 def seleccionar_y_consultar():
   botón_seleccionado = opción.get()
   tabla = {

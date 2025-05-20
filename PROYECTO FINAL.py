@@ -13,7 +13,7 @@ rosado_claro = "#FFECEC"
 rojo_claro= "#FFAEAE"
 verde = "#00FF00"
 verde_claro = "#AEFFAE"
-azul_claro = "#8932FF"
+azul_claro = "#6060FF"
 amarillo_claro = "#FBFFBF"
 dorado = "#FFDF00"
 dorado_claro = "#FFF1A9"
@@ -59,7 +59,8 @@ def consultar_tabla(nombre_de_la_tabla):
         
         
         #Se modificó el for para que cada valor se convierta en string
-        #así evitar cualquier error o excepción
+        #así evitar cualquier error o excepción y también este for sirve
+        #para calcular el ancho de la tabla
         for fila in resultado:
           for i, valor in enumerate(fila):
             valorTipoCadena = str(valor)
@@ -67,7 +68,6 @@ def consultar_tabla(nombre_de_la_tabla):
         
         separaciónAdicional = 2
         ancho_de_tablas = [ancho + separaciónAdicional for ancho in ancho_de_tablas]
-    
         formato = "|".join(f"{{:<{ancho}}}" for ancho in ancho_de_tablas)
         
         #Lo mismo se formateó las filas para que muestre la listBox
@@ -75,6 +75,12 @@ def consultar_tabla(nombre_de_la_tabla):
         #el orden de cada cosa
         for fila in resultado:
           filaTipoCadena = [str(valor) for valor in fila]
+          match nombre_de_la_tabla:
+            case "alumno":
+              filaTipoCadena[-1] = f"{filaTipoCadena[-1]} años"
+            case "materia":
+              filaTipoCadena[2] = f"{filaTipoCadena[2]} horas"
+              
           filas_formateadas = (formato.format(*filaTipoCadena))
           Lista_de_datos.insert(TK.END, filas_formateadas)
     
@@ -169,12 +175,12 @@ def validar_datos(nombre_de_la_tabla, datos):
   patrón_nombre = re.compile(r'^[A-Za-záéíóúÁÉÍÓÚñÑüÜ\s]+$') #Esta variable regular contiene la expresión de solo para letras
   patrón_númerosDecimales = re.compile(r'^\d+([.,]\d+)?$')
   try:
-    tabla_a_validar = {"alumno" : ["Nombre", "FechaDeNacimiento", "ID_Alumno"],
-                                  "materia": ["Nombre", "Horario", "ID_Materia"],
-                                  "profesor": ["Nombre", "HorasTrabajadas", "ID_Profesor"],
+    tabla_a_validar = {"alumno":    ["Nombre", "FechaDeNacimiento", "ID_Alumno"],
+                                  "materia":    ["Nombre", "Horario", "ID_Materia"],
+                                  "profesor":    ["Nombre", "HorasTrabajadas", "ID_Profesor"],
                                   "asistencia": ["ID_Asistencia"],
-                                  "nota": ["Nota_UNO", "Nota_DOS", "ID_Nota"],
-                                  "carrera" : ["Nombre", "Duración", "ID_Carrera"]
+                                  "nota":          ["Nota_UNO", "Nota_DOS", "ID_Nota"],
+                                  "carrera":     ["Nombre", "Duración", "ID_Carrera"]
                                   }
     
     if nombre_de_la_tabla in tabla_a_validar:
@@ -813,9 +819,6 @@ def exportar_en_PDF(nombre_de_la_tabla):
 
 # --- EVENTOS PARA BOTONES ---
 
-  global modo
-  modo = "comparar"
-  comparar_datos(obtener_tabla_seleccionada())
 
 #Esta función me permite desplazar con barra verticalmente
 #la ListBox para que se pueda ver muchos registros en la tabla
@@ -912,10 +915,6 @@ def mover_con_flechas(event=None):
                              txBox_NotaCalificadaUNO, txBox_NotaCalificadaDOS, txBox_IDNota
                             ]
   
-  caja_activa = [
-    
-                        ]
-  
   
   desde_lista_izquierda_hacia_caja = widget == Lista_de_datos and tecla == "Left"
   
@@ -954,7 +953,8 @@ def mover_con_flechas(event=None):
         Lista_de_datos.activate(índice_seleccionado + 1)
         seleccionar_registro()
         return "break"
-    
+
+    #Acá lo que hace es mover el foco desde la ListBox hacia la caja de texto correspondiente
     if desde_lista_izquierda_hacia_caja:
       if tabla_de_alumno:
           txBox_NombreAlumno.focus_set()
@@ -1001,15 +1001,25 @@ def mover_con_flechas(event=None):
   # Estando en el foco de cajas de texto, lo que haré es activar el evento
   # que suba sin depender sólamente del mouse
   elif en_las_cajasDeTexto:
-    índice_actual = caja_activa.index(widget)
-    if tecla_hacia_arriba:
-      nuevo_índice =  (índice_actual - 1) % len(caja_activa)
-      caja_activa[nuevo_índice].focus_set()
+    if widget not in caja_activa:
+      print("Widget no está en caja activa")
       return "break"
-    elif tecla_hacia_abajo:
-      nuevo_índice =  (índice_actual + 1) % len(caja_activa)
-      caja_activa[nuevo_índice].focus_set()
+    if not caja_activa:
+      print("No hay cajas activas")
       return "break"
+    
+    if widget in caja_activa:
+      índice_actual = caja_activa.index(widget)
+    
+      if tecla_hacia_arriba:
+        nuevo_índice =  (índice_actual - 1) % len(caja_activa)
+        caja_activa[nuevo_índice].focus_set()
+        return "break"
+    
+      elif tecla_hacia_abajo:
+        nuevo_índice =  (índice_actual + 1) % len(caja_activa)
+        caja_activa[nuevo_índice].focus_set()
+        return "break"
 
 
 # --- INICIO DEL SISTEMA ---

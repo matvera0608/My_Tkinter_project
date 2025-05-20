@@ -77,7 +77,7 @@ def consultar_tabla(nombre_de_la_tabla):
           filaTipoCadena = [str(valor) for valor in fila]
           match nombre_de_la_tabla:
             case "alumno":
-              filaTipoCadena[-1] = f"{filaTipoCadena[-1]} años"
+              filaTipoCadena[3] = f"{filaTipoCadena[3]} años"
             case "materia":
               filaTipoCadena[2] = f"{filaTipoCadena[2]} horas"
               
@@ -274,12 +274,12 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
   global cajasDeTexto, datos
   
   campos_de_la_base_de_datos = {
-                                                        'alumno':  [ "FechaDeNacimiento", "Nombre", "ID_Alumno"],
-                                                        'asistencia': ["Estado", "ID_Asistencia"],
-                                                        'carrera':  ["Nombre", "Duración", "ID_Carrera"],
-                                                        'materia': ["Nombre", "Horario", "ID_Materia"],
-                                                        'profesor': ["Nombre", "HorasTrabajadas", "ID_Profesor"],
-                                                        'nota':       ["Nota_UNO", "Nota_DOS", "ID_Nota"]
+                                                        'alumno':    [ "FechaDeNacimiento", "Nombre", "ID_Alumno"],
+                                                        'asistencia':["Estado", "ID_Asistencia"],
+                                                        'carrera':    ["Nombre", "Duración", "ID_Carrera"],
+                                                        'materia':   ["Nombre", "Horario", "ID_Materia"],
+                                                        'profesor':   ["Nombre", "HorasTrabajadas", "ID_Profesor"],
+                                                        'nota':         ["Nota_UNO", "Nota_DOS", "ID_Nota"]
                                                       }
   
   datos = {}

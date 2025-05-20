@@ -819,7 +819,6 @@ def exportar_en_PDF(nombre_de_la_tabla):
 
 # --- EVENTOS PARA BOTONES ---
 
-
 #Esta función me permite desplazar con barra verticalmente
 #la ListBox para que se pueda ver muchos registros en la tabla
 def barraDesplazadora():
@@ -907,7 +906,7 @@ def mover_con_flechas(event=None):
                                           Botón_Tabla_de_Notas
                                         ]
   
-  cajasDeTexto = [ txBox_NombreAlumno, txBox_FechaNacimiento, txBox_IDAlumno, 
+  cajasDeTexto = [ txBox_FechaNacimiento, txBox_NombreAlumno, txBox_IDAlumno, 
                              txBox_EstadoDeAsistencia, txBox_IDAsistencia, 
                              txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera, 
                              txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria, 
@@ -915,8 +914,10 @@ def mover_con_flechas(event=None):
                              txBox_NotaCalificadaUNO, txBox_NotaCalificadaDOS, txBox_IDNota
                             ]
   
+  caja_activa = []
   
   desde_lista_izquierda_hacia_caja = widget == Lista_de_datos and tecla == "Left"
+  desde_lista_derecha_hacia_caja = widget == Lista_de_datos and tecla == "Right"
   
   tabla_de_alumno = opción.get() == 1
   tabla_de_asistencia = opción.get() == 2
@@ -955,10 +956,10 @@ def mover_con_flechas(event=None):
         return "break"
 
     #Acá lo que hace es mover el foco desde la ListBox hacia la caja de texto correspondiente
-    if desde_lista_izquierda_hacia_caja:
+    if desde_lista_izquierda_hacia_caja or desde_lista_derecha_hacia_caja:
       if tabla_de_alumno:
           txBox_NombreAlumno.focus_set()
-          caja_activa = [txBox_NombreAlumno, txBox_FechaNacimiento, txBox_IDAlumno]
+          caja_activa = [txBox_FechaNacimiento, txBox_NombreAlumno, txBox_IDAlumno]
       elif tabla_de_asistencia:
           txBox_EstadoDeAsistencia.focus_set()
           caja_activa = [txBox_EstadoDeAsistencia, txBox_IDAsistencia]
@@ -1001,25 +1002,38 @@ def mover_con_flechas(event=None):
   # Estando en el foco de cajas de texto, lo que haré es activar el evento
   # que suba sin depender sólamente del mouse
   elif en_las_cajasDeTexto:
+    if not caja_activa:
+      if en_las_cajasDeTexto:
+        if tabla_de_alumno:
+          caja_activa = [txBox_FechaNacimiento, txBox_NombreAlumno, txBox_IDAlumno]
+        elif tabla_de_asistencia:
+          caja_activa = [txBox_EstadoDeAsistencia, txBox_IDAsistencia]
+        elif tabla_de_carrera:
+          caja_activa = [txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera]
+        elif tabla_de_materia:
+          caja_activa = [txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria]
+        elif tabla_de_profesor:
+          caja_activa = [txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor]
+        elif tabla_de_nota:
+          caja_activa = [txBox_NotaCalificadaUNO, txBox_NotaCalificadaDOS, txBox_IDNota]
+      else:
+        print("No hay cajas activas")
+        
     if widget not in caja_activa:
       print("Widget no está en caja activa")
       return "break"
-    if not caja_activa:
-      print("No hay cajas activas")
+    
+    índice_actual = caja_activa.index(widget)
+
+    if tecla_hacia_arriba:
+      nuevo_índice =  (índice_actual - 1) % len(caja_activa)
+      caja_activa[nuevo_índice].focus_set()
       return "break"
-    
-    if widget in caja_activa:
-      índice_actual = caja_activa.index(widget)
-    
-      if tecla_hacia_arriba:
-        nuevo_índice =  (índice_actual - 1) % len(caja_activa)
-        caja_activa[nuevo_índice].focus_set()
-        return "break"
-    
-      elif tecla_hacia_abajo:
-        nuevo_índice =  (índice_actual + 1) % len(caja_activa)
-        caja_activa[nuevo_índice].focus_set()
-        return "break"
+
+    elif tecla_hacia_abajo:
+      nuevo_índice =  (índice_actual + 1) % len(caja_activa)
+      caja_activa[nuevo_índice].focus_set()
+      return "break"
 
 
 # --- INICIO DEL SISTEMA ---

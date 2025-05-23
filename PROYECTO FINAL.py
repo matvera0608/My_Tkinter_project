@@ -1,9 +1,9 @@
 import os
 from mysql.connector import Error
 from datetime import datetime
-from tkinter import messagebox,  filedialog
+from tkinter import messagebox,  filedialog, font
 from reportlab.pdfgen import canvas
-import tkinter as TK, re
+import tkinter as tk, re
 import mysql.connector as MySql
 import time
 from reportlab.lib.pagesizes import letter
@@ -12,6 +12,7 @@ from reportlab.lib.pagesizes import letter
 rosado_claro = "#FFECEC"
 rojo_claro= "#FFAEAE"
 verde = "#00FF00"
+rojo = "#FF0000"
 verde_claro = "#AEFFAE"
 azul_claro = "#6060FF"
 amarillo_claro = "#FBFFBF"
@@ -22,6 +23,8 @@ agua_claro = "#A9FFFF"
 
 # --- CONEXIÓN CON LA BASE DE DATOS MySQL WORKBENCH
 # --- Y UN ÍCONO PARA LA IMPLEMENTACIÓN ---
+#la variable dirección_del_ícono contiene la dirección de forma dinámica y variable
+#para que no se vea la dirección de la computadora
 dirección_del_ícono = os.path.dirname(__file__)
 ícono = os.path.join(dirección_del_ícono,"escuela.ico")
 
@@ -52,7 +55,7 @@ def consultar_tabla(nombre_de_la_tabla):
         cursor = conexión.cursor()
         cursor.execute(f"SELECT * FROM {nombre_de_la_tabla};")
         resultado = cursor.fetchall()
-        Lista_de_datos.delete(0, TK.END)
+        Lista_de_datos.delete(0, tk.END)
     
         #Creé una variable para alinear bien los registros
         ancho_de_tablas = [0] * len(resultado[0])
@@ -66,7 +69,8 @@ def consultar_tabla(nombre_de_la_tabla):
             valorTipoCadena = str(valor)
             ancho_de_tablas[i] = max(ancho_de_tablas[i], len(valorTipoCadena))
         
-        separaciónAdicional = 2
+        #Se agrega una separación para que no se vea pegado
+        separaciónAdicional = 0
         ancho_de_tablas = [ancho + separaciónAdicional for ancho in ancho_de_tablas]
         formato = "|".join(f"{{:<{ancho}}}" for ancho in ancho_de_tablas)
         
@@ -80,9 +84,10 @@ def consultar_tabla(nombre_de_la_tabla):
               filaTipoCadena[3] = f"{filaTipoCadena[3]} años"
             case "materia":
               filaTipoCadena[2] = f"{filaTipoCadena[2]} horas"
-              
-          filas_formateadas = (formato.format(*filaTipoCadena))
-          Lista_de_datos.insert(TK.END, filas_formateadas)
+            case "profesor":
+              filaTipoCadena[2] = f"{filaTipoCadena[2]} horas"
+          filas_formateadas = formato.format(*filaTipoCadena)
+          Lista_de_datos.insert(tk.END, filas_formateadas)
     
     desconectar_base_de_datos(conexión)
   except Exception as Exc:
@@ -377,7 +382,7 @@ def seleccionar_registro():
           
         #Este for me limpia los campos de texto después de agregarlo
         for caja, valor in zip(cajasDeTexto[nombre_de_la_tabla], fila_seleccionada):
-          caja.delete(0, TK.END)
+          caja.delete(0, tk.END)
           caja.insert(0, str(valor))
     except Error as error:
       messagebox.showerror("ERROR", f"ERROR INESPERADO AL SELECCIONAR: {str(error)}")
@@ -386,13 +391,13 @@ def seleccionar_registro():
         cursor.close()
       desconectar_base_de_datos(conexión)
 
-# --- CONFIGURACIÓN DE INTERFAZ Y ELEMENTOS IMPORTANTES DE TKINTER
+# --- CONFIGURACIÓN DE INTERFAZ Y ELEMENTOS IMPORTANTES DE tkINTER
 # PARA LAS INSTRUCCIONES GUARDADOS EN LA FUNCIÓN pantalla_principal()---
 def pantalla_principal():
   
   global mi_ventana
   # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
-  mi_ventana = TK.Tk()
+  mi_ventana = tk.Tk()
   mi_ventana.title("Sistema Gestor de Asistencia")
   mi_ventana.geometry("1250x400")
   mi_ventana.minsize(1250, 400)
@@ -408,27 +413,27 @@ def pantalla_principal():
     
   
   #Agregar
-  botón_agregar = TK.Button(mi_ventana, text="Agregar Dato", command=lambda:insertar_datos(obtener_tabla_seleccionada()), width=10, height=1)
+  botón_agregar = tk.Button(mi_ventana, text="Agregar Dato", command=lambda:insertar_datos(obtener_tabla_seleccionada()), width=10, height=1)
   botón_agregar.config(fg="black", bg=verde, font=("Arial", 8), cursor='hand2', activebackground=verde_claro)
   botón_agregar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
   #Modificar
-  botón_modificar = TK.Button(mi_ventana, text="Modificar Dato", command=lambda:modificar_datos(obtener_tabla_seleccionada()), width=10, height=1)
+  botón_modificar = tk.Button(mi_ventana, text="Modificar Dato", command=lambda:modificar_datos(obtener_tabla_seleccionada()), width=10, height=1)
   botón_modificar.config(fg="black", bg="red", font=("Arial", 8), cursor='hand2', activebackground=rojo_claro)
   botón_modificar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
   #Eliminar
-  botón_eliminar = TK.Button(mi_ventana, text="Eliminar Dato", command=lambda:eliminar_datos(obtener_tabla_seleccionada()), width=10, height=1)
+  botón_eliminar = tk.Button(mi_ventana, text="Eliminar Dato", command=lambda:eliminar_datos(obtener_tabla_seleccionada()), width=10, height=1)
   botón_eliminar.config(fg="black", bg="blue", font=("Arial", 8), cursor='hand2', activebackground=azul_claro)
   botón_eliminar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
   #Comparar
-  botón_comparar = TK.Button(mi_ventana, text="Comparar", command=lambda:comparar_datos(obtener_tabla_seleccionada()), width=10, height=1)
+  botón_comparar = tk.Button(mi_ventana, text="Comparar", command=lambda:comparar_datos(obtener_tabla_seleccionada()), width=10, height=1)
   botón_comparar.config(fg="black", bg=dorado, font=("Arial", 8), cursor='hand2', activebackground=dorado_claro)
   botón_comparar.bind("<Return>", ejecutar_acción_presionando_Enter)
   
   #Exportar como PDF
-  botón_exportar = TK.Button(mi_ventana, text="Exportar", command=lambda:exportar_en_PDF(obtener_tabla_seleccionada()), width=10, height=1)
+  botón_exportar = tk.Button(mi_ventana, text="Exportar", command=lambda:exportar_en_PDF(obtener_tabla_seleccionada()), width=10, height=1)
   botón_exportar.config(fg="black", bg=agua, font=("Arial", 8), cursor='hand2', activebackground=agua_claro)
   botón_exportar.bind("<Return>", ejecutar_acción_presionando_Enter)
   
@@ -436,130 +441,130 @@ def pantalla_principal():
   # --- ETIQUETAS ---
   global label_NombreAlumno, label_FechaNacimiento, label_IDAlumno, label_EstadoDeAsistencia, label_IDAsistencia, label_NombreCarrera, label_Duración, label_IDCarrera, label_NombreMateria, label_HorarioCorrespondiente, label_IDMateria, label_NombreProfesor, label_HorasTrabajadas, label_IDProfesor, label_NotaCalificadaUNO, label_NotaCalificadaDOS, label_IDNota, label_Hora, label_Obligatoriedad
   #Etiquetas para la tabla de alumno
-  label_NombreAlumno = TK.Label(mi_ventana, text="Nombre del Alumno *")
+  label_NombreAlumno = tk.Label(mi_ventana, text="Nombre del Alumno *")
   label_NombreAlumno.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-  label_FechaNacimiento = TK.Label(mi_ventana, text="Fecha que nació: Formato Año-Mes-Día *")
+  label_FechaNacimiento = tk.Label(mi_ventana, text="Fecha que nació: Formato Año-Mes-Día *")
   label_FechaNacimiento.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-  label_IDAlumno = TK.Label(mi_ventana, text="ID *")
+  label_IDAlumno = tk.Label(mi_ventana, text="ID *")
   label_IDAlumno.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
   #Etiquetas para la tabla de asistencias
   
-  label_EstadoDeAsistencia = TK.Label(mi_ventana, text="Estado de Asistencia *")
+  label_EstadoDeAsistencia = tk.Label(mi_ventana, text="Estado de Asistencia *")
   label_EstadoDeAsistencia.config(fg="Black", bg=rosado_claro, font=("Arial", 12))
   
-  label_IDAsistencia = TK.Label(mi_ventana, text="ID *")
+  label_IDAsistencia = tk.Label(mi_ventana, text="ID *")
   label_IDAsistencia.config(fg="Black", bg=rosado_claro, font=("Arial", 12))
 
   #Etiquetas para la tabla de carrera
-  label_NombreCarrera = TK.Label(mi_ventana, text="Nombre de la Carrera *")
+  label_NombreCarrera = tk.Label(mi_ventana, text="Nombre de la Carrera *")
   label_NombreCarrera.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-  label_Duración = TK.Label(mi_ventana, text="Duración *")
+  label_Duración = tk.Label(mi_ventana, text="Duración *")
   label_Duración.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-  label_IDCarrera = TK.Label(mi_ventana, text="ID *")
+  label_IDCarrera = tk.Label(mi_ventana, text="ID *")
   label_IDCarrera.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
   #Etiquetas para la tabla de materia
-  label_NombreMateria = TK.Label(mi_ventana, text="Nombre de la Materia *")
+  label_NombreMateria = tk.Label(mi_ventana, text="Nombre de la Materia *")
   label_NombreMateria.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-  label_HorarioCorrespondiente = TK.Label(mi_ventana, text="Horario correspondiente: Formato %H:%M *")
+  label_HorarioCorrespondiente = tk.Label(mi_ventana, text="Horario correspondiente: Formato %H:%M *")
   label_HorarioCorrespondiente.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-  label_IDMateria = TK.Label(mi_ventana, text="ID *")
+  label_IDMateria = tk.Label(mi_ventana, text="ID *")
   label_IDMateria.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
   #Etiquetas para la tabla de profesor
-  label_NombreProfesor = TK.Label(mi_ventana, text="Nombre del Profesor *")
+  label_NombreProfesor = tk.Label(mi_ventana, text="Nombre del Profesor *")
   label_NombreProfesor.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-  label_HorasTrabajadas = TK.Label(mi_ventana, text="Horas trabajadas *")
+  label_HorasTrabajadas = tk.Label(mi_ventana, text="Horas trabajadas *")
   label_HorasTrabajadas.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-  label_IDProfesor = TK.Label(mi_ventana, text="ID *")
+  label_IDProfesor = tk.Label(mi_ventana, text="ID *")
   label_IDProfesor.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
   #Etiquetas para la tabla de nota
-  label_NotaCalificadaUNO = TK.Label(mi_ventana, text="Calificación 1*")
+  label_NotaCalificadaUNO = tk.Label(mi_ventana, text="Calificación 1*")
   label_NotaCalificadaUNO.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-  label_NotaCalificadaDOS = TK.Label(mi_ventana, text="Calificación 2*")
+  label_NotaCalificadaDOS = tk.Label(mi_ventana, text="Calificación 2*")
   label_NotaCalificadaDOS.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-  label_Promedio = TK.Label(mi_ventana, text="Promedio")
+  label_Promedio = tk.Label(mi_ventana, text="Promedio")
   label_Promedio.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
-  label_IDNota = TK.Label(mi_ventana, text="ID *")
+  label_IDNota = tk.Label(mi_ventana, text="ID *")
   label_IDNota.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
 
   #Etiqueta para mostrar la hora
-  label_Hora = TK.Label(mi_ventana, text="")
+  label_Hora = tk.Label(mi_ventana, text="")
   label_Hora.config(fg="Black", bg=rosado_claro, font=("Arial", 10))
   #Etiqueta para indicar que significa el asterisco
-  label_Obligatoriedad = TK.Label(mi_ventana, text="el * significa que son obligatorio seleccionar los datos")
+  label_Obligatoriedad = tk.Label(mi_ventana, text="el * significa que son obligatorio seleccionar los datos")
   label_Obligatoriedad.config(fg="Black",bg=rosado_claro, font=("Arial", 8))
 
   #--- ENTRIES ---
   global txBox_NombreAlumno, txBox_FechaNacimiento, txBox_IDAlumno, txBox_EstadoDeAsistencia, txBox_IDAsistencia, txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera, txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria, txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor,  txBox_NotaCalificadaUNO, txBox_NotaCalificadaDOS, txBox_IDNota, opción, Lista_de_datos
   #Tabla alumno
-  txBox_NombreAlumno = TK.Entry(mi_ventana)
-  txBox_FechaNacimiento = TK.Entry(mi_ventana)
-  txBox_IDAlumno = TK.Entry(mi_ventana)
+  txBox_NombreAlumno = tk.Entry(mi_ventana)
+  txBox_FechaNacimiento = tk.Entry(mi_ventana)
+  txBox_IDAlumno = tk.Entry(mi_ventana)
 
   #Tabla asistencia
-  txBox_EstadoDeAsistencia = TK.Entry(mi_ventana)
-  txBox_IDAsistencia = TK.Entry(mi_ventana)
+  txBox_EstadoDeAsistencia = tk.Entry(mi_ventana)
+  txBox_IDAsistencia = tk.Entry(mi_ventana)
 
   #Tabla carrera
-  txBox_NombreCarrera = TK.Entry(mi_ventana)
-  txBox_Duración = TK.Entry(mi_ventana)
-  txBox_IDCarrera = TK.Entry(mi_ventana)
+  txBox_NombreCarrera = tk.Entry(mi_ventana)
+  txBox_Duración = tk.Entry(mi_ventana)
+  txBox_IDCarrera = tk.Entry(mi_ventana)
 
   #Tabla materia
-  txBox_NombreMateria = TK.Entry(mi_ventana)
-  txBox_HorarioCorrespondiente = TK.Entry(mi_ventana)
-  txBox_IDMateria = TK.Entry(mi_ventana)
+  txBox_NombreMateria = tk.Entry(mi_ventana)
+  txBox_HorarioCorrespondiente = tk.Entry(mi_ventana)
+  txBox_IDMateria = tk.Entry(mi_ventana)
 
   #Tabla profesor
-  txBox_NombreProfesor = TK.Entry(mi_ventana)
-  txBox_HorasTrabajadas = TK.Entry(mi_ventana)
-  txBox_IDProfesor = TK.Entry(mi_ventana)
+  txBox_NombreProfesor = tk.Entry(mi_ventana)
+  txBox_HorasTrabajadas = tk.Entry(mi_ventana)
+  txBox_IDProfesor = tk.Entry(mi_ventana)
 
   #Tabla nota
-  txBox_NotaCalificadaUNO = TK.Entry(mi_ventana)
-  txBox_NotaCalificadaDOS = TK.Entry(mi_ventana)
-  txBox_IDNota = TK.Entry(mi_ventana)
+  txBox_NotaCalificadaUNO = tk.Entry(mi_ventana)
+  txBox_NotaCalificadaDOS = tk.Entry(mi_ventana)
+  txBox_IDNota = tk.Entry(mi_ventana)
 
   # --- RADIOBUTTONS ---
   global Botón_Tabla_de_Alumno, Botón_Tabla_de_Asistencia, Botón_Tabla_de_Carrera, Botón_Tabla_de_Materia, Botón_Tabla_de_Profesor, Botón_Tabla_de_Notas, opción
   
-  opción = TK.IntVar()
+  opción = tk.IntVar()
 
-  Botón_Tabla_de_Alumno = TK.Radiobutton(mi_ventana, text="Alumno", variable=opción, value= 1, command=lambda:acción_doble())
+  Botón_Tabla_de_Alumno = tk.Radiobutton(mi_ventana, text="Alumno", variable=opción, value= 1, command=lambda:acción_doble())
   Botón_Tabla_de_Alumno.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
 
-  Botón_Tabla_de_Asistencia = TK.Radiobutton(mi_ventana, text="Asistencia", variable=opción, value= 2, command=lambda: acción_doble())
+  Botón_Tabla_de_Asistencia = tk.Radiobutton(mi_ventana, text="Asistencia", variable=opción, value= 2, command=lambda: acción_doble())
   Botón_Tabla_de_Asistencia.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
 
-  Botón_Tabla_de_Carrera = TK.Radiobutton(mi_ventana, text="Carrera", variable=opción, value= 3, command=lambda:acción_doble())
+  Botón_Tabla_de_Carrera = tk.Radiobutton(mi_ventana, text="Carrera", variable=opción, value= 3, command=lambda:acción_doble())
   Botón_Tabla_de_Carrera.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
 
-  Botón_Tabla_de_Materia = TK.Radiobutton(mi_ventana, text="Materia", variable=opción, value= 4, command=lambda:acción_doble())
+  Botón_Tabla_de_Materia = tk.Radiobutton(mi_ventana, text="Materia", variable=opción, value= 4, command=lambda:acción_doble())
   Botón_Tabla_de_Materia.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
 
-  Botón_Tabla_de_Profesor = TK.Radiobutton(mi_ventana, text="Profesor", variable=opción, value= 5, command=lambda:acción_doble())
+  Botón_Tabla_de_Profesor = tk.Radiobutton(mi_ventana, text="Profesor", variable=opción, value= 5, command=lambda:acción_doble())
   Botón_Tabla_de_Profesor.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
 
-  Botón_Tabla_de_Notas = TK.Radiobutton(mi_ventana, text="Nota", variable=opción, value= 6, command=lambda:acción_doble())
+  Botón_Tabla_de_Notas = tk.Radiobutton(mi_ventana, text="Nota", variable=opción, value= 6, command=lambda:acción_doble())
   Botón_Tabla_de_Notas.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
 
 
@@ -600,7 +605,7 @@ def insertar_datos(nombre_de_la_tabla):
     #para que no quede el último valor que se agregó y se repita continuamente
     for i, (campo, valor) in enumerate(datosNecesarios.items()):
       entry = cajasDeTexto[nombre_de_la_tabla][i]
-      entry.delete(0, TK.END)
+      entry.delete(0, tk.END)
     desconectar_base_de_datos(conexión)
   except Error as e:
     messagebox.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {e}")
@@ -639,7 +644,7 @@ def modificar_datos(nombre_de_la_tabla):
       #para que no quede el último valor que se agregó y se repita continuamente
       for i, (campo, valor) in enumerate(datosNecesarios.items()):
         entry = cajasDeTexto[nombre_de_la_tabla][i]
-        entry.delete(0, TK.END)
+        entry.delete(0, tk.END)
       desconectar_base_de_datos(conexión)
   except Error as e:
     messagebox.showerror("ERROR", f"ERROR INESPERADO AL MODIFICAR: {e}")
@@ -676,7 +681,7 @@ def eliminar_datos(nombre_de_la_tabla):
             #para que no quede el último valor que se agregó y se repita continuamente
             for i, (campo, valor) in enumerate(datosNecesarios.items()):
               entry = cajasDeTexto[nombre_de_la_tabla][i]
-              entry.delete(0, TK.END)
+              entry.delete(0, tk.END)
       except Error as e:
          messagebox.showerror("ERROR", f"ERROR INESPERADO AL ELIMINAR: {e}")
   else:
@@ -695,7 +700,7 @@ def comparar_datos(nombre_de_la_tabla):
     
     #Ahora actualicé más la función para que pueda elegir la tabla a comparar.
     #Puse una ventana que dispare un cuadro de texto para que el usuario pueda elegir la tabla a comparar escribiendo el nombre de la tabla.
-    elegir_Tabla = TK.simpledialog.askstring("Comparar", "Ingrese el nombre de la tabla a comparar: ")
+    elegir_Tabla = tk.simpledialog.askstring("Comparar", "Ingrese el nombre de la tabla a comparar: ")
 
     if elegir_Tabla is None:
       return None #Ocurre cuando el usuario presiona cancelar en el cuadro de texto
@@ -746,17 +751,17 @@ def comparar_datos(nombre_de_la_tabla):
       messagebox.showinfo("SIN RESULTADOS", "NO SE ENCONTRARON REGISTROS PARA LOS CRITERIOS ESPECÍFICOS")
       return
     
-    Lista_de_datos.delete(0, TK.END)
+    Lista_de_datos.delete(0, tk.END)
     
     for fila in resultado:
-      Lista_de_datos.insert(TK.END, " | ".join(map(lambda x: str(x) if x is not None else "", fila )))
+      Lista_de_datos.insert(tk.END, " | ".join(map(lambda x: str(x) if x is not None else "", fila )))
     
   except Error as e:
      messagebox.showerror("ERROR", f"HA OCURRIDO UN ERROR AL RELACIONAR LA TABLA CON LA OTRA: {str(e)}")
   finally:
     desconectar_base_de_datos(conexión)
 
-#En este código voy a exportar en PDF el archivo de datos Tkinter
+#En este código voy a exportar en PDF el archivo de datos tkinter
 def exportar_en_PDF(nombre_de_la_tabla):
   try:
     conexión = conectar_base_de_datos()
@@ -785,7 +790,7 @@ def exportar_en_PDF(nombre_de_la_tabla):
     cursor.execute(consulta)
     fila = cursor.fetchall()
     
-    datos = Lista_de_datos.get(0, TK.END)
+    datos = Lista_de_datos.get(0, tk.END)
     
     ventana_exportar = filedialog.asksaveasfilename(
       defaultextension=".pdf",
@@ -824,22 +829,22 @@ def exportar_en_PDF(nombre_de_la_tabla):
 def barraDesplazadora():
   global Lista_de_datos, Frame_Lista
   # Definimos un frame con tamaño fijo y evitamos que se redimensione automáticamente
-  Frame_Lista = TK.Frame(mi_ventana, width=400, height=500)
-  Frame_Lista.pack(side=TK.RIGHT, padx=10, pady=10)
+  Frame_Lista = tk.Frame(mi_ventana, width=400, height=500)
+  Frame_Lista.pack(side=tk.RIGHT, padx=10, pady=10)
   Frame_Lista.pack_propagate(False)
   
-  barraVertical = TK.Scrollbar(Frame_Lista, orient="vertical")
-  barraVertical.pack(side=TK.RIGHT, fill=TK.Y)
+  barraVertical = tk.Scrollbar(Frame_Lista, orient="vertical")
+  barraVertical.pack(side=tk.RIGHT, fill=tk.Y)
   
   #Acá creé una barra de desplazamiento horizontal para desplazar
   #en la tabla donde dice materias cuando son largas
-  barraHorizontal = TK.Scrollbar(Frame_Lista, orient="horizontal")
-  barraHorizontal.pack(side=TK.BOTTOM, fill=TK.X)
+  barraHorizontal = tk.Scrollbar(Frame_Lista, orient="horizontal")
+  barraHorizontal.pack(side=tk.BOTTOM, fill=tk.X)
   
   # La ListBox se define con dimensiones menores para no ocupar toda la pantalla
-  Lista_de_datos = TK.Listbox(Frame_Lista, exportselection=0, width=90, height=30)
-  Lista_de_datos.config(fg="blue", bg=amarillo_claro, font=("Arial", 15))
-  Lista_de_datos.pack(side=TK.LEFT, fill=TK.BOTH, expand=False)
+  Lista_de_datos = tk.Listbox(Frame_Lista, exportselection=0, width=90, height=40)
+  Lista_de_datos.config(fg="blue", bg=amarillo_claro, font=("Courier New", 15, "bold"))
+  Lista_de_datos.pack(side=tk.LEFT, fill=tk.BOTH, expand=False)
   
   Lista_de_datos.config(yscrollcommand=barraVertical.set)
   Lista_de_datos.config(xscrollcommand=barraHorizontal.set)
@@ -862,7 +867,7 @@ def manejar_selección(event=None):
   else:
     try:
       for txBox in cajasDeTexto.values():
-        txBox.delete(0, TK.END)
+        txBox.delete(0, tk.END)
     except:
       return
 

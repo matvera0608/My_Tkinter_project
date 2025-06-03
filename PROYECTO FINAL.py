@@ -9,17 +9,21 @@ import time
 from reportlab.lib.pagesizes import letter
 
 # --- COLORES EN HEXADECIMALES ---
-rosado_claro = "#FFECEC"
-rojo_claro= "#FFAEAE"
-verde = "#00FF00"
-rojo = "#FF0000"
-verde_claro = "#AEFFAE"
-azul_claro = "#6060FF"
-amarillo_claro = "#FBFFBF"
-dorado = "#FFDF00"
-dorado_claro = "#FFF1A9"
-agua = "#00FDFD"
-agua_claro = "#A9FFFF"
+colores = {
+    "rosado_claro": "#FFECEC",
+    "rojo_claro": "#FFAEAE",
+    "verde": "#00FF00",
+    "rojo": "#FF0000",
+    "verde_claro": "#AEFFAE",
+    "azul_claro": "#6060FF",
+    "amarillo_claro": "#FBFFBF",
+    "dorado": "#FFDF00",
+    "dorado_claro": "#FFF1A9",
+    "agua": "#00FDFD",
+    "agua_claro": "#A9FFFF"
+}
+
+
 
 # --- CONEXIÓN CON LA BASE DE DATOS MySQL WORKBENCH
 # --- Y UN ÍCONO PARA LA IMPLEMENTACIÓN ---
@@ -402,9 +406,10 @@ def pantalla_principal():
   mi_ventana.geometry("1250x400")
   mi_ventana.minsize(1250, 400)
   mi_ventana.maxsize(1250, 400)
-  mi_ventana.configure(bg=rosado_claro)
+  mi_ventana.configure(bg=colores["rosado_claro"])
   mi_ventana.iconbitmap(ícono)
   mi_ventana.attributes("-alpha", 1)
+  mi_ventana.resizable(False, False)
   
   # --- BOTONES NECESARIOS ---
   global botón_agregar, botón_eliminar, botón_modificar, botón_comparar, botón_exportar
@@ -414,27 +419,27 @@ def pantalla_principal():
   
   #Agregar
   botón_agregar = tk.Button(mi_ventana, text="Agregar Dato", command=lambda:insertar_datos(obtener_tabla_seleccionada()), width=10, height=1)
-  botón_agregar.config(fg="black", bg=verde, font=("Arial", 8), cursor='hand2', activebackground=verde_claro)
+  botón_agregar.config(fg="black", bg=colores["verde"], font=("Arial", 8), cursor='hand2', activebackground=colores["verde_claro"])
   botón_agregar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
   #Modificar
   botón_modificar = tk.Button(mi_ventana, text="Modificar Dato", command=lambda:modificar_datos(obtener_tabla_seleccionada()), width=10, height=1)
-  botón_modificar.config(fg="black", bg="red", font=("Arial", 8), cursor='hand2', activebackground=rojo_claro)
+  botón_modificar.config(fg="black", bg="red", font=("Arial", 8), cursor='hand2', activebackground=colores["rojo_claro"])
   botón_modificar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
   #Eliminar
   botón_eliminar = tk.Button(mi_ventana, text="Eliminar Dato", command=lambda:eliminar_datos(obtener_tabla_seleccionada()), width=10, height=1)
-  botón_eliminar.config(fg="black", bg="blue", font=("Arial", 8), cursor='hand2', activebackground=azul_claro)
+  botón_eliminar.config(fg="black", bg="blue", font=("Arial", 8), cursor='hand2', activebackground=colores["azul_claro"])
   botón_eliminar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
   #Comparar
   botón_comparar = tk.Button(mi_ventana, text="Comparar", command=lambda:comparar_datos(obtener_tabla_seleccionada()), width=10, height=1)
-  botón_comparar.config(fg="black", bg=dorado, font=("Arial", 8), cursor='hand2', activebackground=dorado_claro)
+  botón_comparar.config(fg="black", bg=colores["dorado"], font=("Arial", 8), cursor='hand2', activebackground=colores["dorado_claro"])
   botón_comparar.bind("<Return>", ejecutar_acción_presionando_Enter)
   
   #Exportar como PDF
   botón_exportar = tk.Button(mi_ventana, text="Exportar", command=lambda:exportar_en_PDF(obtener_tabla_seleccionada()), width=10, height=1)
-  botón_exportar.config(fg="black", bg=agua, font=("Arial", 8), cursor='hand2', activebackground=agua_claro)
+  botón_exportar.config(fg="black", bg=colores["agua"], font=("Arial", 8), cursor='hand2', activebackground=colores["agua_claro"])
   botón_exportar.bind("<Return>", ejecutar_acción_presionando_Enter)
   
 
@@ -442,71 +447,71 @@ def pantalla_principal():
   global label_NombreAlumno, label_FechaNacimiento, label_IDAlumno, label_EstadoDeAsistencia, label_IDAsistencia, label_NombreCarrera, label_Duración, label_IDCarrera, label_NombreMateria, label_HorarioCorrespondiente, label_IDMateria, label_NombreProfesor, label_HorasTrabajadas, label_IDProfesor, label_NotaCalificadaUNO, label_NotaCalificadaDOS, label_IDNota, label_Hora, label_Obligatoriedad
   #Etiquetas para la tabla de alumno
   label_NombreAlumno = tk.Label(mi_ventana, text="Nombre del Alumno *")
-  label_NombreAlumno.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+  label_NombreAlumno.config(fg="Black",bg=colores["rosado_claro"], font=("Arial", 12))
 
   label_FechaNacimiento = tk.Label(mi_ventana, text="Fecha que nació: Formato Año-Mes-Día *")
-  label_FechaNacimiento.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+  label_FechaNacimiento.config(fg="Black",bg=colores["rosado_claro"], font=("Arial", 12))
 
   label_IDAlumno = tk.Label(mi_ventana, text="ID *")
-  label_IDAlumno.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+  label_IDAlumno.config(fg="Black",bg=colores["rosado_claro"], font=("Arial", 12))
 
   #Etiquetas para la tabla de asistencias
   
   label_EstadoDeAsistencia = tk.Label(mi_ventana, text="Estado de Asistencia *")
-  label_EstadoDeAsistencia.config(fg="Black", bg=rosado_claro, font=("Arial", 12))
+  label_EstadoDeAsistencia.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
   
   label_IDAsistencia = tk.Label(mi_ventana, text="ID *")
-  label_IDAsistencia.config(fg="Black", bg=rosado_claro, font=("Arial", 12))
+  label_IDAsistencia.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
   #Etiquetas para la tabla de carrera
   label_NombreCarrera = tk.Label(mi_ventana, text="Nombre de la Carrera *")
-  label_NombreCarrera.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+  label_NombreCarrera.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
   label_Duración = tk.Label(mi_ventana, text="Duración *")
-  label_Duración.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+  label_Duración.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
   label_IDCarrera = tk.Label(mi_ventana, text="ID *")
-  label_IDCarrera.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+  label_IDCarrera.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
   #Etiquetas para la tabla de materia
   label_NombreMateria = tk.Label(mi_ventana, text="Nombre de la Materia *")
-  label_NombreMateria.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+  label_NombreMateria.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
   label_HorarioCorrespondiente = tk.Label(mi_ventana, text="Horario correspondiente: Formato %H:%M *")
-  label_HorarioCorrespondiente.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+  label_HorarioCorrespondiente.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
   label_IDMateria = tk.Label(mi_ventana, text="ID *")
-  label_IDMateria.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+  label_IDMateria.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
   #Etiquetas para la tabla de profesor
   label_NombreProfesor = tk.Label(mi_ventana, text="Nombre del Profesor *")
-  label_NombreProfesor.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+  label_NombreProfesor.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
   label_HorasTrabajadas = tk.Label(mi_ventana, text="Horas trabajadas *")
-  label_HorasTrabajadas.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+  label_HorasTrabajadas.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
   label_IDProfesor = tk.Label(mi_ventana, text="ID *")
-  label_IDProfesor.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+  label_IDProfesor.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
   #Etiquetas para la tabla de nota
   label_NotaCalificadaUNO = tk.Label(mi_ventana, text="Calificación 1*")
-  label_NotaCalificadaUNO.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+  label_NotaCalificadaUNO.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
   label_NotaCalificadaDOS = tk.Label(mi_ventana, text="Calificación 2*")
-  label_NotaCalificadaDOS.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+  label_NotaCalificadaDOS.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
   label_Promedio = tk.Label(mi_ventana, text="Promedio")
-  label_Promedio.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+  label_Promedio.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
   label_IDNota = tk.Label(mi_ventana, text="ID *")
-  label_IDNota.config(fg="Black",bg=rosado_claro, font=("Arial", 12))
+  label_IDNota.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
   #Etiqueta para mostrar la hora
   label_Hora = tk.Label(mi_ventana, text="")
-  label_Hora.config(fg="Black", bg=rosado_claro, font=("Arial", 10))
+  label_Hora.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 10))
   #Etiqueta para indicar que significa el asterisco
   label_Obligatoriedad = tk.Label(mi_ventana, text="el * significa que son obligatorio seleccionar los datos")
-  label_Obligatoriedad.config(fg="Black",bg=rosado_claro, font=("Arial", 8))
+  label_Obligatoriedad.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 8))
 
   #--- ENTRIES ---
   global txBox_NombreAlumno, txBox_FechaNacimiento, txBox_IDAlumno, txBox_EstadoDeAsistencia, txBox_IDAsistencia, txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera, txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria, txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor,  txBox_NotaCalificadaUNO, txBox_NotaCalificadaDOS, txBox_IDNota, opción, Lista_de_datos
@@ -545,27 +550,27 @@ def pantalla_principal():
   opción = tk.IntVar()
 
   Botón_Tabla_de_Alumno = tk.Radiobutton(mi_ventana, text="Alumno", variable=opción, value= 1, command=lambda:acción_doble())
-  Botón_Tabla_de_Alumno.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
+  Botón_Tabla_de_Alumno.config(bg=colores["rosado_claro"], font=("Arial", 12), cursor='hand2')
 
 
   Botón_Tabla_de_Asistencia = tk.Radiobutton(mi_ventana, text="Asistencia", variable=opción, value= 2, command=lambda: acción_doble())
-  Botón_Tabla_de_Asistencia.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
+  Botón_Tabla_de_Asistencia.config(bg=colores["rosado_claro"], font=("Arial", 12), cursor='hand2')
 
 
   Botón_Tabla_de_Carrera = tk.Radiobutton(mi_ventana, text="Carrera", variable=opción, value= 3, command=lambda:acción_doble())
-  Botón_Tabla_de_Carrera.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
+  Botón_Tabla_de_Carrera.config(bg=colores["rosado_claro"], font=("Arial", 12), cursor='hand2')
 
 
   Botón_Tabla_de_Materia = tk.Radiobutton(mi_ventana, text="Materia", variable=opción, value= 4, command=lambda:acción_doble())
-  Botón_Tabla_de_Materia.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
+  Botón_Tabla_de_Materia.config(bg=colores["rosado_claro"], font=("Arial", 12), cursor='hand2')
 
 
   Botón_Tabla_de_Profesor = tk.Radiobutton(mi_ventana, text="Profesor", variable=opción, value= 5, command=lambda:acción_doble())
-  Botón_Tabla_de_Profesor.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
+  Botón_Tabla_de_Profesor.config(bg=colores["rosado_claro"], font=("Arial", 12), cursor='hand2')
 
 
   Botón_Tabla_de_Notas = tk.Radiobutton(mi_ventana, text="Nota", variable=opción, value= 6, command=lambda:acción_doble())
-  Botón_Tabla_de_Notas.config(bg=rosado_claro, font=("Arial", 12), cursor='hand2')
+  Botón_Tabla_de_Notas.config(bg=colores["rosado_claro"], font=("Arial", 12), cursor='hand2')
 
 
   Botón_Tabla_de_Alumno.place(x= 40, y = 350)
@@ -843,7 +848,7 @@ def barraDesplazadora():
   
   # La ListBox se define con dimensiones menores para no ocupar toda la pantalla
   Lista_de_datos = tk.Listbox(Frame_Lista, exportselection=0, width=90, height=40)
-  Lista_de_datos.config(fg="blue", bg=amarillo_claro, font=("Courier New", 15, "bold"))
+  Lista_de_datos.config(fg="blue", bg=colores["amarillo_claro"], font=("Courier New", 15, "bold"))
   Lista_de_datos.pack(side=tk.LEFT, fill=tk.BOTH, expand=False)
   
   Lista_de_datos.config(yscrollcommand=barraVertical.set)

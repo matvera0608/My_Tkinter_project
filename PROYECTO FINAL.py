@@ -123,7 +123,7 @@ def habilitar_botones_e_inputs():
 
   txBoxes = [
                      txBox_FechaNacimiento, label_FechaNacimiento, txBox_NombreAlumno, label_NombreAlumno, txBox_IDAlumno, label_IDAlumno,
-                     txBox_EstadoDeAsistencia, label_EstadoDeAsistencia ,txBox_IDAsistencia, label_IDAsistencia,
+                     txBox_EstadoDeAsistencia, label_EstadoDeAsistencia ,txBox_FechaAsistencia, label_Fecha, txBox_IDAsistencia, label_IDAsistencia,
                      txBox_NombreCarrera, label_NombreCarrera, txBox_Duración, label_Duración, txBox_IDCarrera, label_IDCarrera,
                      txBox_NombreMateria, label_NombreMateria, txBox_HorarioCorrespondiente, label_HorarioCorrespondiente, txBox_IDMateria, label_IDMateria,
                      txBox_NombreProfesor, label_NombreProfesor, txBox_HorasTrabajadas, label_HorasTrabajadas, txBox_IDProfesor, label_IDProfesor,
@@ -188,7 +188,7 @@ def validar_datos(nombre_de_la_tabla, datos):
                                   "materia":    ["Nombre", "Horario", "ID_Materia"],
                                   "profesor":    ["Nombre", "HorasTrabajadas", "ID_Profesor"],
                                   "asistencia": ["ID_Asistencia"],
-                                  "nota":          ["Nota_UNO", "Nota_DOS", "ID_Nota"],
+                                  "nota":          ["valorNota", "TipoNota", "ID_Nota"],
                                   "carrera":     ["Nombre", "Duración", "ID_Carrera"]
                                   }
     

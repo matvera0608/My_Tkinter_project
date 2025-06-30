@@ -127,8 +127,8 @@ def habilitar_botones_e_inputs():
                      txBox_NombreCarrera, label_NombreCarrera, txBox_Duración, label_Duración, txBox_IDCarrera, label_IDCarrera,
                      txBox_NombreMateria, label_NombreMateria, txBox_HorarioCorrespondiente, label_HorarioCorrespondiente, txBox_IDMateria, label_IDMateria,
                      txBox_NombreProfesor, label_NombreProfesor, txBox_HorasTrabajadas, label_HorasTrabajadas, txBox_IDProfesor, label_IDProfesor,
-                     txBox_NotaCalificadaUNO, label_NotaCalificadaUNO, txBox_NotaCalificadaDOS, label_NotaCalificadaDOS, txBox_IDNota, label_IDNota
-                   ]
+                     txBox_Valor, label_Valor, txBox_Tipo, label_Tipo
+            ]
 
   for widget in txBoxes:
     widget.place_forget()
@@ -149,7 +149,7 @@ def habilitar_botones_e_inputs():
                                          3: [(txBox_NombreCarrera, label_NombreCarrera, 100), (txBox_Duración, label_Duración, 150), (txBox_IDCarrera, label_IDCarrera, 200)],
                                          4: [(txBox_NombreMateria, label_NombreMateria,100), (txBox_HorarioCorrespondiente, label_HorarioCorrespondiente, 150), (txBox_IDMateria, label_IDMateria, 200)],
                                          5: [(txBox_NombreProfesor, label_NombreProfesor, 100), (txBox_HorasTrabajadas, label_HorasTrabajadas, 150), (txBox_IDProfesor, label_IDProfesor, 200)],
-                                         6: [(txBox_NotaCalificadaUNO, label_NotaCalificadaUNO, 100), (txBox_NotaCalificadaDOS, label_NotaCalificadaDOS, 150), (txBox_IDNota, label_IDNota, 200)]
+                                         6: [(txBox_Valor, label_Valor, 100), (txBox_Tipo, label_Tipo, 150)]
                                        }
   
   if botón_seleccionado in opciones_del_widget:
@@ -299,7 +299,7 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
                               'carrera':  (txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera),
                               'materia': (txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria),
                               'profesor': (txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor),
-                              'nota':       (txBox_NotaCalificadaUNO, txBox_NotaCalificadaDOS, txBox_IDNota), 
+                              'nota':     (txBox_Valor, txBox_Tipo)
                            }
 
   #Este for es más escalable, ya que esto me solucionó el problema de que no me imprimía la Nota 1 en la listBox
@@ -338,8 +338,7 @@ def conseguir_campo_ID(nombre_de_la_tabla):
               'asistencia': "ID_Asistencia",
               'carrera': "ID_Carrera",
               'materia': "ID_Materia",
-              'profesor': "ID_Profesor",
-              'nota': "ID_Nota"
+              'profesor': "ID_Profesor"
             }
   return IDs.get(nombre_de_la_tabla.strip().lower())
 
@@ -444,7 +443,7 @@ def pantalla_principal():
   
 
   # --- ETIQUETAS ---
-  global label_NombreAlumno, label_FechaNacimiento, label_IDAlumno, label_EstadoDeAsistencia, label_IDAsistencia, label_NombreCarrera, label_Duración, label_IDCarrera, label_NombreMateria, label_HorarioCorrespondiente, label_IDMateria, label_NombreProfesor, label_HorasTrabajadas, label_IDProfesor, label_NotaCalificadaUNO, label_NotaCalificadaDOS, label_IDNota, label_Hora, label_Obligatoriedad
+  global label_NombreAlumno, label_FechaNacimiento, label_IDAlumno, label_EstadoDeAsistencia, label_IDAsistencia, label_Fecha, label_NombreCarrera, label_Duración, label_IDCarrera, label_NombreMateria, label_HorarioCorrespondiente, label_IDMateria, label_NombreProfesor, label_HorasTrabajadas, label_IDProfesor, label_Valor, label_Tipo, label_Hora, label_Obligatoriedad
   #Etiquetas para la tabla de alumno
   label_NombreAlumno = tk.Label(mi_ventana, text="Nombre del Alumno *")
   label_NombreAlumno.config(fg="Black",bg=colores["rosado_claro"], font=("Arial", 12))
@@ -459,6 +458,9 @@ def pantalla_principal():
   
   label_EstadoDeAsistencia = tk.Label(mi_ventana, text="Estado de Asistencia *")
   label_EstadoDeAsistencia.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
+  
+  label_Fecha = tk.Label(mi_ventana, text="Fecha que asistió *")
+  label_Fecha.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
   
   label_IDAsistencia = tk.Label(mi_ventana, text="ID *")
   label_IDAsistencia.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
@@ -494,17 +496,11 @@ def pantalla_principal():
   label_IDProfesor.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
   #Etiquetas para la tabla de nota
-  label_NotaCalificadaUNO = tk.Label(mi_ventana, text="Calificación 1*")
-  label_NotaCalificadaUNO.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
+  label_Valor = tk.Label(mi_ventana, text="Nota*")
+  label_Valor.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
-  label_NotaCalificadaDOS = tk.Label(mi_ventana, text="Calificación 2*")
-  label_NotaCalificadaDOS.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
-
-  label_Promedio = tk.Label(mi_ventana, text="Promedio")
-  label_Promedio.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
-
-  label_IDNota = tk.Label(mi_ventana, text="ID *")
-  label_IDNota.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
+  label_Tipo = tk.Label(mi_ventana, text="Tipo*")
+  label_Tipo.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
   #Etiqueta para mostrar la hora
   label_Hora = tk.Label(mi_ventana, text="")
@@ -514,7 +510,7 @@ def pantalla_principal():
   label_Obligatoriedad.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 8))
 
   #--- ENTRIES ---
-  global txBox_NombreAlumno, txBox_FechaNacimiento, txBox_IDAlumno, txBox_EstadoDeAsistencia, txBox_IDAsistencia, txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera, txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria, txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor,  txBox_NotaCalificadaUNO, txBox_NotaCalificadaDOS, txBox_IDNota, opción, Lista_de_datos
+  global txBox_NombreAlumno, txBox_FechaNacimiento, txBox_IDAlumno, txBox_EstadoDeAsistencia, txBox_FechaAsistencia ,txBox_IDAsistencia, txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera, txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria, txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor,  txBox_Valor, txBox_Tipo, txBox_IDNota, opción, Lista_de_datos
   #Tabla alumno
   txBox_NombreAlumno = tk.Entry(mi_ventana)
   txBox_FechaNacimiento = tk.Entry(mi_ventana)
@@ -522,6 +518,7 @@ def pantalla_principal():
 
   #Tabla asistencia
   txBox_EstadoDeAsistencia = tk.Entry(mi_ventana)
+  txBox_FechaAsistencia = tk.Entry(mi_ventana)
   txBox_IDAsistencia = tk.Entry(mi_ventana)
 
   #Tabla carrera
@@ -540,8 +537,8 @@ def pantalla_principal():
   txBox_IDProfesor = tk.Entry(mi_ventana)
 
   #Tabla nota
-  txBox_NotaCalificadaUNO = tk.Entry(mi_ventana)
-  txBox_NotaCalificadaDOS = tk.Entry(mi_ventana)
+  txBox_Valor = tk.Entry(mi_ventana)
+  txBox_Tipo = tk.Entry(mi_ventana)
   txBox_IDNota = tk.Entry(mi_ventana)
 
   # --- RADIOBUTTONS ---

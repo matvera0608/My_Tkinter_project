@@ -55,15 +55,40 @@ def desconectar_base_de_datos(conexión):
 def consultar_tabla(nombre_de_la_tabla):
   try:
     conexión = conectar_base_de_datos()
+    #Mejora de la función consultar_tabla para que sea más escalable,
+    #voy a hacer que cada consulta sea dinámica depediendo de la tabla que se seleccione
+    #y también las consultas serán relacionadas dependiendo del ID que coincida con la tabla
     if conexión:
         cursor = conexión.cursor()
-        cursor.execute(f"SELECT * FROM {nombre_de_la_tabla};")
+        match nombre_de_la_tabla.lower():
+          case "alumno":
+            cursor.execute("""SELECT al.Nombre, al.Edad, al.FechaDeNacimiento
+                           FROM alumno AS al
+                           ORDER BY ID_Alumno;""")
+          case "asistencia":
+            cursor.execute("""SELECT al.Nombre, a.Estado
+                          FROM asistencia AS a
+                          JOIN alumno AS al ON a.ID_Alumno = al.ID_Alumno;""")
+          case "carrera":
+            cursor.execute("""SELECT c.Nombre, c.Duración 
+                           FROM carrera as c 
+                           ORDER BY ID_Carrera;""")
+          case "materia":
+            cursor.execute("SELECT * FROM materia ORDER BY ID_Materia;")
+          case "profesor":
+            cursor.execute("""SELECT *
+                              FROM profesor AS pro
+                              JOIN enseñanza AS e ON pro.ID_Profesor = e.ID_Profesor
+                              JOIN materia AS m ON e.ID_Materia = m.ID_Materia;""")
+          case "nota":
+            cursor.execute("SELECT * FROM nota;")
+          case _:
+            cursor.execute(f"SELECT * FROM {nombre_de_la_tabla};")
+        
         resultado = cursor.fetchall()
         Lista_de_datos.delete(0, tk.END)
-    
         #Creé una variable para alinear bien los registros
         ancho_de_tablas = [0] * len(resultado[0])
-        
         
         #Se modificó el for para que cada valor se convierta en string
         #así evitar cualquier error o excepción y también este for sirve
@@ -85,7 +110,7 @@ def consultar_tabla(nombre_de_la_tabla):
           filaTipoCadena = [str(valor) for valor in fila]
           match nombre_de_la_tabla:
             case "alumno":
-              filaTipoCadena[3] = f"{filaTipoCadena[3]} años"
+              filaTipoCadena[1] = f"{filaTipoCadena[1]} años"
             case "materia":
               filaTipoCadena[2] = f"{filaTipoCadena[2]} horas"
             case "profesor":
@@ -95,7 +120,7 @@ def consultar_tabla(nombre_de_la_tabla):
     
     desconectar_base_de_datos(conexión)
   except Exception as Exc:
-    messagebox.showerror("ERROR", f"Algo no está correcto: {Exc}")
+    messagebox.showerror("ERROR", f"Algo no está correcto o no tiene nada de datos: {Exc}")
   
 def seleccionar_y_consultar():
   botón_seleccionado = opción.get()
@@ -283,19 +308,19 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
   global cajasDeTexto, datos
   
   campos_de_la_base_de_datos = {
-                                                        'alumno':    [ "FechaDeNacimiento", "Nombre", "ID_Alumno"],
-                                                        'asistencia':["Estado", "ID_Asistencia"],
+                                                        'alumno':     [ "FechaDeNacimiento", "Nombre", "ID_Alumno"],
+                                                        'asistencia': ["Estado", "Fecha_Asistencia","ID_Asistencia"],
                                                         'carrera':    ["Nombre", "Duración", "ID_Carrera"],
-                                                        'materia':   ["Nombre", "Horario", "ID_Materia"],
+                                                        'materia':    ["Nombre", "Horario", "ID_Materia"],
                                                         'profesor':   ["Nombre", "HorasTrabajadas", "ID_Profesor"],
-                                                        'nota':         ["Nota_UNO", "Nota_DOS", "ID_Nota"]
+                                                        'nota':       ["valorNota", "tipoNota"]
                                                       }
   
   datos = {}
 
   cajasDeTexto = {
                               'alumno':  (txBox_FechaNacimiento, txBox_NombreAlumno,  txBox_IDAlumno),
-                              'asistencia': (txBox_EstadoDeAsistencia , txBox_IDAsistencia),
+                              'asistencia': (txBox_EstadoDeAsistencia , txBox_FechaAsistencia, txBox_IDAsistencia),
                               'carrera':  (txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera),
                               'materia': (txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria),
                               'profesor': (txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor),
@@ -339,7 +364,7 @@ def conseguir_campo_ID(nombre_de_la_tabla):
               'carrera': "ID_Carrera",
               'materia': "ID_Materia",
               'profesor': "ID_Profesor"
-            }
+        }
   return IDs.get(nombre_de_la_tabla.strip().lower())
 
 #Esta función sirve para actualizar la hora
@@ -918,7 +943,7 @@ def mover_con_flechas(event=None):
                              txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera, 
                              txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria, 
                              txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor, 
-                             txBox_NotaCalificadaUNO, txBox_NotaCalificadaDOS, txBox_IDNota
+                             txBox_Valor, txBox_Tipo
                             ]
   
   caja_activa = []
@@ -980,8 +1005,8 @@ def mover_con_flechas(event=None):
           txBox_NombreProfesor.focus_set()
           caja_activa = [txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor]
       elif tabla_de_nota:
-          txBox_NotaCalificadaUNO.focus_set()
-          caja_activa = [txBox_NotaCalificadaUNO, txBox_NotaCalificadaDOS, txBox_IDNota]
+          txBox_Valor.focus_set()
+          caja_activa = [txBox_Valor, txBox_Tipo]
       return "break"
     
   # Si el foco está en alguno de los RadioButtons, navegamos entre ellos.
@@ -1022,7 +1047,7 @@ def mover_con_flechas(event=None):
         elif tabla_de_profesor:
           caja_activa = [txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor]
         elif tabla_de_nota:
-          caja_activa = [txBox_NotaCalificadaUNO, txBox_NotaCalificadaDOS, txBox_IDNota]
+          caja_activa = [txBox_Valor, txBox_Tipo]
       else:
         print("No hay cajas activas")
         

@@ -69,19 +69,19 @@ def consultar_tabla(nombre_de_la_tabla):
         cursor = conexión.cursor()
         match nombre_de_la_tabla.lower():
           case "alumno":
-            cursor.execute("""SELECT al.Nombre, al.Edad, al.FechaDeNacimiento
-                           FROM alumno AS al
-                           ORDER BY ID_Alumno;""")
+            cursor.execute("""SELECT a.ID_Alumno, a.Nombre, a.FechaDeNacimiento, a.Edad
+                          FROM alumno AS a;""")
           case "asistencia":
-            cursor.execute("""SELECT al.Nombre, a.Estado
-                          FROM asistencia AS a
-                          JOIN alumno AS al ON a.ID_Alumno = al.ID_Alumno;""")
+            cursor.execute("""SELECT asis.ID_Asistencia, asis.Estado, asis.Fecha_Asistencia, al.Nombre
+                          FROM asistencia AS asis
+                          JOIN alumno AS al ON asis.ID_Alumno = al.ID_Alumno;""")
           case "carrera":
-            cursor.execute("""SELECT c.Nombre, c.Duración 
-                           FROM carrera as c 
-                           ORDER BY ID_Carrera;""")
+            cursor.execute("""SELECT c.ID_Carrera, c.Nombre, c.Duración
+                          FROM carrera AS c;""")
           case "materia":
-            cursor.execute("""SELECT * FROM materia ORDER BY ID_Materia;""")
+            cursor.execute("""SELECT m.ID_Materia, m.Nombre, m.Horario, c.Nombre AS NombreCarrera
+                          FROM materia AS m
+                          JOIN carrera AS c ON m.IDCarrera = c.ID_Carrera;""")
           case "profesor":
             cursor.execute("""SELECT *
                               FROM profesor AS pro
@@ -106,27 +106,27 @@ def consultar_tabla(nombre_de_la_tabla):
         for fila in resultado:
           idReal = fila[0]
           lista_IDs.append(idReal)
-          
           filaVisible = fila[1:] #Esta lista muestra todos los campos excepto el ID
+          # índice = Lista_de_datos.curselection()
+          # if índice:
+          #   idReal = lista_IDs[índice[0]]
           for i, valor in enumerate(filaVisible):
             valorTipoCadena = str(valor)
             ancho_de_tablas[i] = max(ancho_de_tablas[i], len(valorTipoCadena))
       
-        
         #Se agrega una separación para que no se vea pegado
         formato = "|".join(f"{{:<{ancho}}}" for ancho in ancho_de_tablas)
-        #Lo mismo se formateó las filas para que muestre la listBox
-        #con todos los registros emparejados para facilitar al usuario
-        #el orden de cada cosa
+  
         for fila in resultado:
-          filaTipoCadena = [str(valor) for valor in fila[1:]]
+          #Copio la parte sin depender de su ID
+          filaVisible = list(fila[1:])
           match nombre_de_la_tabla.lower():
             case "alumno":
-              filaTipoCadena[0] = f"{filaTipoCadena[0]} años"
-            case "materia":
-              filaTipoCadena[2] = f"{filaTipoCadena[2]} horas"
-            case "profesor":
-              filaTipoCadena[2] = f"{filaTipoCadena[2]} horas"
+              filaVisible[2] = f"{filaVisible[2]} años"
+            case "materia" | "profesor":
+              if len(filaVisible) > 2:
+                filaVisible[2] = f"{filaVisible[2]} horas"
+          filaTipoCadena = [str(valor) for valor in filaVisible]
           filas_formateadas = formato.format(*filaTipoCadena)
           Lista_de_datos.insert(tk.END, filas_formateadas)
     
@@ -222,12 +222,12 @@ def validar_datos(nombre_de_la_tabla, datos):
   patrón_númerosDecimales = re.compile(r'^\d+([.,]\d+)?$')
   try:
     tabla_a_validar = {"alumno":    ["Nombre", "FechaDeNacimiento", "ID_Alumno"],
-                                  "materia":    ["Nombre", "Horario", "ID_Materia"],
-                                  "profesor":    ["Nombre", "HorasTrabajadas", "ID_Profesor"],
-                                  "asistencia": ["ID_Asistencia"],
-                                  "nota":          ["valorNota", "TipoNota", "ID_Nota"],
-                                  "carrera":     ["Nombre", "Duración", "ID_Carrera"]
-                                  }
+                      "materia":    ["Nombre", "Horario", "ID_Materia"],
+                      "profesor":    ["Nombre", "HorasTrabajadas", "ID_Profesor"],
+                      "asistencia": ["ID_Asistencia"],
+                      "nota":          ["valorNota", "TipoNota", "ID_Nota"],
+                      "carrera":     ["Nombre", "Duración", "ID_Carrera"]
+                      }
     
     if nombre_de_la_tabla in tabla_a_validar:
       campo = tabla_a_validar[nombre_de_la_tabla]

@@ -51,8 +51,15 @@ def desconectar_base_de_datos(conexión):
   if desconectando_db:
     conexión.close()
 
+#Se creó una lista para que la función extraerIDs
+#funcione correctamente cuando están ocultos esos
+# #campos clave.
+
 #--- FUNCIONES DEL ABM (ALTA, BAJA Y MODIFICACIÓN) ---
+
+lista_IDs = []
 def consultar_tabla(nombre_de_la_tabla):
+  global lista_IDs
   try:
     conexión = conectar_base_de_datos()
     #Mejora de la función consultar_tabla para que sea más escalable,
@@ -74,7 +81,7 @@ def consultar_tabla(nombre_de_la_tabla):
                            FROM carrera as c 
                            ORDER BY ID_Carrera;""")
           case "materia":
-            cursor.execute("SELECT * FROM materia ORDER BY ID_Materia;")
+            cursor.execute("""SELECT * FROM materia ORDER BY ID_Materia;""")
           case "profesor":
             cursor.execute("""SELECT *
                               FROM profesor AS pro
@@ -87,30 +94,35 @@ def consultar_tabla(nombre_de_la_tabla):
         
         resultado = cursor.fetchall()
         Lista_de_datos.delete(0, tk.END)
-        #Creé una variable para alinear bien los registros
-        ancho_de_tablas = [0] * len(resultado[0])
+
+        lista_IDs.clear()
         
-        #Se modificó el for para que cada valor se convierta en string
-        #así evitar cualquier error o excepción y también este for sirve
-        #para calcular el ancho de la tabla
+        #Creé una variable para alinear bien los registros. El -1 sirve
+        #para no contar el ID ya que está oculto
+        ancho_de_tablas = [0] * (len(resultado[0]) - 1)
+        
+        #Este for hace que el ID se tome en cuenta a la hora de hacer
+        #UPDATE o DELETE, es decir, tomar en cuenta o guardar el ID en paralelo.
         for fila in resultado:
-          for i, valor in enumerate(fila):
+          idReal = fila[0]
+          lista_IDs.append(idReal)
+          
+          filaVisible = fila[1:] #Esta lista muestra todos los campos excepto el ID
+          for i, valor in enumerate(filaVisible):
             valorTipoCadena = str(valor)
             ancho_de_tablas[i] = max(ancho_de_tablas[i], len(valorTipoCadena))
+      
         
         #Se agrega una separación para que no se vea pegado
-        separaciónAdicional = 0
-        ancho_de_tablas = [ancho + separaciónAdicional for ancho in ancho_de_tablas]
         formato = "|".join(f"{{:<{ancho}}}" for ancho in ancho_de_tablas)
-        
         #Lo mismo se formateó las filas para que muestre la listBox
         #con todos los registros emparejados para facilitar al usuario
         #el orden de cada cosa
         for fila in resultado:
-          filaTipoCadena = [str(valor) for valor in fila]
-          match nombre_de_la_tabla:
+          filaTipoCadena = [str(valor) for valor in fila[1:]]
+          match nombre_de_la_tabla.lower():
             case "alumno":
-              filaTipoCadena[1] = f"{filaTipoCadena[1]} años"
+              filaTipoCadena[0] = f"{filaTipoCadena[0]} años"
             case "materia":
               filaTipoCadena[2] = f"{filaTipoCadena[2]} horas"
             case "profesor":

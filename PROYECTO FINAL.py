@@ -23,8 +23,6 @@ colores = {
     "agua_claro": "#A9FFFF"
 }
 
-
-
 # --- CONEXIÓN CON LA BASE DE DATOS MySQL WORKBENCH
 # --- Y UN ÍCONO PARA LA IMPLEMENTACIÓN ---
 #la variable dirección_del_ícono contiene la dirección de forma dinámica y variable
@@ -79,11 +77,11 @@ def consultar_tabla(nombre_de_la_tabla):
             cursor.execute("""SELECT c.ID_Carrera, c.Nombre, c.Duración
                           FROM carrera AS c;""")
           case "materia":
-            cursor.execute("""SELECT m.ID_Materia, m.Nombre, m.Horario, c.Nombre AS NombreCarrera
+            cursor.execute("""SELECT m.ID_Materia, m.Nombre, c.Nombre, TIME_FORMAT(m.Horario,'%H:%i')
                           FROM materia AS m
                           JOIN carrera AS c ON m.IDCarrera = c.ID_Carrera;""")
           case "profesor":
-            cursor.execute("""SELECT *
+            cursor.execute("""SELECT pro.ID_Profesor, pro.Nombre, m.Nombre, pro.HorasTrabajadas
                               FROM profesor AS pro
                               JOIN enseñanza AS e ON pro.ID_Profesor = e.ID_Profesor
                               JOIN materia AS m ON e.ID_Materia = m.ID_Materia;""")
@@ -124,7 +122,7 @@ def consultar_tabla(nombre_de_la_tabla):
             case "alumno":
               filaVisible[2] = f"{filaVisible[2]} años"
             case "materia" | "profesor":
-              if len(filaVisible) > 2:
+              if len(filaVisible) >= 2:
                 filaVisible[2] = f"{filaVisible[2]} horas"
           filaTipoCadena = [str(valor) for valor in filaVisible]
           filas_formateadas = formato.format(*filaTipoCadena)
@@ -357,14 +355,14 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
 
 #Esta función llamada extraerIDs y sirve
 #para que pueda modificar y eliminar datos de una tabla dinámicamente
-def extraerIDs(selección):
-  partes = selección.split('|')
-  for parte in partes:
-    parte = parte.strip()
-    dígito = parte.isdigit()
-    if dígito:
-      return int(parte)
-  return None
+# # def extraerIDs(selección):
+# #   partes = selección.split('|')
+# #   for parte in partes:
+# #     parte = parte.strip()
+# #     dígito = parte.isdigit()
+# #     if dígito:
+# #       return int(parte)
+# #   return None
 
 #Esta función me permite obtener el ID 
 #de cualquier tabla que se encuentre en mi base de datos antes de eliminar
@@ -659,8 +657,8 @@ def modificar_datos(nombre_de_la_tabla):
     messagebox.showwarning("ADVERTENCIA", "FALTA SELECCIONAR UNA COLUMNA")
     return
   else:
-    selección = Lista_de_datos.get(columna_seleccionada[0])
-    ID_Seleccionado = extraerIDs(selección)
+    selección = columna_seleccionada[0]
+    ID_Seleccionado = lista_IDs[selección]
     if ID_Seleccionado is None:
       messagebox.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
       return
@@ -678,6 +676,7 @@ def modificar_datos(nombre_de_la_tabla):
       cursor.execute(query, values)
       conexión.commit()
       consultar_tabla(nombre_de_la_tabla)
+      print(f"Edad actualizada: {values}")
       messagebox.showinfo("CORRECTO", "SE MODIFICÓ EXITOSAMENTE")
       #Este for me limpia los campos de texto después de agregarlo
       #para que no quede el último valor que se agregó y se repita continuamente
@@ -705,22 +704,21 @@ def eliminar_datos(nombre_de_la_tabla):
         with conectar_base_de_datos() as conexión:
           cursor = conexión.cursor()
           for index in columna_seleccionada:
-            selección = Lista_de_datos.get(index)
-            ID_Seleccionado = extraerIDs(selección)
-            values = (ID_Seleccionado,)
+            ID_Seleccionado = lista_IDs[index]
             if ID_Seleccionado is not None:
               query = f"DELETE FROM {nombre_de_la_tabla} where {CampoID} = %s"
-              cursor.execute(query, values)
+              cursor.execute(query, (ID_Seleccionado,))
+              #Este for me limpia los campos de texto después de agregarlo
+              #para que no quede el último valor que se agregó y se repita continuamente
+              for i, (campo, valor) in enumerate(datosNecesarios.items()):
+                entry = cajasDeTexto[nombre_de_la_tabla][i]
+                entry.delete(0, tk.END)
             else:
               messagebox.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
             conexión.commit()
             consultar_tabla(nombre_de_la_tabla)
+            print(f"Eliminando de {nombre_de_la_tabla} con {CampoID} = {ID_Seleccionado}")
             messagebox.showinfo("ÉXITOS", "Ha sido eliminada exitosamente")
-            #Este for me limpia los campos de texto después de agregarlo
-            #para que no quede el último valor que se agregó y se repita continuamente
-            for i, (campo, valor) in enumerate(datosNecesarios.items()):
-              entry = cajasDeTexto[nombre_de_la_tabla][i]
-              entry.delete(0, tk.END)
       except Error as e:
          messagebox.showerror("ERROR", f"ERROR INESPERADO AL ELIMINAR: {e}")
   else:

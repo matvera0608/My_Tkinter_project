@@ -67,10 +67,10 @@ def consultar_tabla(nombre_de_la_tabla):
         cursor = conexión.cursor()
         match nombre_de_la_tabla.lower():
           case "alumno":
-            cursor.execute("""SELECT a.ID_Alumno, a.Nombre, a.FechaDeNacimiento, a.Edad
+            cursor.execute("""SELECT a.ID_Alumno, a.Nombre, DATE_FORMAT(a.FechaDeNacimiento, '%d/%m/%Y'), a.Edad
                           FROM alumno AS a;""")
           case "asistencia":
-            cursor.execute("""SELECT asis.ID_Asistencia, asis.Estado, asis.Fecha_Asistencia, al.Nombre
+            cursor.execute("""SELECT asis.ID_Asistencia, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y'), al.Nombre
                           FROM asistencia AS asis
                           JOIN alumno AS al ON asis.ID_Alumno = al.ID_Alumno;""")
           case "carrera":
@@ -86,7 +86,7 @@ def consultar_tabla(nombre_de_la_tabla):
                               JOIN enseñanza AS e ON pro.ID_Profesor = e.ID_Profesor
                               JOIN materia AS m ON e.ID_Materia = m.ID_Materia;""")
           case "nota":
-            cursor.execute("SELECT * FROM nota;")
+            cursor.execute("SELECT * FROM nota as n;")
           case _:
             cursor.execute(f"SELECT * FROM {nombre_de_la_tabla};")
         
@@ -104,19 +104,20 @@ def consultar_tabla(nombre_de_la_tabla):
         for fila in resultado:
           idReal = fila[0]
           lista_IDs.append(idReal)
-          filaVisible = fila[1:] #Esta lista muestra todos los campos excepto el ID
+          #MEJORA: la tabla nota no tiene el ID, por lo tanto necesito mostrar la primer columna del registro valor o tipoNota.
           # índice = Lista_de_datos.curselection()
           # if índice:
           #   idReal = lista_IDs[índice[0]]
+          
           for i, valor in enumerate(filaVisible):
             valorTipoCadena = str(valor)
             ancho_de_tablas[i] = max(ancho_de_tablas[i], len(valorTipoCadena))
-      
-        #Se agrega una separación para que no se vea pegado
-        formato = "|".join(f"{{:<{ancho}}}" for ancho in ancho_de_tablas)
+        
+        formato = "|".join("{:<" + str(ancho) + "}" for ancho in ancho_de_tablas)
+
   
         for fila in resultado:
-          #Copio la parte sin depender de su ID
+          #Copio la parte sin depender de su ID.
           filaVisible = list(fila[1:])
           match nombre_de_la_tabla.lower():
             case "alumno":
@@ -125,6 +126,8 @@ def consultar_tabla(nombre_de_la_tabla):
               if len(filaVisible) >= 2:
                 filaVisible[2] = f"{filaVisible[2]} horas"
           filaTipoCadena = [str(valor) for valor in filaVisible]
+          #Se agrega una separación para que no se vea pegado
+          filaVisible = fila[1:] if nombre_de_la_tabla != "nota" else fila
           filas_formateadas = formato.format(*filaTipoCadena)
           Lista_de_datos.insert(tk.END, filas_formateadas)
     
@@ -158,7 +161,7 @@ def habilitar_botones_e_inputs():
 
   txBoxes = [
                      txBox_FechaNacimiento, label_FechaNacimiento, txBox_NombreAlumno, label_NombreAlumno, txBox_IDAlumno, label_IDAlumno,
-                     txBox_EstadoDeAsistencia, label_EstadoDeAsistencia ,txBox_FechaAsistencia, label_Fecha, txBox_IDAsistencia, label_IDAsistencia,
+                     txBox_EstadoDeAsistencia, label_EstadoDeAsistencia ,txBox_FechaAsistencia, label_Fecha, txBox_FechaAsistencia, label_Fecha,
                      txBox_NombreCarrera, label_NombreCarrera, txBox_Duración, label_Duración, txBox_IDCarrera, label_IDCarrera,
                      txBox_NombreMateria, label_NombreMateria, txBox_HorarioCorrespondiente, label_HorarioCorrespondiente, txBox_IDMateria, label_IDMateria,
                      txBox_NombreProfesor, label_NombreProfesor, txBox_HorasTrabajadas, label_HorasTrabajadas, txBox_IDProfesor, label_IDProfesor,
@@ -180,7 +183,7 @@ def habilitar_botones_e_inputs():
   
   opciones_del_widget = {
                                          1: [(txBox_FechaNacimiento, label_FechaNacimiento, 100), (txBox_NombreAlumno,label_NombreAlumno, 150), (txBox_IDAlumno, label_IDAlumno, 200)],
-                                         2: [(txBox_EstadoDeAsistencia, label_EstadoDeAsistencia, 100), (txBox_IDAsistencia, label_IDAsistencia, 150)],
+                                         2: [(txBox_EstadoDeAsistencia, label_EstadoDeAsistencia, 100), (txBox_FechaAsistencia, label_Fecha, 150)],
                                          3: [(txBox_NombreCarrera, label_NombreCarrera, 100), (txBox_Duración, label_Duración, 150), (txBox_IDCarrera, label_IDCarrera, 200)],
                                          4: [(txBox_NombreMateria, label_NombreMateria,100), (txBox_HorarioCorrespondiente, label_HorarioCorrespondiente, 150), (txBox_IDMateria, label_IDMateria, 200)],
                                          5: [(txBox_NombreProfesor, label_NombreProfesor, 100), (txBox_HorasTrabajadas, label_HorasTrabajadas, 150), (txBox_IDProfesor, label_IDProfesor, 200)],
@@ -222,8 +225,8 @@ def validar_datos(nombre_de_la_tabla, datos):
     tabla_a_validar = {"alumno":    ["Nombre", "FechaDeNacimiento", "ID_Alumno"],
                       "materia":    ["Nombre", "Horario", "ID_Materia"],
                       "profesor":    ["Nombre", "HorasTrabajadas", "ID_Profesor"],
-                      "asistencia": ["ID_Asistencia"],
-                      "nota":          ["valorNota", "TipoNota", "ID_Nota"],
+                      "asistencia": ["Fecha_Asistencia"],
+                      "nota":          ["valorNota", "TipoNota"],
                       "carrera":     ["Nombre", "Duración", "ID_Carrera"]
                       }
     
@@ -250,7 +253,7 @@ def validar_datos(nombre_de_la_tabla, datos):
       },
       'asistencia': {
               "Estado": lambda valor: valor.isalpha(),
-              "ID_Asistencia": lambda valor: valor.isdigit()
+              "Fecha_Asistencia": lambda valor: time.strptime(valor, '%Y-%m-%d')
       },
       'carrera': {
               "Nombre": lambda valor :patrón_nombre.match(valor),
@@ -319,7 +322,7 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
   
   campos_de_la_base_de_datos = {
                                                         'alumno':     [ "FechaDeNacimiento", "Nombre", "ID_Alumno"],
-                                                        'asistencia': ["Estado", "Fecha_Asistencia","ID_Asistencia"],
+                                                        'asistencia': ["Estado", "Fecha_Asistencia"],
                                                         'carrera':    ["Nombre", "Duración", "ID_Carrera"],
                                                         'materia':    ["Nombre", "Horario", "ID_Materia"],
                                                         'profesor':   ["Nombre", "HorasTrabajadas", "ID_Profesor"],
@@ -330,7 +333,7 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
 
   cajasDeTexto = {
                               'alumno':  (txBox_FechaNacimiento, txBox_NombreAlumno,  txBox_IDAlumno),
-                              'asistencia': (txBox_EstadoDeAsistencia , txBox_FechaAsistencia, txBox_IDAsistencia),
+                              'asistencia': (txBox_EstadoDeAsistencia , txBox_FechaAsistencia),
                               'carrera':  (txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera),
                               'materia': (txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria),
                               'profesor': (txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor),
@@ -478,7 +481,7 @@ def pantalla_principal():
   
 
   # --- ETIQUETAS ---
-  global label_NombreAlumno, label_FechaNacimiento, label_IDAlumno, label_EstadoDeAsistencia, label_IDAsistencia, label_Fecha, label_NombreCarrera, label_Duración, label_IDCarrera, label_NombreMateria, label_HorarioCorrespondiente, label_IDMateria, label_NombreProfesor, label_HorasTrabajadas, label_IDProfesor, label_Valor, label_Tipo, label_Hora, label_Obligatoriedad
+  global label_NombreAlumno, label_FechaNacimiento, label_IDAlumno, label_EstadoDeAsistencia, label_Fecha, label_NombreCarrera, label_Duración, label_IDCarrera, label_NombreMateria, label_HorarioCorrespondiente, label_IDMateria, label_NombreProfesor, label_HorasTrabajadas, label_IDProfesor, label_Valor, label_Tipo, label_Hora, label_Obligatoriedad
   #Etiquetas para la tabla de alumno
   label_NombreAlumno = tk.Label(mi_ventana, text="Nombre del Alumno *")
   label_NombreAlumno.config(fg="Black",bg=colores["rosado_claro"], font=("Arial", 12))
@@ -496,9 +499,6 @@ def pantalla_principal():
   
   label_Fecha = tk.Label(mi_ventana, text="Fecha que asistió *")
   label_Fecha.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
-  
-  label_IDAsistencia = tk.Label(mi_ventana, text="ID *")
-  label_IDAsistencia.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
   #Etiquetas para la tabla de carrera
   label_NombreCarrera = tk.Label(mi_ventana, text="Nombre de la Carrera *")
@@ -545,7 +545,7 @@ def pantalla_principal():
   label_Obligatoriedad.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 8))
 
   #--- ENTRIES ---
-  global txBox_NombreAlumno, txBox_FechaNacimiento, txBox_IDAlumno, txBox_EstadoDeAsistencia, txBox_FechaAsistencia ,txBox_IDAsistencia, txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera, txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria, txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor,  txBox_Valor, txBox_Tipo, txBox_IDNota, opción, Lista_de_datos
+  global txBox_NombreAlumno, txBox_FechaNacimiento, txBox_IDAlumno, txBox_EstadoDeAsistencia, txBox_FechaAsistencia, txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera, txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria, txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor,  txBox_Valor, txBox_Tipo, txBox_IDNota, opción, Lista_de_datos
   #Tabla alumno
   txBox_NombreAlumno = tk.Entry(mi_ventana)
   txBox_FechaNacimiento = tk.Entry(mi_ventana)
@@ -554,7 +554,6 @@ def pantalla_principal():
   #Tabla asistencia
   txBox_EstadoDeAsistencia = tk.Entry(mi_ventana)
   txBox_FechaAsistencia = tk.Entry(mi_ventana)
-  txBox_IDAsistencia = tk.Entry(mi_ventana)
 
   #Tabla carrera
   txBox_NombreCarrera = tk.Entry(mi_ventana)
@@ -949,7 +948,7 @@ def mover_con_flechas(event=None):
                                         ]
   
   cajasDeTexto = [ txBox_FechaNacimiento, txBox_NombreAlumno, txBox_IDAlumno, 
-                             txBox_EstadoDeAsistencia, txBox_IDAsistencia, 
+                             txBox_EstadoDeAsistencia, txBox_FechaAsistencia, 
                              txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera, 
                              txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria, 
                              txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor, 
@@ -1004,7 +1003,7 @@ def mover_con_flechas(event=None):
           caja_activa = [txBox_FechaNacimiento, txBox_NombreAlumno, txBox_IDAlumno]
       elif tabla_de_asistencia:
           txBox_EstadoDeAsistencia.focus_set()
-          caja_activa = [txBox_EstadoDeAsistencia, txBox_IDAsistencia]
+          caja_activa = [txBox_EstadoDeAsistencia, txBox_FechaAsistencia]
       elif tabla_de_carrera:
           txBox_NombreCarrera.focus_set()
           caja_activa = [txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera]
@@ -1049,7 +1048,7 @@ def mover_con_flechas(event=None):
         if tabla_de_alumno:
           caja_activa = [txBox_FechaNacimiento, txBox_NombreAlumno, txBox_IDAlumno]
         elif tabla_de_asistencia:
-          caja_activa = [txBox_EstadoDeAsistencia, txBox_IDAsistencia]
+          caja_activa = [txBox_EstadoDeAsistencia, txBox_FechaAsistencia]
         elif tabla_de_carrera:
           caja_activa = [txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera]
         elif tabla_de_materia:

@@ -35,7 +35,7 @@ def conectar_base_de_datos():
     cadena_de_conexión = MySql.connect(
         host = 'localhost',
         user = 'root',
-        password = 'aHQfu3.4JW8rX/cd!K',
+        password = 'admin',
         database = 'escuela', )
     conexión_exitosa = cadena_de_conexión.is_connected()
     if conexión_exitosa:
@@ -81,10 +81,10 @@ def consultar_tabla(nombre_de_la_tabla):
                           FROM materia AS m
                           JOIN carrera AS c ON m.IDCarrera = c.ID_Carrera;""")
           case "profesor":
-            cursor.execute("""SELECT pro.ID_Profesor, pro.Nombre, m.Nombre, pro.HorasTrabajadas
+            cursor.execute("""SELECT pro.ID_Profesor, pro.Nombre, m.Nombre
                               FROM profesor AS pro
-                              JOIN enseñanza AS e ON pro.ID_Profesor = e.ID_Profesor
-                              JOIN materia AS m ON e.ID_Materia = m.ID_Materia;""")
+                              JOIN enseñanza AS e ON pro.ID_Profesor = e.IDProfesor
+                              JOIN materia AS m ON e.IDMateria = m.ID_Materia;""")
           case "nota":
             cursor.execute("SELECT * FROM nota as n;")
           case _:
@@ -108,26 +108,24 @@ def consultar_tabla(nombre_de_la_tabla):
           # índice = Lista_de_datos.curselection()
           # if índice:
           #   idReal = lista_IDs[índice[0]]
-          
+          filaVisible = fila[1:] if nombre_de_la_tabla != "nota" else fila
           for i, valor in enumerate(filaVisible):
             valorTipoCadena = str(valor)
             ancho_de_tablas[i] = max(ancho_de_tablas[i], len(valorTipoCadena))
         
         formato = "|".join("{:<" + str(ancho) + "}" for ancho in ancho_de_tablas)
-
-  
+ 
         for fila in resultado:
           #Copio la parte sin depender de su ID.
           filaVisible = list(fila[1:])
           match nombre_de_la_tabla.lower():
             case "alumno":
               filaVisible[2] = f"{filaVisible[2]} años"
-            case "materia" | "profesor":
-              if len(filaVisible) >= 2:
+            case "materia":
+              if len(filaVisible) >= 3:
                 filaVisible[2] = f"{filaVisible[2]} horas"
           filaTipoCadena = [str(valor) for valor in filaVisible]
           #Se agrega una separación para que no se vea pegado
-          filaVisible = fila[1:] if nombre_de_la_tabla != "nota" else fila
           filas_formateadas = formato.format(*filaTipoCadena)
           Lista_de_datos.insert(tk.END, filas_formateadas)
     
@@ -879,7 +877,7 @@ def barraDesplazadora():
   
   # La ListBox se define con dimensiones menores para no ocupar toda la pantalla
   Lista_de_datos = tk.Listbox(Frame_Lista, exportselection=0, width=90, height=40)
-  Lista_de_datos.config(fg="blue", bg=colores["amarillo_claro"], font=("Courier New", 15, "bold"))
+  Lista_de_datos.config(fg="blue", bg=colores["amarillo_claro"], font=("Courier New", 12, "bold"))
   Lista_de_datos.pack(side=tk.LEFT, fill=tk.BOTH, expand=False)
   
   Lista_de_datos.config(yscrollcommand=barraVertical.set)

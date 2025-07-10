@@ -72,12 +72,12 @@ def consultar_tabla(nombre_de_la_tabla):
           case "asistencia":
             cursor.execute("""SELECT asis.ID_Asistencia, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y'), al.Nombre
                           FROM asistencia AS asis
-                          JOIN alumno AS al ON asis.ID_Alumno = al.ID_Alumno;""")
+                          JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno;""")
           case "carrera":
             cursor.execute("""SELECT c.ID_Carrera, c.Nombre, c.Duración
                           FROM carrera AS c;""")
           case "materia":
-            cursor.execute("""SELECT m.ID_Materia, m.Nombre, c.Nombre, TIME_FORMAT(m.Horario,'%H:%i')
+            cursor.execute("""SELECT m.ID_Materia, m.Nombre, TIME_FORMAT(m.Horario,'%H:%i'), c.Nombre
                           FROM materia AS m
                           JOIN carrera AS c ON m.IDCarrera = c.ID_Carrera;""")
           case "profesor":
@@ -122,8 +122,8 @@ def consultar_tabla(nombre_de_la_tabla):
             case "alumno":
               filaVisible[2] = f"{filaVisible[2]} años"
             case "materia":
-              if len(filaVisible) >= 3:
-                filaVisible[2] = f"{filaVisible[2]} horas"
+              if len(filaVisible) >= 2:
+                filaVisible[1] = f"{filaVisible[2]} horas"
           filaTipoCadena = [str(valor) for valor in filaVisible]
           #Se agrega una separación para que no se vea pegado
           filas_formateadas = formato.format(*filaTipoCadena)
@@ -162,7 +162,7 @@ def habilitar_botones_e_inputs():
                      txBox_EstadoDeAsistencia, label_EstadoDeAsistencia ,txBox_FechaAsistencia, label_Fecha, txBox_FechaAsistencia, label_Fecha,
                      txBox_NombreCarrera, label_NombreCarrera, txBox_Duración, label_Duración, txBox_IDCarrera, label_IDCarrera,
                      txBox_NombreMateria, label_NombreMateria, txBox_HorarioCorrespondiente, label_HorarioCorrespondiente, txBox_IDMateria, label_IDMateria,
-                     txBox_NombreProfesor, label_NombreProfesor, txBox_HorasTrabajadas, label_HorasTrabajadas, txBox_IDProfesor, label_IDProfesor,
+                     txBox_NombreProfesor, label_NombreProfesor, txBox_IDProfesor, label_IDProfesor,
                      txBox_Valor, label_Valor, txBox_Tipo, label_Tipo
             ]
 
@@ -180,11 +180,11 @@ def habilitar_botones_e_inputs():
   label_Obligatoriedad.pack(padx= 100, pady= 50)
   
   opciones_del_widget = {
-                                         1: [(txBox_FechaNacimiento, label_FechaNacimiento, 100), (txBox_NombreAlumno,label_NombreAlumno, 150), (txBox_IDAlumno, label_IDAlumno, 200)],
+                                         1: [(txBox_FechaNacimiento, label_FechaNacimiento, 100), (txBox_NombreAlumno,label_NombreAlumno, 150)],
                                          2: [(txBox_EstadoDeAsistencia, label_EstadoDeAsistencia, 100), (txBox_FechaAsistencia, label_Fecha, 150)],
-                                         3: [(txBox_NombreCarrera, label_NombreCarrera, 100), (txBox_Duración, label_Duración, 150), (txBox_IDCarrera, label_IDCarrera, 200)],
-                                         4: [(txBox_NombreMateria, label_NombreMateria,100), (txBox_HorarioCorrespondiente, label_HorarioCorrespondiente, 150), (txBox_IDMateria, label_IDMateria, 200)],
-                                         5: [(txBox_NombreProfesor, label_NombreProfesor, 100), (txBox_HorasTrabajadas, label_HorasTrabajadas, 150), (txBox_IDProfesor, label_IDProfesor, 200)],
+                                         3: [(txBox_NombreCarrera, label_NombreCarrera, 100), (txBox_Duración, label_Duración, 150)],
+                                         4: [(txBox_NombreMateria, label_NombreMateria,100), (txBox_HorarioCorrespondiente, label_HorarioCorrespondiente, 150)],
+                                         5: [(txBox_NombreProfesor, label_NombreProfesor, 100)],
                                          6: [(txBox_Valor, label_Valor, 100), (txBox_Tipo, label_Tipo, 150)]
                                        }
   
@@ -220,12 +220,12 @@ def validar_datos(nombre_de_la_tabla, datos):
   patrón_nombre = re.compile(r'^[A-Za-záéíóúÁÉÍÓÚñÑüÜ\s]+$') #Esta variable regular contiene la expresión de solo para letras
   patrón_númerosDecimales = re.compile(r'^\d+([.,]\d+)?$')
   try:
-    tabla_a_validar = {"alumno":    ["Nombre", "FechaDeNacimiento", "ID_Alumno"],
-                      "materia":    ["Nombre", "Horario", "ID_Materia"],
-                      "profesor":    ["Nombre", "HorasTrabajadas", "ID_Profesor"],
-                      "asistencia": ["Fecha_Asistencia"],
-                      "nota":          ["valorNota", "TipoNota"],
-                      "carrera":     ["Nombre", "Duración", "ID_Carrera"]
+    tabla_a_validar = {"alumno":     ["Nombre", "FechaDeNacimiento", ],
+                       "carrera":    ["Nombre", "Duración"],
+                       "materia":    ["Nombre", "Horario",],
+                       "profesor":   ["Nombre",],
+                       "asistencia": ["Fecha_Asistencia"],
+                       "nota":       ["valorNota", "TipoNota"]
                       }
     
     if nombre_de_la_tabla in tabla_a_validar:
@@ -235,8 +235,8 @@ def validar_datos(nombre_de_la_tabla, datos):
         consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campo[0]} = %s"
         cursor.execute(consulta, (datos[campo[0]],))
       elif len(campo) > 1:
-        consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campo[0]} = %s AND {campo[1]} = %s AND {campo[2]} = %s"
-        cursor.execute(consulta, (datos[campo[0]], datos[campo[1]], datos[campo[2]]))
+        consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campo[0]} = %s AND {campo[1]} = %s"
+        cursor.execute(consulta, (datos[campo[0]], datos[campo[1]]))
       resultado = cursor.fetchone()
     else:
       messagebox.showerror("Error", "La tabla solicitada no se encuentra")
@@ -247,7 +247,7 @@ def validar_datos(nombre_de_la_tabla, datos):
       'alumno': {
               "Nombre": lambda valor:patrón_nombre.match(valor),
               "FechaDeNacimiento": lambda valor: valor.strip() and time.strptime(valor, '%Y-%m-%d'),
-              "ID_Alumno": lambda valor: valor.isdigit()
+              # "ID_Alumno": lambda valor: valor.isdigit()
       },
       'asistencia': {
               "Estado": lambda valor: valor.isalpha(),
@@ -256,22 +256,21 @@ def validar_datos(nombre_de_la_tabla, datos):
       'carrera': {
               "Nombre": lambda valor :patrón_nombre.match(valor),
               "Duración": lambda valor :re.match(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$', valor), #en Duración cambié la expresión regular para que acepte letras, números y espacios.
-              "ID_Carrera": lambda valor: valor.isdigit()
+              # "ID_Carrera": lambda valor: valor.isdigit()
       },
       'materia': {
               "Nombre": lambda valor :patrón_nombre.match(valor),
               "Horario": lambda valor :datetime.strptime(valor, '%H:%M'),
-              "ID_Materia": lambda valor: valor.isdigit()
+              # "ID_Materia": lambda valor: valor.isdigit()
       },
       'profesor': {
               "Nombre": lambda valor :patrón_nombre.match(valor),
-              "HorasTrabajadas": lambda valor :patrón_númerosDecimales.match(valor),
-              "ID_Profesor": lambda valor: valor.isdigit()
+              # "ID_Profesor": lambda valor: valor.isdigit()
       },
       'nota': {
-              "Nota_UNO": lambda valor :patrón_númerosDecimales.match(valor),
-              "Nota_DOS": lambda valor :patrón_númerosDecimales.match(valor),
-              "ID_Nota": lambda valor: valor.isdigit()
+              "valorNota": lambda valor :patrón_númerosDecimales.match(valor),
+              "tipoNota": lambda valor :patrón_númerosDecimales.match(valor),
+              # "ID_Nota": lambda valor: valor.isdigit()
       }
     }
     
@@ -292,7 +291,7 @@ def validar_datos(nombre_de_la_tabla, datos):
       elif campo == "Estado" and valor.lower() not in ["presente", "ausente"]:
          messagebox.showerror("Error", "La asistencia sólo permite poner presente o ausente")
          return False
-      elif campo in ["Nota_UNO", "Nota_DOS"]:
+      elif campo in ["valorNota", "tipoNota"]:
         if not patrón_númerosDecimales.match(valor):
           messagebox.showerror("Error", f"El campo {campo} tiene que ser un número válido")
           return False
@@ -319,13 +318,13 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
   global cajasDeTexto, datos
   
   campos_de_la_base_de_datos = {
-                                                        'alumno':     [ "FechaDeNacimiento", "Nombre", "ID_Alumno"],
+                                                        'alumno':     ["FechaDeNacimiento", "Nombre",],
                                                         'asistencia': ["Estado", "Fecha_Asistencia"],
-                                                        'carrera':    ["Nombre", "Duración", "ID_Carrera"],
-                                                        'materia':    ["Nombre", "Horario", "ID_Materia"],
-                                                        'profesor':   ["Nombre", "HorasTrabajadas", "ID_Profesor"],
+                                                        'carrera':    ["Nombre", "Duración",],
+                                                        'materia':    ["Nombre", "Horario",],
+                                                        'profesor':   ["Nombre",],
                                                         'nota':       ["valorNota", "tipoNota"]
-                                                      }
+                                }
   
   datos = {}
 
@@ -334,9 +333,9 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
                               'asistencia': (txBox_EstadoDeAsistencia , txBox_FechaAsistencia),
                               'carrera':  (txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera),
                               'materia': (txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria),
-                              'profesor': (txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor),
+                              'profesor': (txBox_NombreProfesor, txBox_IDProfesor),
                               'nota':     (txBox_Valor, txBox_Tipo)
-                           }
+                  }
 
   #Este for es más escalable, ya que esto me solucionó el problema de que no me imprimía la Nota 1 en la listBox
   for índice, campo in enumerate(campos_de_la_base_de_datos[nombre_de_la_tabla]):
@@ -543,7 +542,7 @@ def pantalla_principal():
   label_Obligatoriedad.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 8))
 
   #--- ENTRIES ---
-  global txBox_NombreAlumno, txBox_FechaNacimiento, txBox_IDAlumno, txBox_EstadoDeAsistencia, txBox_FechaAsistencia, txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera, txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria, txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor,  txBox_Valor, txBox_Tipo, txBox_IDNota, opción, Lista_de_datos
+  global txBox_NombreAlumno, txBox_FechaNacimiento, txBox_IDAlumno, txBox_EstadoDeAsistencia, txBox_FechaAsistencia, txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera, txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria, txBox_NombreProfesor, txBox_IDProfesor, txBox_Valor, txBox_Tipo, txBox_IDNota, opción, Lista_de_datos
   #Tabla alumno
   txBox_NombreAlumno = tk.Entry(mi_ventana)
   txBox_FechaNacimiento = tk.Entry(mi_ventana)
@@ -565,7 +564,6 @@ def pantalla_principal():
 
   #Tabla profesor
   txBox_NombreProfesor = tk.Entry(mi_ventana)
-  txBox_HorasTrabajadas = tk.Entry(mi_ventana)
   txBox_IDProfesor = tk.Entry(mi_ventana)
 
   #Tabla nota
@@ -804,22 +802,22 @@ def exportar_en_PDF(nombre_de_la_tabla):
 
     cursor = conexión.cursor()
     
-    match nombre_de_la_tabla:
-      case 'alumno':
-        consulta = "SELECT * FROM alumno"
-      case 'asistencia':
-        consulta = "SELECT * FROM asistencia"
-      case 'carrera':
-        consulta = "SELECT * FROM carrera"
-      case 'materia':
-        consulta = "SELECT * FROM materia"
-      case 'profesor':
-        consulta = "SELECT * FROM profesor"
-      case 'nota':
-        consulta = "SELECT * FROM nota"
-      case _:
-        messagebox.showerror("ERROR", "NO SE ENCONTRÓ LA TABLA ESPECIFICADA")
-        return
+    # match nombre_de_la_tabla:
+    #   case 'alumno':
+    #     consulta = "SELECT * FROM alumno"
+    #   case 'asistencia':
+    #     consulta = "SELECT * FROM asistencia"
+    #   case 'carrera':
+    #     consulta = "SELECT * FROM carrera"
+    #   case 'materia':
+    #     consulta = "SELECT * FROM materia"
+    #   case 'profesor':
+    #     consulta = "SELECT * FROM profesor"
+    #   case 'nota':
+    #     consulta = "SELECT * FROM nota"
+    #   case _:
+    #     messagebox.showerror("ERROR", "NO SE ENCONTRÓ LA TABLA ESPECIFICADA")
+    #     return
       
     cursor.execute(consulta)
     fila = cursor.fetchall()
@@ -949,7 +947,7 @@ def mover_con_flechas(event=None):
                              txBox_EstadoDeAsistencia, txBox_FechaAsistencia, 
                              txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera, 
                              txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria, 
-                             txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor, 
+                             txBox_NombreProfesor, txBox_IDProfesor, 
                              txBox_Valor, txBox_Tipo
                             ]
   
@@ -1010,7 +1008,7 @@ def mover_con_flechas(event=None):
           caja_activa = [txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria]
       elif tabla_de_profesor:
           txBox_NombreProfesor.focus_set()
-          caja_activa = [txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor]
+          caja_activa = [txBox_NombreProfesor, txBox_IDProfesor]
       elif tabla_de_nota:
           txBox_Valor.focus_set()
           caja_activa = [txBox_Valor, txBox_Tipo]
@@ -1052,7 +1050,7 @@ def mover_con_flechas(event=None):
         elif tabla_de_materia:
           caja_activa = [txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria]
         elif tabla_de_profesor:
-          caja_activa = [txBox_NombreProfesor, txBox_HorasTrabajadas, txBox_IDProfesor]
+          caja_activa = [txBox_NombreProfesor, txBox_IDProfesor]
         elif tabla_de_nota:
           caja_activa = [txBox_Valor, txBox_Tipo]
       else:

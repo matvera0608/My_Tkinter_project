@@ -83,7 +83,7 @@ def consultar_tabla(nombre_de_la_tabla):
           case "profesor":
             cursor.execute("""SELECT pro.ID_Profesor, pro.Nombre, m.Nombre
                               FROM profesor AS pro
-                              JOIN enseñanza AS e ON pro.ID_Profesor = e.IDProfesor
+                              JOIN enseñanza AS e ON e.IDProfesor = pro.ID_Profesor
                               JOIN materia AS m ON e.IDMateria = m.ID_Materia;""")
           case "nota":
             cursor.execute("SELECT * FROM nota as n;")
@@ -93,14 +93,19 @@ def consultar_tabla(nombre_de_la_tabla):
         resultado = cursor.fetchall()
         Lista_de_datos.delete(0, tk.END)
 
+        if not resultado:
+          messagebox.showinfo("Sin datos", "No hay datos disponibles para mostrar.")
+          return
+
         lista_IDs.clear()
         
         #Creé una variable para alinear bien los registros. El -1 sirve
         #para no contar el ID ya que está oculto
-        ancho_de_tablas = [0] * (len(resultado[0]) - 1)
+        ancho_de_tablas = []
         
         #Este for hace que el ID se tome en cuenta a la hora de hacer
         #UPDATE o DELETE, es decir, tomar en cuenta o guardar el ID en paralelo.
+        
         for fila in resultado:
           idReal = fila[0]
           lista_IDs.append(idReal)
@@ -109,6 +114,10 @@ def consultar_tabla(nombre_de_la_tabla):
           # if índice:
           #   idReal = lista_IDs[índice[0]]
           filaVisible = fila[1:] if nombre_de_la_tabla != "nota" else fila
+          
+          while len(ancho_de_tablas) < len(filaVisible):
+            ancho_de_tablas.append(0)
+          
           for i, valor in enumerate(filaVisible):
             valorTipoCadena = str(valor)
             ancho_de_tablas[i] = max(ancho_de_tablas[i], len(valorTipoCadena))
@@ -116,18 +125,20 @@ def consultar_tabla(nombre_de_la_tabla):
         formato = "|".join("{:<" + str(ancho) + "}" for ancho in ancho_de_tablas)
  
         for fila in resultado:
-          #Copio la parte sin depender de su ID.
-          filaVisible = list(fila[1:])
+          filaVisible = list(fila[1:] if nombre_de_la_tabla != "nota" else fila)
           match nombre_de_la_tabla.lower():
             case "alumno":
               filaVisible[2] = f"{filaVisible[2]} años"
             case "materia":
-              if len(filaVisible) >= 2:
-                filaVisible[1] = f"{filaVisible[2]} horas"
+              # if len(filaVisible) >= 2:
+              filaVisible[1] = f"{filaVisible[1]} horas"
           filaTipoCadena = [str(valor) for valor in filaVisible]
           #Se agrega una separación para que no se vea pegado
-          filas_formateadas = formato.format(*filaTipoCadena)
-          Lista_de_datos.insert(tk.END, filas_formateadas)
+          if len(filaTipoCadena) == len(ancho_de_tablas):
+            filas_formateadas = formato.format(*filaTipoCadena)
+            Lista_de_datos.insert(tk.END, filas_formateadas)
+          else:
+            print("❗ Columnas desalineadas:", filaTipoCadena)
     
     desconectar_base_de_datos(conexión)
   except Exception as Exc:

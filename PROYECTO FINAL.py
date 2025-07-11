@@ -329,6 +329,8 @@ def validar_datos(nombre_de_la_tabla, datos):
 def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
   global cajasDeTexto, datos, campos_de_la_base_de_datos
   
+  ##Tengo 3 diccionarios, pero cada uno cumple sus funciones
+  
   campos_de_la_base_de_datos = {
                                                         'alumno':     ["FechaDeNacimiento", "Nombre",],
                                                         'asistencia': ["Estado", "Fecha_Asistencia"],
@@ -348,17 +350,14 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
                               'profesor': (txBox_NombreProfesor),
                               'nota':     (txBox_Valor, txBox_Tipo)
                  }
-  
-  campos_visibles = [c for c in cajasDeTexto[nombre_de_la_tabla] if not c.lower().startswith("id_")]
 
   
-  for índice, campo in enumerate(campos_visibles):
+  for índice, campo in enumerate(campos_de_la_base_de_datos[nombre_de_la_tabla]):
     valor = cajasDeTexto[nombre_de_la_tabla][índice].get()
     if validarDatos and not valor:
-      mensajeTexto.showwarning("Falta un dato", f"Falta completar el campo: {campo}")
-      return None
+        mensajeTexto.showwarning("Falta un dato", f"Falta completar el campo: {campo}")
+        return None
     datos[campo] = valor
-    return datos
   
   #En esta condición, valido los datos de la tabla
   #antes de agregarlo a la listBox. Puse un condicional

@@ -170,11 +170,11 @@ def seleccionar_y_consultar():
 def habilitar_botones_e_inputs():
 
   txBoxes = [
-                     txBox_FechaNacimiento, label_FechaNacimiento, txBox_NombreAlumno, label_NombreAlumno, txBox_IDAlumno, label_IDAlumno,
+                     txBox_FechaNacimiento, label_FechaNacimiento, txBox_NombreAlumno, label_NombreAlumno,
                      txBox_EstadoDeAsistencia, label_EstadoDeAsistencia ,txBox_FechaAsistencia, label_Fecha, txBox_FechaAsistencia, label_Fecha,
-                     txBox_NombreCarrera, label_NombreCarrera, txBox_Duración, label_Duración, txBox_IDCarrera, label_IDCarrera,
-                     txBox_NombreMateria, label_NombreMateria, txBox_HorarioCorrespondiente, label_HorarioCorrespondiente, txBox_IDMateria, label_IDMateria,
-                     txBox_NombreProfesor, label_NombreProfesor, txBox_IDProfesor, label_IDProfesor,
+                     txBox_NombreCarrera, label_NombreCarrera, txBox_Duración, label_Duración,
+                     txBox_NombreMateria, label_NombreMateria, txBox_HorarioCorrespondiente, label_HorarioCorrespondiente,
+                     txBox_NombreProfesor, label_NombreProfesor,
                      txBox_Valor, label_Valor, txBox_Tipo, label_Tipo
             ]
 
@@ -336,21 +336,29 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
                                                         'materia':    ["Nombre", "Horario",],
                                                         'profesor':   ["Nombre",],
                                                         'nota':       ["valorNota", "tipoNota"]
-                                }
+                               }
   
   datos = {}
 
   cajasDeTexto = {
-                              'alumno':  (txBox_FechaNacimiento, txBox_NombreAlumno,  txBox_IDAlumno),
+                              'alumno':  (txBox_FechaNacimiento, txBox_NombreAlumno),
                               'asistencia': (txBox_EstadoDeAsistencia , txBox_FechaAsistencia),
-                              'carrera':  (txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera),
-                              'materia': (txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria),
-                              'profesor': (txBox_NombreProfesor, txBox_IDProfesor),
+                              'carrera':  (txBox_NombreCarrera, txBox_Duración),
+                              'materia': (txBox_NombreMateria, txBox_HorarioCorrespondiente),
+                              'profesor': (txBox_NombreProfesor),
                               'nota':     (txBox_Valor, txBox_Tipo)
-                  }
+                 }
+  
+  campos_visibles = [c for c in cajasDeTexto[nombre_de_la_tabla] if not c.lower().startswith("id_")]
 
-  for índice, campo in enumerate(campos_de_la_base_de_datos[nombre_de_la_tabla]):
-   datos[campo] = cajasDeTexto[nombre_de_la_tabla][índice].get()
+  
+  for índice, campo in enumerate(campos_visibles):
+    valor = cajasDeTexto[nombre_de_la_tabla][índice].get()
+    if validarDatos and not valor:
+      mensajeTexto.showwarning("Falta un dato", f"Falta completar el campo: {campo}")
+      return None
+    datos[campo] = valor
+    return datos
   
   #En esta condición, valido los datos de la tabla
   #antes de agregarlo a la listBox. Puse un condicional
@@ -411,9 +419,8 @@ def seleccionar_registro():
       consulta = f"SELECT {campos} FROM {nombre_de_la_tabla} WHERE {ID_Campo} = %s"
       cursor.execute(consulta, (id,))
       fila_seleccionada = cursor.fetchone()
-      # resultado = cursor.fetchall()
-    
-      if not fila_seleccionada:
+      
+      if fila_seleccionada is None:
         mensajeTexto.showwarning("ADVERTENCIA", "NO SE ENCONTRÓ LA FILA")
         return
       
@@ -446,13 +453,10 @@ def pantalla_principal():
   mi_ventana.iconbitmap(ícono)
   mi_ventana.attributes("-alpha", 1)
   mi_ventana.resizable(False, False)
-  
+
   # --- BOTONES NECESARIOS ---
   global botón_agregar, botón_eliminar, botón_modificar, botón_ordenar, botón_exportar
-  
-  # for botón in [botón_agregar, botón_modificar, botón_eliminar, botón_ordenar, botón_exportar]:
-    
-  
+
   #Agregar
   botón_agregar = tk.Button(mi_ventana, text="Agregar Dato", command=lambda:insertar_datos(obtener_tabla_seleccionada()), width=10, height=1)
   botón_agregar.config(fg="black", bg=colores["verde"], font=("Arial", 8), cursor='hand2', activebackground=colores["verde_claro"])
@@ -469,7 +473,7 @@ def pantalla_principal():
   botón_eliminar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
   #Comparar
-  botón_ordenar = tk.Button(mi_ventana, text="Comparar", command=lambda:ordenar_datos(obtener_tabla_seleccionada()), width=10, height=1)
+  botón_ordenar = tk.Button(mi_ventana, text="Ordenar", command=lambda:ordenar_datos(obtener_tabla_seleccionada()), width=10, height=1)
   botón_ordenar.config(fg="black", bg=colores["dorado"], font=("Arial", 8), cursor='hand2', activebackground=colores["dorado_claro"])
   botón_ordenar.bind("<Return>", ejecutar_acción_presionando_Enter)
   
@@ -480,16 +484,13 @@ def pantalla_principal():
   
 
   # --- ETIQUETAS ---
-  global label_NombreAlumno, label_FechaNacimiento, label_IDAlumno, label_EstadoDeAsistencia, label_Fecha, label_NombreCarrera, label_Duración, label_IDCarrera, label_NombreMateria, label_HorarioCorrespondiente, label_IDMateria, label_NombreProfesor, label_HorasTrabajadas, label_IDProfesor, label_Valor, label_Tipo, label_Hora, label_Obligatoriedad
+  global label_NombreAlumno, label_FechaNacimiento, label_EstadoDeAsistencia, label_Fecha, label_NombreCarrera, label_Duración, label_NombreMateria, label_HorarioCorrespondiente, label_NombreProfesor, label_Valor, label_Tipo, label_Hora, label_Obligatoriedad
   #Etiquetas para la tabla de alumno
   label_NombreAlumno = tk.Label(mi_ventana, text="Nombre del Alumno *")
   label_NombreAlumno.config(fg="Black",bg=colores["rosado_claro"], font=("Arial", 12))
 
   label_FechaNacimiento = tk.Label(mi_ventana, text="Fecha que nació: Formato Año-Mes-Día *")
   label_FechaNacimiento.config(fg="Black",bg=colores["rosado_claro"], font=("Arial", 12))
-
-  label_IDAlumno = tk.Label(mi_ventana, text="ID *")
-  label_IDAlumno.config(fg="Black",bg=colores["rosado_claro"], font=("Arial", 12))
 
   #Etiquetas para la tabla de asistencias
   
@@ -506,9 +507,6 @@ def pantalla_principal():
   label_Duración = tk.Label(mi_ventana, text="Duración *")
   label_Duración.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
-  label_IDCarrera = tk.Label(mi_ventana, text="ID *")
-  label_IDCarrera.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
-
   #Etiquetas para la tabla de materia
   label_NombreMateria = tk.Label(mi_ventana, text="Nombre de la Materia *")
   label_NombreMateria.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
@@ -516,18 +514,9 @@ def pantalla_principal():
   label_HorarioCorrespondiente = tk.Label(mi_ventana, text="Horario correspondiente: Formato %H:%M *")
   label_HorarioCorrespondiente.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
-  label_IDMateria = tk.Label(mi_ventana, text="ID *")
-  label_IDMateria.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
-
   #Etiquetas para la tabla de profesor
   label_NombreProfesor = tk.Label(mi_ventana, text="Nombre del Profesor *")
   label_NombreProfesor.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
-
-  label_HorasTrabajadas = tk.Label(mi_ventana, text="Horas trabajadas *")
-  label_HorasTrabajadas.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
-
-  label_IDProfesor = tk.Label(mi_ventana, text="ID *")
-  label_IDProfesor.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
   #Etiquetas para la tabla de nota
   label_Valor = tk.Label(mi_ventana, text="Nota*")
@@ -540,15 +529,14 @@ def pantalla_principal():
   label_Hora = tk.Label(mi_ventana, text="")
   label_Hora.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 10))
   #Etiqueta para indicar que significa el asterisco
-  label_Obligatoriedad = tk.Label(mi_ventana, text="el * significa que son obligatorio seleccionar los datos")
+  label_Obligatoriedad = tk.Label(mi_ventana, text="el * significa que es obligatorio seleccionar los datos")
   label_Obligatoriedad.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 8))
 
   #--- ENTRIES ---
-  global txBox_NombreAlumno, txBox_FechaNacimiento, txBox_IDAlumno, txBox_EstadoDeAsistencia, txBox_FechaAsistencia, txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera, txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria, txBox_NombreProfesor, txBox_IDProfesor, txBox_Valor, txBox_Tipo, txBox_IDNota, opción, Lista_de_datos
+  global txBox_NombreAlumno, txBox_FechaNacimiento, txBox_EstadoDeAsistencia, txBox_FechaAsistencia, txBox_NombreCarrera, txBox_Duración, txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_NombreProfesor, txBox_Valor, txBox_Tipo, opción, Lista_de_datos
   #Tabla alumno
   txBox_NombreAlumno = tk.Entry(mi_ventana)
   txBox_FechaNacimiento = tk.Entry(mi_ventana)
-  txBox_IDAlumno = tk.Entry(mi_ventana)
 
   #Tabla asistencia
   txBox_EstadoDeAsistencia = tk.Entry(mi_ventana)
@@ -557,21 +545,17 @@ def pantalla_principal():
   #Tabla carrera
   txBox_NombreCarrera = tk.Entry(mi_ventana)
   txBox_Duración = tk.Entry(mi_ventana)
-  txBox_IDCarrera = tk.Entry(mi_ventana)
-
+  
   #Tabla materia
   txBox_NombreMateria = tk.Entry(mi_ventana)
   txBox_HorarioCorrespondiente = tk.Entry(mi_ventana)
-  txBox_IDMateria = tk.Entry(mi_ventana)
-
+  
   #Tabla profesor
   txBox_NombreProfesor = tk.Entry(mi_ventana)
-  txBox_IDProfesor = tk.Entry(mi_ventana)
 
   #Tabla nota
   txBox_Valor = tk.Entry(mi_ventana)
   txBox_Tipo = tk.Entry(mi_ventana)
-  txBox_IDNota = tk.Entry(mi_ventana)
 
   # --- RADIOBUTTONS ---
   global Botón_Tabla_de_Alumno, Botón_Tabla_de_Asistencia, Botón_Tabla_de_Carrera, Botón_Tabla_de_Materia, Botón_Tabla_de_Profesor, Botón_Tabla_de_Notas, opción
@@ -905,11 +889,11 @@ def mover_con_flechas(event=None):
                           Botón_Tabla_de_Notas
                         ]
   
-  cajasDeTexto = [ txBox_FechaNacimiento, txBox_NombreAlumno, txBox_IDAlumno, 
+  cajasDeTexto = [ txBox_FechaNacimiento, txBox_NombreAlumno, 
                              txBox_EstadoDeAsistencia, txBox_FechaAsistencia, 
-                             txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera, 
-                             txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria, 
-                             txBox_NombreProfesor, txBox_IDProfesor, 
+                             txBox_NombreCarrera, txBox_Duración, 
+                             txBox_NombreMateria, txBox_HorarioCorrespondiente, 
+                             txBox_NombreProfesor, 
                              txBox_Valor, txBox_Tipo
                   ]
   
@@ -958,19 +942,19 @@ def mover_con_flechas(event=None):
     if desde_lista_izquierda_hacia_caja or desde_lista_derecha_hacia_caja:
       if tabla_de_alumno:
           txBox_NombreAlumno.focus_set()
-          caja_activa = [txBox_FechaNacimiento, txBox_NombreAlumno, txBox_IDAlumno]
+          caja_activa = [txBox_FechaNacimiento, txBox_NombreAlumno]
       elif tabla_de_asistencia:
           txBox_EstadoDeAsistencia.focus_set()
           caja_activa = [txBox_EstadoDeAsistencia, txBox_FechaAsistencia]
       elif tabla_de_carrera:
           txBox_NombreCarrera.focus_set()
-          caja_activa = [txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera]
+          caja_activa = [txBox_NombreCarrera, txBox_Duración]
       elif tabla_de_materia:
           txBox_NombreMateria.focus_set()
-          caja_activa = [txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria]
+          caja_activa = [txBox_NombreMateria, txBox_HorarioCorrespondiente]
       elif tabla_de_profesor:
           txBox_NombreProfesor.focus_set()
-          caja_activa = [txBox_NombreProfesor, txBox_IDProfesor]
+          caja_activa = [txBox_NombreProfesor]
       elif tabla_de_nota:
           txBox_Valor.focus_set()
           caja_activa = [txBox_Valor, txBox_Tipo]
@@ -1004,15 +988,15 @@ def mover_con_flechas(event=None):
     if not caja_activa:
       if en_las_cajasDeTexto:
         if tabla_de_alumno:
-          caja_activa = [txBox_FechaNacimiento, txBox_NombreAlumno, txBox_IDAlumno]
+          caja_activa = [txBox_FechaNacimiento, txBox_NombreAlumno]
         elif tabla_de_asistencia:
           caja_activa = [txBox_EstadoDeAsistencia, txBox_FechaAsistencia]
         elif tabla_de_carrera:
-          caja_activa = [txBox_NombreCarrera, txBox_Duración, txBox_IDCarrera]
+          caja_activa = [txBox_NombreCarrera, txBox_Duración]
         elif tabla_de_materia:
-          caja_activa = [txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria]
+          caja_activa = [txBox_NombreMateria, txBox_HorarioCorrespondiente]
         elif tabla_de_profesor:
-          caja_activa = [txBox_NombreProfesor, txBox_IDProfesor]
+          caja_activa = [txBox_NombreProfesor]
         elif tabla_de_nota:
           caja_activa = [txBox_Valor, txBox_Tipo]
       else:

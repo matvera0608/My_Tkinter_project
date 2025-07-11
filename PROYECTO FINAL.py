@@ -85,8 +85,12 @@ def consultar_tabla(nombre_de_la_tabla):
                               FROM profesor AS pro
                               JOIN enseñanza AS e ON e.IDProfesor = pro.ID_Profesor
                               JOIN materia AS m ON e.IDMateria = m.ID_Materia;""")
+          
           case "nota":
-            cursor.execute("SELECT * FROM nota as n;")
+            cursor.execute("""SELECT n.valorNota, n.tipoNota, al.Nombre, m.Nombre
+                              FROM nota as n
+                              JOIN alumno as al ON n.IDAlumno = al.ID_Alumno
+                              JOIN materia as m ON n.IDMateria = m.ID_Materia;""")
           case _:
             cursor.execute(f"SELECT * FROM {nombre_de_la_tabla};")
         
@@ -99,8 +103,7 @@ def consultar_tabla(nombre_de_la_tabla):
 
         lista_IDs.clear()
         
-        #Creé una variable para alinear bien los registros. El -1 sirve
-        #para no contar el ID ya que está oculto
+        #Creé una variable para alinear bien los registros.
         ancho_de_tablas = []
         
         #Este for hace que el ID se tome en cuenta a la hora de hacer
@@ -109,12 +112,10 @@ def consultar_tabla(nombre_de_la_tabla):
         for fila in resultado:
           idReal = fila[0]
           lista_IDs.append(idReal)
-          #MEJORA: la tabla nota no tiene el ID, por lo tanto necesito mostrar la primer columna del registro valor o tipoNota.
-          # índice = Lista_de_datos.curselection()
-          # if índice:
-          #   idReal = lista_IDs[índice[0]]
           filaVisible = fila[1:] if nombre_de_la_tabla != "nota" else fila
           
+          #Este controla que el ancho de las tablas se ajuste
+          #dependiendo de la cantidad de registros que tenga para facilitar la lectura al usuario
           while len(ancho_de_tablas) < len(filaVisible):
             ancho_de_tablas.append(0)
           
@@ -139,6 +140,7 @@ def consultar_tabla(nombre_de_la_tabla):
             Lista_de_datos.insert(tk.END, filas_formateadas)
           else:
             print("❗ Columnas desalineadas:", filaTipoCadena)
+            print("🔍 Longitudes -> fila:", len(filaTipoCadena), "| ancho_de_tablas:", len(ancho_de_tablas))
     
     desconectar_base_de_datos(conexión)
   except Exception as Exc:
@@ -348,7 +350,6 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
                               'nota':     (txBox_Valor, txBox_Tipo)
                   }
 
-  #Este for es más escalable, ya que esto me solucionó el problema de que no me imprimía la Nota 1 en la listBox
   for índice, campo in enumerate(campos_de_la_base_de_datos[nombre_de_la_tabla]):
    datos[campo] = cajasDeTexto[nombre_de_la_tabla][índice].get()
   
@@ -364,16 +365,6 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
   else:
     return datos
 
-#Esta función llamada extraerIDs y sirve
-#para que pueda modificar y eliminar datos de una tabla dinámicamente
-# # def extraerIDs(selección):
-# #   partes = selección.split('|')
-# #   for parte in partes:
-# #     parte = parte.strip()
-# #     dígito = parte.isdigit()
-# #     if dígito:
-# #       return int(parte)
-# #   return None
 
 #Esta función me permite obtener el ID 
 #de cualquier tabla que se encuentre en mi base de datos antes de eliminar
@@ -410,10 +401,19 @@ def seleccionar_registro():
   #Esta variable consulta me permite obtener los datos de la tabla de forma ordenada dependiendo del orden de la caja de texto
   #{', '.join([campo for campo in datos.keys()])} este es un método que me permite agregar los campos en las cajas de texto de forma dinámica
   consulta = {
-    nombre_de_la_tabla: f"SELECT {', '.join([campo for campo in datos.keys()])} FROM {nombre_de_la_tabla};"
-    }
+    "alumno": """SELECT * FROM alumno""",
+    "asistencia" :"""SELECT * FROM asistencia""",
+    "carrera": """SELECT * FROM carrera""",
+    "materia" : """SELECT * FROM materia""",
+    "profesor": """SELECT * FROM profesor""",
+    "nota" : """SELECT * FROM nota"""
+  }
+  selección = Lista_de_datos.curselection()
+
   if conexión:
     try:
+      índice = selección[0]
+      id = lista_IDs[índice]
       cursor = conexión.cursor()
       cursor.execute(consulta[nombre_de_la_tabla])
       selección = Lista_de_datos.curselection()
@@ -422,13 +422,10 @@ def seleccionar_registro():
       if not resultado:
         messagebox.showwarning("ADVERTENCIA", "NO HAY DATOS EN LA TABLA")
         return
-    
+      
       if selección:
-        fila_seleccionada = resultado[selección[0]]
-        #Este if me permite controlar que nombre de la tabla no exista en la caja de textos pueda llamar a la función obtener_datos_de_Formulario
-        #y no me tire error de que no existe la tabla en la base de datos, además para que pueda agregarlo a la listBox.
         obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=False)
-          
+        fila_seleccionada = resultado[índice]
         #Este for me limpia los campos de texto después de agregarlo
         for caja, valor in zip(cajasDeTexto[nombre_de_la_tabla], fila_seleccionada):
           caja.delete(0, tk.END)
@@ -940,19 +937,19 @@ def mover_con_flechas(event=None):
   tecla = event.keysym
   
   botones_funcionales = [ botón_agregar,
-                                        botón_modificar, 
-                                        botón_eliminar, 
-                                        botón_comparar, 
-                                        botón_exportar
-                                      ]
+                          botón_modificar, 
+                          botón_eliminar, 
+                          botón_comparar, 
+                          botón_exportar
+                        ]
   
-  botones_excluyentes = [  Botón_Tabla_de_Alumno, 
-                                          Botón_Tabla_de_Asistencia, 
-                                          Botón_Tabla_de_Carrera,
-                                          Botón_Tabla_de_Materia,
-                                          Botón_Tabla_de_Profesor,
-                                          Botón_Tabla_de_Notas
-                                        ]
+  botones_excluyentes = [ Botón_Tabla_de_Alumno, 
+                          Botón_Tabla_de_Asistencia, 
+                          Botón_Tabla_de_Carrera,
+                          Botón_Tabla_de_Materia,
+                          Botón_Tabla_de_Profesor,
+                          Botón_Tabla_de_Notas
+                        ]
   
   cajasDeTexto = [ txBox_FechaNacimiento, txBox_NombreAlumno, txBox_IDAlumno, 
                              txBox_EstadoDeAsistencia, txBox_FechaAsistencia, 
@@ -960,7 +957,7 @@ def mover_con_flechas(event=None):
                              txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_IDMateria, 
                              txBox_NombreProfesor, txBox_IDProfesor, 
                              txBox_Valor, txBox_Tipo
-                            ]
+                  ]
   
   caja_activa = []
   
@@ -1083,8 +1080,6 @@ def mover_con_flechas(event=None):
       caja_activa[nuevo_índice].focus_set()
       return "break"
 
-
 # --- INICIO DEL SISTEMA ---
 interfaz = pantalla_principal()
-
 interfaz.mainloop()

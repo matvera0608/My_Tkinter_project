@@ -1,7 +1,7 @@
 import os
 from mysql.connector import Error
 from datetime import datetime
-from tkinter import messagebox,  filedialog, font
+from tkinter import messagebox as mensajeTexto, filedialog as diálogo, font as fuenteLetra
 from reportlab.pdfgen import canvas
 import tkinter as tk, re
 import mysql.connector as MySql
@@ -98,7 +98,7 @@ def consultar_tabla(nombre_de_la_tabla):
         Lista_de_datos.delete(0, tk.END)
 
         if not resultado:
-          messagebox.showinfo("Sin datos", "No hay datos disponibles para mostrar.")
+          mensajeTexto.showinfo("Sin datos", "No hay datos disponibles para mostrar.")
           return
 
         lista_IDs.clear()
@@ -131,7 +131,6 @@ def consultar_tabla(nombre_de_la_tabla):
             case "alumno":
               filaVisible[2] = f"{filaVisible[2]} años"
             case "materia":
-              # if len(filaVisible) >= 2:
               filaVisible[1] = f"{filaVisible[1]} horas"
           filaTipoCadena = [str(valor) for valor in filaVisible]
           #Se agrega una separación para que no se vea pegado
@@ -144,7 +143,7 @@ def consultar_tabla(nombre_de_la_tabla):
     
     desconectar_base_de_datos(conexión)
   except Exception as Exc:
-    messagebox.showerror("ERROR", f"Algo no está correcto o no tiene nada de datos: {Exc}")
+    mensajeTexto.showerror("ERROR", f"Algo no está correcto o no tiene nada de datos: {Exc}")
   
 def seleccionar_y_consultar():
   botón_seleccionado = opción.get()
@@ -155,7 +154,7 @@ def seleccionar_y_consultar():
                4: 'materia',
                5: 'profesor',
                6: 'nota'
-              }
+          }
   try:
     nombre_de_la_tabla = tabla.get(botón_seleccionado)
     if nombre_de_la_tabla is None:
@@ -163,7 +162,7 @@ def seleccionar_y_consultar():
     else:
       consultar_tabla(nombre_de_la_tabla)
   except Exception as e:
-    messagebox.showerror(f"Error al consultar la tabla: {e}")
+    mensajeTexto.showerror(f"Error al consultar la tabla: {e}")
     return None
 
 #Definí una función para poder mostrar 
@@ -187,7 +186,7 @@ def habilitar_botones_e_inputs():
   botón_agregar.place(x = 40, y = 100)
   botón_modificar.place(x = 40, y = 160)
   botón_eliminar.place(x = 40, y = 220)
-  botón_comparar.place(x = 40, y = 280)
+  botón_ordenar.place(x = 40, y = 280)
   botón_exportar.place(x= 20, y= 50)
   
   label_Obligatoriedad.pack(padx= 100, pady= 50)
@@ -219,7 +218,7 @@ def obtener_tabla_seleccionada():
               }
   nombre = tabla.get(opción.get(), None)
   if nombre is None:
-    messagebox.showerror("Error", "Selección inválida. Los valores están entre el 1 y 6")
+    mensajeTexto.showerror("Error", "Selección inválida. Los valores están entre el 1 y 6")
     return None
   else:
     return nombre
@@ -252,7 +251,7 @@ def validar_datos(nombre_de_la_tabla, datos):
         cursor.execute(consulta, (datos[campo[0]], datos[campo[1]]))
       resultado = cursor.fetchone()
     else:
-      messagebox.showerror("Error", "La tabla solicitada no se encuentra")
+      mensajeTexto.showerror("Error", "La tabla solicitada no se encuentra")
       return False
   
     
@@ -288,7 +287,7 @@ def validar_datos(nombre_de_la_tabla, datos):
     }
     
     if not nombre_de_la_tabla in validaciones:
-      messagebox.showerror("Error", "La tabla solicitada no se encuentra")
+      mensajeTexto.showerror("Error", "La tabla solicitada no se encuentra")
       return False
     #en este for controlo que los datos estén puestos correctamente, en caso contrario
     #no me agregan o modifican. Condiciones a llevar en cuenta:
@@ -296,29 +295,29 @@ def validar_datos(nombre_de_la_tabla, datos):
     #el formato debe cumplir estrictamente con las validaciones, que es un diccionario para control
     for campo, valor in datos.items():
       if campo in validaciones[nombre_de_la_tabla] and not valor.strip():
-        messagebox.showerror("Error", "Los campos no pueden estar vacíos")
+        mensajeTexto.showerror("Error", "Los campos no pueden estar vacíos")
         return False
       elif campo in validaciones[nombre_de_la_tabla] and not validaciones[nombre_de_la_tabla][campo](valor):
-        messagebox.showerror("Error", f"El campo {campo} tiene un formato inválido con valor {valor}")
+        mensajeTexto.showerror("Error", f"El campo {campo} tiene un formato inválido con valor {valor}")
         return False
       elif campo == "Estado" and valor.lower() not in ["presente", "ausente"]:
-         messagebox.showerror("Error", "La asistencia sólo permite poner presente o ausente")
+         mensajeTexto.showerror("Error", "La asistencia sólo permite poner presente o ausente")
          return False
       elif campo in ["valorNota", "tipoNota"]:
         if not patrón_númerosDecimales.match(valor):
-          messagebox.showerror("Error", f"El campo {campo} tiene que ser un número válido")
+          mensajeTexto.showerror("Error", f"El campo {campo} tiene que ser un número válido")
           return False
         elif (float(valor) < 1 or float(valor) > 10):
-          messagebox.showerror("Error", f"El campo que tiene una nota menor que 1 o mayor que 10 es {campo}")
+          mensajeTexto.showerror("Error", f"El campo que tiene una nota menor que 1 o mayor que 10 es {campo}")
           return False
         
       #en esta condición verifico si el valor ya existe en la base de datos o si un registro se repite o no
       if resultado and resultado[0] > 0:
-        messagebox.showwarning("Advertencia", f"El valor '{valor}' en '{campo}' ya existe en la base de datos")
+        mensajeTexto.showwarning("Advertencia", f"El valor '{valor}' en '{campo}' ya existe en la base de datos")
         return False
          
   except ValueError as vE:
-    messagebox.showerror("Error", F"El formato de uno de los campos es incorrecto: {str(vE)}")
+    mensajeTexto.showerror("Error", F"El formato de uno de los campos es incorrecto: {str(vE)}")
     return False
   finally:
     desconectar_base_de_datos(conexión)
@@ -328,7 +327,7 @@ def validar_datos(nombre_de_la_tabla, datos):
 #En esta función obtengo todos los datos del formulario de MySQL para agregar, modificar
 #y eliminar algunos datos de la tabla
 def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
-  global cajasDeTexto, datos
+  global cajasDeTexto, datos, campos_de_la_base_de_datos
   
   campos_de_la_base_de_datos = {
                                                         'alumno':     ["FechaDeNacimiento", "Nombre",],
@@ -365,7 +364,6 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
   else:
     return datos
 
-
 #Esta función me permite obtener el ID 
 #de cualquier tabla que se encuentre en mi base de datos antes de eliminar
 #ya que SQL obliga poner una condición antes de ejecutar una tarea
@@ -397,41 +395,37 @@ def acción_doble():
 def seleccionar_registro():
   nombre_de_la_tabla = obtener_tabla_seleccionada()
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=False)
-  conexión = conectar_base_de_datos()
-  #Esta variable consulta me permite obtener los datos de la tabla de forma ordenada dependiendo del orden de la caja de texto
-  #{', '.join([campo for campo in datos.keys()])} este es un método que me permite agregar los campos en las cajas de texto de forma dinámica
-  consulta = {
-    "alumno": """SELECT * FROM alumno""",
-    "asistencia" :"""SELECT * FROM asistencia""",
-    "carrera": """SELECT * FROM carrera""",
-    "materia" : """SELECT * FROM materia""",
-    "profesor": """SELECT * FROM profesor""",
-    "nota" : """SELECT * FROM nota"""
-  }
+  ID_Campo = conseguir_campo_ID(nombre_de_la_tabla)
+  
   selección = Lista_de_datos.curselection()
-
+  if not selección:
+    return
+  índice = selección[0]
+  id = lista_IDs[índice]
+  
+  conexión = conectar_base_de_datos()
   if conexión:
     try:
-      índice = selección[0]
-      id = lista_IDs[índice]
       cursor = conexión.cursor()
-      cursor.execute(consulta[nombre_de_la_tabla])
-      selección = Lista_de_datos.curselection()
-      resultado = cursor.fetchall()
+      campos = ', '.join([campo for campo in datos.keys()])
+      consulta = f"SELECT {campos} FROM {nombre_de_la_tabla} WHERE {ID_Campo} = %s"
+      cursor.execute(consulta, (id,))
+      fila_seleccionada = cursor.fetchone()
+      # resultado = cursor.fetchall()
     
-      if not resultado:
-        messagebox.showwarning("ADVERTENCIA", "NO HAY DATOS EN LA TABLA")
+      if not fila_seleccionada:
+        mensajeTexto.showwarning("ADVERTENCIA", "NO SE ENCONTRÓ LA FILA")
         return
       
       if selección:
         obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=False)
-        fila_seleccionada = resultado[índice]
+
         #Este for me limpia los campos de texto después de agregarlo
         for caja, valor in zip(cajasDeTexto[nombre_de_la_tabla], fila_seleccionada):
           caja.delete(0, tk.END)
           caja.insert(0, str(valor))
     except Error as error:
-      messagebox.showerror("ERROR", f"ERROR INESPERADO AL SELECCIONAR: {str(error)}")
+      mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL SELECCIONAR: {str(error)}")
     finally:
       if cursor:
         cursor.close()
@@ -454,9 +448,9 @@ def pantalla_principal():
   mi_ventana.resizable(False, False)
   
   # --- BOTONES NECESARIOS ---
-  global botón_agregar, botón_eliminar, botón_modificar, botón_comparar, botón_exportar
+  global botón_agregar, botón_eliminar, botón_modificar, botón_ordenar, botón_exportar
   
-  # for botón in [botón_agregar, botón_modificar, botón_eliminar, botón_comparar, botón_exportar]:
+  # for botón in [botón_agregar, botón_modificar, botón_eliminar, botón_ordenar, botón_exportar]:
     
   
   #Agregar
@@ -475,9 +469,9 @@ def pantalla_principal():
   botón_eliminar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
   #Comparar
-  botón_comparar = tk.Button(mi_ventana, text="Comparar", command=lambda:comparar_datos(obtener_tabla_seleccionada()), width=10, height=1)
-  botón_comparar.config(fg="black", bg=colores["dorado"], font=("Arial", 8), cursor='hand2', activebackground=colores["dorado_claro"])
-  botón_comparar.bind("<Return>", ejecutar_acción_presionando_Enter)
+  botón_ordenar = tk.Button(mi_ventana, text="Comparar", command=lambda:ordenar_datos(obtener_tabla_seleccionada()), width=10, height=1)
+  botón_ordenar.config(fg="black", bg=colores["dorado"], font=("Arial", 8), cursor='hand2', activebackground=colores["dorado_claro"])
+  botón_ordenar.bind("<Return>", ejecutar_acción_presionando_Enter)
   
   #Exportar como PDF
   botón_exportar = tk.Button(mi_ventana, text="Exportar", command=lambda:exportar_en_PDF(obtener_tabla_seleccionada()), width=10, height=1)
@@ -640,7 +634,7 @@ def insertar_datos(nombre_de_la_tabla):
     cursor.execute(query)
     conexión.commit()
     consultar_tabla(nombre_de_la_tabla)
-    messagebox.showinfo("CORRECTO", "SE AGREGÓ LOS DATOS NECESARIOS")
+    mensajeTexto.showinfo("CORRECTO", "SE AGREGÓ LOS DATOS NECESARIOS")
     #Este for me limpia los campos de texto después de agregarlo
     #para que no quede el último valor que se agregó y se repita continuamente
     for i, (campo, valor) in enumerate(datosNecesarios.items()):
@@ -648,7 +642,7 @@ def insertar_datos(nombre_de_la_tabla):
       entry.delete(0, tk.END)
     desconectar_base_de_datos(conexión)
   except Error as e:
-    messagebox.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {e}")
+    mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {e}")
 
 #Mejoré mi función de insertar datos para modificarlo
 #dinámicamente sin tener que entrar a MySQL y puse una
@@ -657,13 +651,13 @@ def insertar_datos(nombre_de_la_tabla):
 def modificar_datos(nombre_de_la_tabla):
   columna_seleccionada = Lista_de_datos.curselection()
   if not columna_seleccionada:
-    messagebox.showwarning("ADVERTENCIA", "FALTA SELECCIONAR UNA COLUMNA")
+    mensajeTexto.showwarning("ADVERTENCIA", "FALTA SELECCIONAR UNA COLUMNA")
     return
   else:
     selección = columna_seleccionada[0]
     ID_Seleccionado = lista_IDs[selección]
     if ID_Seleccionado is None:
-      messagebox.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
+      mensajeTexto.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
       return
   
   datosNecesarios = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
@@ -679,8 +673,7 @@ def modificar_datos(nombre_de_la_tabla):
       cursor.execute(query, values)
       conexión.commit()
       consultar_tabla(nombre_de_la_tabla)
-      print(f"Edad actualizada: {values}")
-      messagebox.showinfo("CORRECTO", "SE MODIFICÓ EXITOSAMENTE")
+      mensajeTexto.showinfo("CORRECTO", "SE MODIFICÓ EXITOSAMENTE")
       #Este for me limpia los campos de texto después de agregarlo
       #para que no quede el último valor que se agregó y se repita continuamente
       for i, (campo, valor) in enumerate(datosNecesarios.items()):
@@ -688,7 +681,7 @@ def modificar_datos(nombre_de_la_tabla):
         entry.delete(0, tk.END)
       desconectar_base_de_datos(conexión)
   except Error as e:
-    messagebox.showerror("ERROR", f"ERROR INESPERADO AL MODIFICAR: {e}")
+    mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL MODIFICAR: {e}")
   
 #Mejoré mi función de insertar datos para eliminar
 #dinámicamente sin tener que entrar a MySQL y puse una
@@ -699,7 +692,7 @@ def eliminar_datos(nombre_de_la_tabla):
   datosNecesarios = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=False)
   CampoID = conseguir_campo_ID(nombre_de_la_tabla)
   if not CampoID:
-    messagebox.showerror("ERROR", "No se ha podido determinar el campo ID para esta tabla")
+    mensajeTexto.showerror("ERROR", "No se ha podido determinar el campo ID para esta tabla")
     return
   
   if columna_seleccionada:
@@ -717,36 +710,33 @@ def eliminar_datos(nombre_de_la_tabla):
                 entry = cajasDeTexto[nombre_de_la_tabla][i]
                 entry.delete(0, tk.END)
             else:
-              messagebox.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
+              mensajeTexto.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
             conexión.commit()
             consultar_tabla(nombre_de_la_tabla)
             print(f"Eliminando de {nombre_de_la_tabla} con {CampoID} = {ID_Seleccionado}")
-            messagebox.showinfo("ÉXITOS", "Ha sido eliminada exitosamente")
+            mensajeTexto.showinfo("ÉXITOS", "Ha sido eliminada exitosamente")
       except Error as e:
-         messagebox.showerror("ERROR", f"ERROR INESPERADO AL ELIMINAR: {e}")
+         mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL ELIMINAR: {e}")
   else:
-    messagebox.showwarning("ADVERTENCIA", "NO SELECCIONASTE NINGUNA COLUMNA")
+    mensajeTexto.showwarning("ADVERTENCIA", "NO SELECCIONASTE NINGUNA COLUMNA")
 
 #En esta función comparar relaciono una tabla con la otra
 #pero coincidiendo cada valor para que se pueda leer con facilidad
 #y saber si uno de los alumnos están presentes o no
-def comparar_datos(nombre_de_la_tabla):
+def ordenar_datos(nombre_de_la_tabla):
   try:
     conexión = conectar_base_de_datos()
     if conexión is None:
-      messagebox.showerror("ERROR DE CONEXIÓN", "NO SE PUDO CONECTAR A LA BASE DE DATOS")
+      mensajeTexto.showerror("ERROR DE CONEXIÓN", "NO SE PUDO CONECTAR A LA BASE DE DATOS")
       return
     cursor = conexión.cursor()
+    ordenar_Campo = tk.simpledialog.askstring("Ordenar", f"Que campo quieres ordenar los datos en {nombre_de_la_tabla}? ")
+    campos_de_la_base_de_datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=False)
     
-    #Ahora actualicé más la función para que pueda elegir la tabla a comparar.
-    #Puse una ventana que dispare un cuadro de texto para que el usuario pueda elegir la tabla a comparar escribiendo el nombre de la tabla.
-    elegir_Tabla = tk.simpledialog.askstring("Comparar", "Ingrese el nombre de la tabla a comparar: ")
-
-    if elegir_Tabla is None:
-      return None #Ocurre cuando el usuario presiona cancelar en el cuadro de texto
+    if ordenar_Campo is None:
+      return None
     else:
-      elegir_Tabla = elegir_Tabla.strip().lower() #Acá verifico que el usuario no ingrese espacios en blanco al principio o al final del nombre de la tabla, 
-                                                                          #si por casualidad el mismo lo pone corta los espacios y lo convierte a minúscula.
+      ordenar_Campo = ordenar_Campo.strip().lower()
       tabla_a_seleccionar = {
         "alumno": Botón_Tabla_de_Alumno,
         "asistencia": Botón_Tabla_de_Asistencia,
@@ -758,37 +748,20 @@ def comparar_datos(nombre_de_la_tabla):
       
       #Esta variable guarda el botón seleccionado dependiendo de la tabla que elija el usuario
       #y si no existe, me tira un error de que no se ha ingresado ninguna tabla
-      botónSeleccionado = tabla_a_seleccionar.get(elegir_Tabla)
+      botónSeleccionado = tabla_a_seleccionar.get(ordenar_Campo)
       
       if not botónSeleccionado:
-        messagebox.showerror("ERROR", "NO SE HA INGRESADO NINGUNA TABLA")
+        mensajeTexto.showerror("ERROR", "NO SE HA INGRESADO NINGUNA TABLA")
         return
       
       botónSeleccionado.select() #Esto selecciona el botón correspondiente a la tabla elegida por el usuario
-      
-      match elegir_Tabla:
-        case "alumno":
-          consulta = "SELECT alumno.Nombre, asistencia.Estado FROM alumno JOIN asistencia on alumno.ID_Alumno = asistencia.ID_Asistencia;"
-        case "asistencia":
-          consulta = "SELECT asistencia.Estado, alumno.Nombre FROM asistencia JOIN alumno on asistencia.ID_Asistencia = alumno.ID_Alumno;"
-        case "carrera":
-          consulta = "SELECT carrera.Nombre, alumno.Nombre FROM carrera JOIN alumno on carrera.ID_Carrera = alumno.ID_Alumno;"
-        case "profesor":
-          consulta = "SELECT profesor.Nombre, materia.Nombre FROM profesor JOIN materia on profesor.ID_Profesor = materia.ID_Materia;"
-        case "materia":
-          consulta = "SELECT materia.Nombre, materia.Horario, profesor.Nombre FROM materia JOIN profesor on materia.ID_Materia = profesor.ID_Profesor;"
-        case "nota":
-          consulta = "SELECT nota.Promedio, nota.Estado, alumno.Nombre FROM nota JOIN alumno on nota.ID_Nota = alumno.ID_Alumno;"
-        case _:
-          messagebox.showerror("ERROR", "LA TABLA NO EXISTE EN LA BASE DE DATOS")
-          return
         
-    cursor.execute(consulta)
+    # cursor.execute(consulta)
     resultado = cursor.fetchall()
 
     #Controlo que haya resultados, en caso contrario, me imprime un mensaje de que no hay resultados para criterios específicos
     if not resultado:
-      messagebox.showinfo("SIN RESULTADOS", "NO SE ENCONTRARON REGISTROS PARA LOS CRITERIOS ESPECÍFICOS")
+      mensajeTexto.showinfo("SIN RESULTADOS", "NO SE ENCONTRARON REGISTROS PARA LOS CRITERIOS ESPECÍFICOS")
       return
     
     Lista_de_datos.delete(0, tk.END)
@@ -797,7 +770,7 @@ def comparar_datos(nombre_de_la_tabla):
       Lista_de_datos.insert(tk.END, " | ".join(map(lambda x: str(x) if x is not None else "", fila )))
     
   except Error as e:
-     messagebox.showerror("ERROR", f"HA OCURRIDO UN ERROR AL RELACIONAR LA TABLA CON LA OTRA: {str(e)}")
+     mensajeTexto.showerror("ERROR", f"HA OCURRIDO UN ERROR AL RELACIONAR LA TABLA CON LA OTRA: {str(e)}")
   finally:
     desconectar_base_de_datos(conexión)
 
@@ -807,32 +780,13 @@ def exportar_en_PDF(nombre_de_la_tabla):
     conexión = conectar_base_de_datos()
     if conexión is None:
       return
-
     cursor = conexión.cursor()
-    
-    # match nombre_de_la_tabla:
-    #   case 'alumno':
-    #     consulta = "SELECT * FROM alumno"
-    #   case 'asistencia':
-    #     consulta = "SELECT * FROM asistencia"
-    #   case 'carrera':
-    #     consulta = "SELECT * FROM carrera"
-    #   case 'materia':
-    #     consulta = "SELECT * FROM materia"
-    #   case 'profesor':
-    #     consulta = "SELECT * FROM profesor"
-    #   case 'nota':
-    #     consulta = "SELECT * FROM nota"
-    #   case _:
-    #     messagebox.showerror("ERROR", "NO SE ENCONTRÓ LA TABLA ESPECIFICADA")
-    #     return
-      
-    cursor.execute(consulta)
+    cursor.execute()
     fila = cursor.fetchall()
     
     datos = Lista_de_datos.get(0, tk.END)
     
-    ventana_exportar = filedialog.asksaveasfilename(
+    ventana_exportar = diálogo.asksaveasfilename(
       defaultextension=".pdf",
       filetypes=[("Archivo PDF","*.pdf")],
       initialfile="Sistema Gestor de Asistencia",
@@ -845,7 +799,7 @@ def exportar_en_PDF(nombre_de_la_tabla):
     
     #aquí empiezo a crear el archivo PDF para exportar la información del Sistema Gestor de Asistencias 
     canva = canvas.Canvas(ventana_exportar)
-    canva.setFont("Helvetica", 20)
+    canva.setFont("Arial", 20)
     y = 780
     
     canva = canvas.Canvas(ventana_exportar, pagesize=letter)
@@ -857,10 +811,10 @@ def exportar_en_PDF(nombre_de_la_tabla):
       
     canva.save()
     
-    messagebox.showwarning("ÉXITOS", "EXPORTADO CORRECTAMENTE")
+    mensajeTexto.showwarning("ÉXITOS", "EXPORTADO CORRECTAMENTE")
     
   except Error as e:
-    messagebox.showerror("OCURRIÓ UN ERROR", f"Error al exportar en PDF la información detallada: {str(e)}")
+    mensajeTexto.showerror("OCURRIÓ UN ERROR", f"Error al exportar en PDF la información detallada: {str(e)}")
 
 # --- EVENTOS PARA BOTONES ---
 
@@ -920,8 +874,8 @@ def ejecutar_acción_presionando_Enter(event):
     modificar_datos(obtener_tabla_seleccionada())
   elif event.widget == botón_eliminar:
     eliminar_datos(obtener_tabla_seleccionada())
-  elif event.widget == botón_comparar:
-    comparar_datos(obtener_tabla_seleccionada())
+  elif event.widget == botón_ordenar:
+    ordenar_datos(obtener_tabla_seleccionada())
   elif event.widget == botón_exportar:
     exportar_en_PDF(obtener_tabla_seleccionada())
   return "break"
@@ -939,7 +893,7 @@ def mover_con_flechas(event=None):
   botones_funcionales = [ botón_agregar,
                           botón_modificar, 
                           botón_eliminar, 
-                          botón_comparar, 
+                          botón_ordenar, 
                           botón_exportar
                         ]
   

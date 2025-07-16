@@ -1,11 +1,11 @@
 import os
 from mysql.connector import Error
-from datetime import datetime
+from datetime import datetime, date, time as d_time
 from tkinter import messagebox as mensajeTexto, filedialog as diálogo, font
 from reportlab.pdfgen import canvas
 import tkinter as tk, re
 import mysql.connector as MySql
-import time
+import time as hora_del_sistema
 from reportlab.lib.pagesizes import letter
 
 # --- COLORES EN HEXADECIMALES ---
@@ -259,11 +259,11 @@ def validar_datos(nombre_de_la_tabla, datos):
     validaciones = {
       'alumno': {
               "Nombre": lambda valor:patrón_nombre.match(valor),
-              "FechaDeNacimiento": lambda valor: valor.strip() and time.strptime(valor, '%d/%m/%Y'),
+              "FechaDeNacimiento": lambda valor: valor.strip() and d_time.strptime(valor, '%d/%m/%Y'),
       },
       'asistencia': {
               "Estado": lambda valor: valor.isalpha(),
-              "Fecha_Asistencia": lambda valor: time.strptime(valor, '%d/%m/%Y')
+              "Fecha_Asistencia": lambda valor: d_time.strptime(valor, '%d/%m/%Y')
       },
       'carrera': {
               "Nombre": lambda valor :patrón_nombre.match(valor),
@@ -343,7 +343,7 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
                               'asistencia': (txBox_EstadoDeAsistencia , txBox_FechaAsistencia),
                               'carrera':  (txBox_NombreCarrera, txBox_Duración),
                               'materia': (txBox_NombreMateria, txBox_HorarioCorrespondiente),
-                              'profesor': (txBox_NombreProfesor),
+                              'profesor': (txBox_NombreProfesor,),
                               'nota':     (txBox_Valor, txBox_Tipo)
                  }
 
@@ -382,8 +382,7 @@ def conseguir_campo_ID(nombre_de_la_tabla):
 
 #Esta función sirve para actualizar la hora
 def actualizar_la_hora(interfaz):
-  
-  label_Hora.config(text=time.strftime("%I:%M:%S %p"))
+  label_Hora.config(text=hora_del_sistema.strftime("%I:%M:%S %p"))
   label_Hora.pack()
   interfaz.after(1000, actualizar_la_hora, interfaz)
   
@@ -430,7 +429,18 @@ def seleccionar_registro():
       if selección:
         obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=False)
         #Este for me limpia los campos de texto después de agregarlo
-        for caja, valor in zip(cajasDeTexto[nombre_de_la_tabla], fila_seleccionada):
+        for campo, (caja, valor) in zip(campos_de_la_base_de_datos[nombre_de_la_tabla], zip(cajasDeTexto[nombre_de_la_tabla], fila_seleccionada)):
+          # Limpia la caja de texto antes de insertar el valor
+          # Verificamos si es un valor tipo fecha (MySQL trae como string 'YYYY-MM-DD')
+          if "fecha" in campo.lower():
+            if isinstance(valor, datetime) or (isinstance(valor, date) and not isinstance(valor, d_time)): #Este es más seguro ejecutar en comparación con la condición de una sola vez.
+              valor = valor.strftime("%d/%m/%Y")  
+            elif isinstance(valor, str):
+              try:
+                valor_fecha = datetime.strptime(valor, "%Y-%m-%d")
+                valor = valor_fecha.strftime("%d/%m/%Y")
+              except ValueError:
+                print("No es una fecha válida:", valor)
           caja.delete(0, tk.END)
           caja.insert(0, str(valor))
     except Error as error:

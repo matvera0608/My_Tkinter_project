@@ -1,7 +1,7 @@
 import os
 from mysql.connector import Error
 from datetime import datetime
-from tkinter import messagebox as mensajeTexto, filedialog as diálogo, font as fuenteLetra
+from tkinter import messagebox as mensajeTexto, filedialog as diálogo, font
 from reportlab.pdfgen import canvas
 import tkinter as tk, re
 import mysql.connector as MySql
@@ -231,6 +231,7 @@ def validar_datos(nombre_de_la_tabla, datos):
   cursor = conexión.cursor()
   patrón_nombre = re.compile(r'^[A-Za-záéíóúÁÉÍÓÚñÑüÜ\s]+$') #Esta variable regular contiene la expresión de solo para letras
   patrón_númerosDecimales = re.compile(r'^\d+([.,]\d+)?$')
+  patrón_alfanumérico = re.compile(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$') #Esta variable regular contiene la expresión de letras y números
   try:
     tabla_a_validar = {"alumno":     ["Nombre", "FechaDeNacimiento", ],
                        "carrera":    ["Nombre", "Duración"],
@@ -258,31 +259,26 @@ def validar_datos(nombre_de_la_tabla, datos):
     validaciones = {
       'alumno': {
               "Nombre": lambda valor:patrón_nombre.match(valor),
-              "FechaDeNacimiento": lambda valor: valor.strip() and time.strptime(valor, '%Y-%m-%d'),
-              # "ID_Alumno": lambda valor: valor.isdigit()
+              "FechaDeNacimiento": lambda valor: valor.strip() and time.strptime(valor, '%d/%m/%Y'),
       },
       'asistencia': {
               "Estado": lambda valor: valor.isalpha(),
-              "Fecha_Asistencia": lambda valor: time.strptime(valor, '%Y-%m-%d')
+              "Fecha_Asistencia": lambda valor: time.strptime(valor, '%d/%m/%Y')
       },
       'carrera': {
               "Nombre": lambda valor :patrón_nombre.match(valor),
-              "Duración": lambda valor :re.match(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$', valor), #en Duración cambié la expresión regular para que acepte letras, números y espacios.
-              # "ID_Carrera": lambda valor: valor.isdigit()
+              "Duración": lambda valor :patrón_alfanumérico.match(valor), #en Duración cambié la expresión regular para que acepte letras, números y espacios.
       },
       'materia': {
               "Nombre": lambda valor :patrón_nombre.match(valor),
               "Horario": lambda valor :datetime.strptime(valor, '%H:%M'),
-              # "ID_Materia": lambda valor: valor.isdigit()
       },
       'profesor': {
               "Nombre": lambda valor :patrón_nombre.match(valor),
-              # "ID_Profesor": lambda valor: valor.isdigit()
       },
       'nota': {
               "valorNota": lambda valor :patrón_númerosDecimales.match(valor),
-              "tipoNota": lambda valor :patrón_númerosDecimales.match(valor),
-              # "ID_Nota": lambda valor: valor.isdigit()
+              "tipoNota": lambda valor : patrón_alfanumérico.match(valor) #tipoNota sólo acepta letras,
       }
     }
     
@@ -304,7 +300,7 @@ def validar_datos(nombre_de_la_tabla, datos):
          mensajeTexto.showerror("Error", "La asistencia sólo permite poner presente o ausente")
          return False
       elif campo in ["valorNota", "tipoNota"]:
-        if not patrón_númerosDecimales.match(valor):
+        if "tipoNota" and valor.lower() not in ["Parcial 1", "Parcial 2", "Parcial 3","Parcial 4","Trabajo Práctico 1","Trabajo Práctico 2","Exámen Final"]:
           mensajeTexto.showerror("Error", f"El campo {campo} tiene que ser un número válido")
           return False
         elif (float(valor) < 1 or float(valor) > 10):
@@ -332,11 +328,11 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
   ##Tengo 3 diccionarios, pero cada uno cumple sus funciones
   
   campos_de_la_base_de_datos = {
-                                                        'alumno':     ["FechaDeNacimiento", "Nombre",],
+                                                        'alumno':     ["FechaDeNacimiento", "Nombre"],
                                                         'asistencia': ["Estado", "Fecha_Asistencia"],
-                                                        'carrera':    ["Nombre", "Duración",],
-                                                        'materia':    ["Nombre", "Horario",],
-                                                        'profesor':   ["Nombre",],
+                                                        'carrera':    ["Nombre", "Duración"],
+                                                        'materia':    ["Nombre", "Horario"],
+                                                        'profesor':   ["Nombre"],
                                                         'nota':       ["valorNota", "tipoNota"]
                                }
   
@@ -352,8 +348,8 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
                  }
 
   
-  for índice, campo in enumerate(campos_de_la_base_de_datos[nombre_de_la_tabla]):
-    valor = cajasDeTexto[nombre_de_la_tabla][índice].get()
+  for campo, caja in zip(campos_de_la_base_de_datos[nombre_de_la_tabla], cajasDeTexto[nombre_de_la_tabla]):
+    valor = caja.get()
     if validarDatos and not valor:
         mensajeTexto.showwarning("Falta un dato", f"Falta completar el campo: {campo}")
         return None
@@ -403,17 +399,25 @@ def seleccionar_registro():
   nombre_de_la_tabla = obtener_tabla_seleccionada()
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=False)
   ID_Campo = conseguir_campo_ID(nombre_de_la_tabla)
-  
   selección = Lista_de_datos.curselection()
+  
   if not selección:
     return
   índice = selección[0]
   id = lista_IDs[índice]
-  
+
   conexión = conectar_base_de_datos()
   if conexión:
     try:
       cursor = conexión.cursor()
+      if not ID_Campo:
+        mensajeTexto.showerror("ERROR", "No se pudo determinar el campo ID para esta tabla.")
+        return
+
+      if id is None:
+        mensajeTexto.showerror("ERROR", "No se pudo determinar el ID del registro seleccionado.")
+        return
+      
       campos = ', '.join([campo for campo in datos.keys()])
       consulta = f"SELECT {campos} FROM {nombre_de_la_tabla} WHERE {ID_Campo} = %s"
       cursor.execute(consulta, (id,))
@@ -425,7 +429,6 @@ def seleccionar_registro():
       
       if selección:
         obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=False)
-
         #Este for me limpia los campos de texto después de agregarlo
         for caja, valor in zip(cajasDeTexto[nombre_de_la_tabla], fila_seleccionada):
           caja.delete(0, tk.END)

@@ -1,6 +1,6 @@
 import os
-from mysql.connector import Error
-from datetime import datetime, date, time as d_time
+from mysql.connector import Error as error_sql
+from datetime import datetime, date, time
 from tkinter import messagebox as mensajeTexto, filedialog as diálogo, font
 from reportlab.pdfgen import canvas
 import tkinter as tk, re
@@ -15,7 +15,7 @@ colores = {
     "verde": "#00FF00",
     "rojo": "#FF0000",
     "verde_claro": "#AEFFAE",
-    "azul_claro": "#6060FF",
+    "azul": "#0000FF",
     "amarillo_claro": "#FBFFBF",
     "dorado": "#FFDF00",
     "dorado_claro": "#FFF1A9",
@@ -40,7 +40,7 @@ def conectar_base_de_datos():
     conexión_exitosa = cadena_de_conexión.is_connected()
     if conexión_exitosa:
       return cadena_de_conexión
-  except Error as e:
+  except error_sql as e:
     print(f"Error inesperado al conectar MySql {e}")
     return None
 
@@ -259,11 +259,11 @@ def validar_datos(nombre_de_la_tabla, datos):
     validaciones = {
       'alumno': {
               "Nombre": lambda valor:patrón_nombre.match(valor),
-              "FechaDeNacimiento": lambda valor: valor.strip() and d_time.strptime(valor, '%d/%m/%Y'),
+              "FechaDeNacimiento": lambda valor: valor.strip() and time.strptime(valor, '%d/%m/%Y'),
       },
       'asistencia': {
               "Estado": lambda valor: valor.isalpha(),
-              "Fecha_Asistencia": lambda valor: d_time.strptime(valor, '%d/%m/%Y')
+              "Fecha_Asistencia": lambda valor: time.strptime(valor, '%d/%m/%Y')
       },
       'carrera': {
               "Nombre": lambda valor :patrón_nombre.match(valor),
@@ -367,8 +367,7 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
   else:
     return datos
 
-#Esta función me permite obtener el ID 
-#de cualquier tabla que se encuentre en mi base de datos antes de eliminar
+#Esta función me permite obtener el ID de cualquier tabla que se encuentre en mi base de datos antes de eliminar
 #ya que SQL obliga poner una condición antes de ejecutar una tarea
 def conseguir_campo_ID(nombre_de_la_tabla):
   IDs = {
@@ -379,6 +378,26 @@ def conseguir_campo_ID(nombre_de_la_tabla):
               'profesor': "ID_Profesor"
         }
   return IDs.get(nombre_de_la_tabla.strip().lower())
+
+#Esta función ayuda a forzar poner la fecha formateada en el país donde uno vive
+#porque SQL te obliga a poner en formato de Año-Mes-Día, esta es la única solución.
+def preparar_para_sql(datos):
+    datos_convertidos = {}
+    for campo, valor in datos.items():
+        if isinstance(valor, str) and "fecha" in campo.lower():
+            try:
+                fecha_obj = datetime.strptime(valor, "%Y-%m-%d")
+                valor = fecha_obj.strftime("%d/%m/%Y")
+            except ValueError:
+                pass
+        elif isinstance(valor, str) and "hora" in campo.lower():
+            try:
+                hora_obj = datetime.strptime(valor, "%H:%M")
+                valor = hora_obj.strftime("%H:%M")
+            except ValueError:
+                pass
+        datos_convertidos[campo] = valor
+    return datos_convertidos
 
 #Esta función sirve para actualizar la hora
 def actualizar_la_hora(interfaz):
@@ -433,17 +452,32 @@ def seleccionar_registro():
           # Limpia la caja de texto antes de insertar el valor
           # Verificamos si es un valor tipo fecha (MySQL trae como string 'YYYY-MM-DD')
           if "fecha" in campo.lower():
-            if isinstance(valor, datetime) or (isinstance(valor, date) and not isinstance(valor, d_time)): #Este es más seguro ejecutar en comparación con la condición de una sola vez.
+            if isinstance(valor, datetime) or (isinstance(valor, date) and not isinstance(valor, time)): #Este es más seguro ejecutar en comparación con la condición de una sola vez.
               valor = valor.strftime("%d/%m/%Y")  
             elif isinstance(valor, str):
               try:
                 valor_fecha = datetime.strptime(valor, "%Y-%m-%d")
                 valor = valor_fecha.strftime("%d/%m/%Y")
               except ValueError:
-                print("No es una fecha válida:", valor)
+                pass
+            elif "hora" in campo.lower():
+              # Si el valor es un objeto datetime o time, formatear como HH:MM
+              if isinstance(valor, datetime) or (isinstance(valor, time) and not isinstance(valor, datetime)):
+                valor = valor.strftime("%H:%M")
+              elif isinstance(valor, str):
+                # Intentar convertir el string a datetime y formatear como HH:MM
+                try:
+                  valor_hora = datetime.strptime(valor, "%H:%M")
+                  valor = valor_hora.strftime("%H:%M")
+                except ValueError:
+                  try:
+                    valor_hora = datetime.strptime(valor, "%H:%M:%S")
+                    valor = valor_hora.strftime("%H:%M")
+                  except ValueError:
+                    pass
           caja.delete(0, tk.END)
           caja.insert(0, str(valor))
-    except Error as error:
+    except error_sql as error:
       mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL SELECCIONAR: {str(error)}")
     finally:
       if cursor:
@@ -470,18 +504,18 @@ def pantalla_principal():
   global botón_agregar, botón_eliminar, botón_modificar, botón_ordenar, botón_exportar
 
   #Agregar
-  botón_agregar = tk.Button(mi_ventana, text="Agregar Dato", command=lambda:insertar_datos(obtener_tabla_seleccionada()), width=10, height=1)
-  botón_agregar.config(fg="black", bg=colores["verde"], font=("Arial", 8), cursor='hand2', activebackground=colores["verde_claro"])
+  botón_agregar = tk.Button(mi_ventana, text="Agregar", command=lambda:insertar_datos(obtener_tabla_seleccionada()), width=10, height=1)
+  botón_agregar.config(fg="black", bg=colores["verde"], font=("Arial", 8), cursor='hand2', activebackground=colores["verde"])
   botón_agregar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
   #Modificar
-  botón_modificar = tk.Button(mi_ventana, text="Modificar Dato", command=lambda:modificar_datos(obtener_tabla_seleccionada()), width=10, height=1)
-  botón_modificar.config(fg="black", bg="red", font=("Arial", 8), cursor='hand2', activebackground=colores["rojo_claro"])
+  botón_modificar = tk.Button(mi_ventana, text="Modificar", command=lambda:modificar_datos(obtener_tabla_seleccionada()), width=10, height=1)
+  botón_modificar.config(fg="black", bg="red", font=("Arial", 8), cursor='hand2', activebackground=colores["rojo"])
   botón_modificar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
   #Eliminar
-  botón_eliminar = tk.Button(mi_ventana, text="Eliminar Dato", command=lambda:eliminar_datos(obtener_tabla_seleccionada()), width=10, height=1)
-  botón_eliminar.config(fg="black", bg="blue", font=("Arial", 8), cursor='hand2', activebackground=colores["azul_claro"])
+  botón_eliminar = tk.Button(mi_ventana, text="Eliminar", command=lambda:eliminar_datos(obtener_tabla_seleccionada()), width=10, height=1)
+  botón_eliminar.config(fg="black", bg="blue", font=("Arial", 8), cursor='hand2', activebackground=colores["azul"])
   botón_eliminar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
   #Comparar
@@ -623,21 +657,20 @@ def insertar_datos(nombre_de_la_tabla):
   if not datosNecesarios:
     return
   try:
+    datos_a_forzar = preparar_para_sql(datosNecesarios) #Acá se ubica la función de preparar_para_sql, ayuda a forzar agregar o modificar la fecha
     cursor = conexión.cursor()
-    campos = ', '.join(datosNecesarios.keys())
-    values = ', '.join([f"'{valor}'" for valor in datosNecesarios.values()])
+    campos = ', '.join(datos_a_forzar.keys())
+    values = ', '.join([f"'{valor}'" for valor in datos_a_forzar.values()])
     query = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({values})"
     cursor.execute(query)
     conexión.commit()
     consultar_tabla(nombre_de_la_tabla)
     mensajeTexto.showinfo("CORRECTO", "SE AGREGÓ LOS DATOS NECESARIOS")
-    #Este for me limpia los campos de texto después de agregarlo
-    #para que no quede el último valor que se agregó y se repita continuamente
-    for i, (campo, valor) in enumerate(datosNecesarios.items()):
-      entry = cajasDeTexto[nombre_de_la_tabla][i]
-      entry.delete(0, tk.END)
+    # for i, (campo, valor) in enumerate(datosNecesarios.items()):
+    #   entry = cajasDeTexto[nombre_de_la_tabla][i]
+    #   entry.delete(0, tk.END)
     desconectar_base_de_datos(conexión)
-  except Error as e:
+  except Exception as e:
     mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {e}")
 
 #Mejoré mi función de insertar datos para modificarlo
@@ -660,23 +693,22 @@ def modificar_datos(nombre_de_la_tabla):
   CampoID = conseguir_campo_ID(nombre_de_la_tabla)
   if not datosNecesarios:
     return
+  datos_a_forzar = preparar_para_sql(datosNecesarios) #Acá se ubica la función de preparar_para_sql, ayuda a forzar agregar o modificar la fecha
   try:
     with conectar_base_de_datos() as conexión:
       cursor = conexión.cursor()
-      columnas = ', '.join([f"{k} = %s" for k in datosNecesarios.keys()])
-      values = list(datosNecesarios.values()) + [ID_Seleccionado]
+      columnas = ', '.join([f"{k} = %s" for k in datos_a_forzar.keys()])
+      values = list(datos_a_forzar.values()) + [ID_Seleccionado]
       query = f"UPDATE {nombre_de_la_tabla} SET {columnas} WHERE {CampoID} = %s"
       cursor.execute(query, values)
       conexión.commit()
       consultar_tabla(nombre_de_la_tabla)
       mensajeTexto.showinfo("CORRECTO", "SE MODIFICÓ EXITOSAMENTE")
-      #Este for me limpia los campos de texto después de agregarlo
-      #para que no quede el último valor que se agregó y se repita continuamente
       for i, (campo, valor) in enumerate(datosNecesarios.items()):
         entry = cajasDeTexto[nombre_de_la_tabla][i]
         entry.delete(0, tk.END)
       desconectar_base_de_datos(conexión)
-  except Error as e:
+  except Exception as e:
     mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL MODIFICAR: {e}")
   
 #Mejoré mi función de insertar datos para eliminar
@@ -711,7 +743,7 @@ def eliminar_datos(nombre_de_la_tabla):
             consultar_tabla(nombre_de_la_tabla)
             print(f"Eliminando de {nombre_de_la_tabla} con {CampoID} = {ID_Seleccionado}")
             mensajeTexto.showinfo("ÉXITOS", "Ha sido eliminada exitosamente")
-      except Error as e:
+      except error_sql as e:
          mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL ELIMINAR: {e}")
   else:
     mensajeTexto.showwarning("ADVERTENCIA", "NO SELECCIONASTE NINGUNA COLUMNA")
@@ -765,7 +797,7 @@ def ordenar_datos(nombre_de_la_tabla):
     for fila in resultado:
       Lista_de_datos.insert(tk.END, " | ".join(map(lambda x: str(x) if x is not None else "", fila )))
     
-  except Error as e:
+  except error_sql as e:
      mensajeTexto.showerror("ERROR", f"HA OCURRIDO UN ERROR AL RELACIONAR LA TABLA CON LA OTRA: {str(e)}")
   finally:
     desconectar_base_de_datos(conexión)
@@ -809,7 +841,7 @@ def exportar_en_PDF(nombre_de_la_tabla):
     
     mensajeTexto.showwarning("ÉXITOS", "EXPORTADO CORRECTAMENTE")
     
-  except Error as e:
+  except error_sql as e:
     mensajeTexto.showerror("OCURRIÓ UN ERROR", f"Error al exportar en PDF la información detallada: {str(e)}")
 
 # --- EVENTOS PARA BOTONES ---

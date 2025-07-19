@@ -234,11 +234,11 @@ def validar_datos(nombre_de_la_tabla, datos):
   patrón_alfanumérico = re.compile(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$') #Esta variable regular contiene la expresión de letras y números
   try:
     tabla_a_validar = {"alumno":     ["Nombre", "FechaDeNacimiento", ],
-                       "carrera":    ["Nombre", "Duración"],
+                       "carrera":    ["Nombre", "Duración",],
                        "materia":    ["Nombre", "Horario",],
                        "profesor":   ["Nombre",],
-                       "asistencia": ["Fecha_Asistencia", "Estado"],
-                       "nota":       ["valorNota", "TipoNota"]
+                       "asistencia": ["Fecha_Asistencia", "Estado",],
+                       "nota":       ["valorNota", "TipoNota",]
                       }
     
     if nombre_de_la_tabla in tabla_a_validar:
@@ -259,11 +259,11 @@ def validar_datos(nombre_de_la_tabla, datos):
     validaciones = {
       'alumno': {
               "Nombre": lambda valor:patrón_nombre.match(valor),
-              "FechaDeNacimiento": lambda valor: valor.strip() and time.strptime(valor, '%d/%m/%Y'),
+              "FechaDeNacimiento": lambda valor: valor.strip() and datetime.strptime(valor, '%d/%m/%Y'),
       },
       'asistencia': {
               "Estado": lambda valor: valor.isalpha(),
-              "Fecha_Asistencia": lambda valor: time.strptime(valor, '%d/%m/%Y')
+              "Fecha_Asistencia": lambda valor: datetime.strptime(valor, '%d/%m/%Y')
       },
       'carrera': {
               "Nombre": lambda valor :patrón_nombre.match(valor),
@@ -313,8 +313,7 @@ def validar_datos(nombre_de_la_tabla, datos):
         return False
          
   except ValueError as vE:
-    mensajeTexto.showerror("Error", F"El formato de uno de los campos es incorrecto: {str(vE)}")
-    return False
+    raise ValueError(f"Error de formato: {vE}")
   finally:
     desconectar_base_de_datos(conexión)
 
@@ -324,9 +323,9 @@ def validar_datos(nombre_de_la_tabla, datos):
 #y eliminar algunos datos de la tabla
 def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
   global cajasDeTexto, datos, campos_de_la_base_de_datos
-  
   ##Tengo 3 diccionarios, pero cada uno cumple sus funciones
-  
+
+
   campos_de_la_base_de_datos = {
                                       'alumno':     ["FechaDeNacimiento", "Nombre"],
                                       'asistencia': ["Estado", "Fecha_Asistencia"],
@@ -388,16 +387,28 @@ def preparar_para_sql(datos):
     for campo, valor in datos.items():
         if isinstance(valor, str) and (("fecha" in campo.lower()) or ("f_nac" in campo.lower()) or ("nac" in campo.lower())):  # Verifica si el campo es una fecha con alternativas sin bastar con una sola.
             try:
-              #Esta condición me permite saber si la fecha está en formato "DD/MM/YYYY" o "YYYY-MM-DD"
-                if "/" in valor:
-                    fecha_obj = datetime.strptime(valor, "%d/%m/%Y")
-                elif "-" in valor:
-                    fecha_obj = datetime.strptime(valor, "%Y-%m-%d")
-                else:
-                    raise ValueError("Formato de fecha no reconocido")
-                valor = fecha_obj.strftime("%Y-%m-%d")
+              fecha_obj = datetime.strptime(valor, "%d/%m/%Y")
+              valor = fecha_obj.strftime("%Y-%m-%d")
             except ValueError:
                 print(f"Error al convertir la fecha en el campo {campo}: {valor}")
+                pass
+            try:
+              # Si falla, intenta como YYYY-MM-DD
+              fecha_obj = datetime.strptime(valor, "%Y-%m-%d")
+              valor = fecha_obj.strftime("%Y-%m-%d")
+            except ValueError:
+                print(f"❌ No se pudo convertir el campo {campo}: {valor}")
+        elif isinstance(valor, str) and ("hora" in campo.lower() or "horario" in campo.lower()):  # Verifica si el campo es una hora
+            try:
+                #Esta condición me permite saber si la hora está en formato "HH:MM" o "HH:MM:SS"
+                if ":" in valor:
+                    hora_obj = datetime.strptime(valor, "%H:%M")
+                else:
+                    raise ValueError("Formato de hora no reconocido")
+                valor = hora_obj.strftime("%H:%M")
+            except ValueError:
+                print(f"Error al convertir la hora en el campo {campo}: {valor}")
+                pass
         datos_convertidos[campo] = valor
     return datos_convertidos
 

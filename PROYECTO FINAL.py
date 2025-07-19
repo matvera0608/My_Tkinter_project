@@ -237,7 +237,7 @@ def validar_datos(nombre_de_la_tabla, datos):
                        "carrera":    ["Nombre", "Duración"],
                        "materia":    ["Nombre", "Horario",],
                        "profesor":   ["Nombre",],
-                       "asistencia": ["Fecha_Asistencia"],
+                       "asistencia": ["Fecha_Asistencia", "Estado"],
                        "nota":       ["valorNota", "TipoNota"]
                       }
     
@@ -328,12 +328,12 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
   ##Tengo 3 diccionarios, pero cada uno cumple sus funciones
   
   campos_de_la_base_de_datos = {
-                                                        'alumno':     ["FechaDeNacimiento", "Nombre"],
-                                                        'asistencia': ["Estado", "Fecha_Asistencia"],
-                                                        'carrera':    ["Nombre", "Duración"],
-                                                        'materia':    ["Nombre", "Horario"],
-                                                        'profesor':   ["Nombre"],
-                                                        'nota':       ["valorNota", "tipoNota"]
+                                      'alumno':     ["FechaDeNacimiento", "Nombre"],
+                                      'asistencia': ["Estado", "Fecha_Asistencia"],
+                                      'carrera':    ["Nombre", "Duración"],
+                                      'materia':    ["Nombre", "Horario"],
+                                      'profesor':   ["Nombre"],
+                                      'nota':       ["valorNota", "tipoNota"]
                                }
   
   datos = {}
@@ -381,23 +381,26 @@ def conseguir_campo_ID(nombre_de_la_tabla):
 
 #Esta función ayuda a forzar poner la fecha formateada en el país donde uno vive
 #porque SQL te obliga a poner en formato de Año-Mes-Día, esta es la única solución.
+#Lo mismo con la hora, que SQL te obliga a poner en formato de Hora:Minuto:Segundo.
+#Pero el usuario necesita solo que muestre la Hora:Minuto.
 def preparar_para_sql(datos):
     datos_convertidos = {}
     for campo, valor in datos.items():
-        if isinstance(valor, str) and "fecha" in campo.lower():
+        if isinstance(valor, str) and (("fecha" in campo.lower()) or ("f_nac" in campo.lower()) or ("nac" in campo.lower())):
             try:
                 fecha_obj = datetime.strptime(valor, "%Y-%m-%d")
-                valor = fecha_obj.strftime("%d/%m/%Y")
+                valor = fecha_obj.strftime("%Y-%m-%d")
             except ValueError:
-                pass
+                print(f"Error al convertir la fecha en el campo {campo}: {valor}")
         elif isinstance(valor, str) and "hora" in campo.lower():
             try:
                 hora_obj = datetime.strptime(valor, "%H:%M")
-                valor = hora_obj.strftime("%H:%M")
+                valor = hora_obj.strftime("%H:%M:%S")  # más compatible
             except ValueError:
                 pass
         datos_convertidos[campo] = valor
     return datos_convertidos
+
 
 #Esta función sirve para actualizar la hora
 def actualizar_la_hora(interfaz):
@@ -460,21 +463,6 @@ def seleccionar_registro():
                 valor = valor_fecha.strftime("%d/%m/%Y")
               except ValueError:
                 pass
-            elif "hora" in campo.lower():
-              # Si el valor es un objeto datetime o time, formatear como HH:MM
-              if isinstance(valor, datetime) or (isinstance(valor, time) and not isinstance(valor, datetime)):
-                valor = valor.strftime("%H:%M")
-              elif isinstance(valor, str):
-                # Intentar convertir el string a datetime y formatear como HH:MM
-                try:
-                  valor_hora = datetime.strptime(valor, "%H:%M")
-                  valor = valor_hora.strftime("%H:%M")
-                except ValueError:
-                  try:
-                    valor_hora = datetime.strptime(valor, "%H:%M:%S")
-                    valor = valor_hora.strftime("%H:%M")
-                  except ValueError:
-                    pass
           caja.delete(0, tk.END)
           caja.insert(0, str(valor))
     except error_sql as error:
@@ -656,11 +644,22 @@ def insertar_datos(nombre_de_la_tabla):
   datosNecesarios = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
   if not datosNecesarios:
     return
+  
+  datos_sql = preparar_para_sql(datosNecesarios) #Acá se ubica la función de preparar_para_sql, ayuda a forzar agregar o modificar la fecha
+  print("Datos convertidos para SQL:")
+  for k, v in datos_sql.items():
+    print(f"{k}: {v}")
+  #En esta condición, valido los datos de la tabla
+  #antes de agregarlo a la listBox. Puse un condicional
+  #donde si las entrys de cada registro, no me tiren error. Además validarDatos
+  #como variable me sirve para que no me tire error de que no existe la tabla antes de indicar un registro de la listBox
+  if not validar_datos(nombre_de_la_tabla, datos_sql):
+    return
+  
   try:
-    datos_a_forzar = preparar_para_sql(datosNecesarios) #Acá se ubica la función de preparar_para_sql, ayuda a forzar agregar o modificar la fecha
     cursor = conexión.cursor()
-    campos = ', '.join(datos_a_forzar.keys())
-    values = ', '.join([f"'{valor}'" for valor in datos_a_forzar.values()])
+    campos = ', '.join(datos_sql.keys())
+    values = ', '.join([f"'{valor}'" for valor in datos_sql.values()])
     query = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({values})"
     cursor.execute(query)
     conexión.commit()
@@ -689,24 +688,29 @@ def modificar_datos(nombre_de_la_tabla):
       mensajeTexto.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
       return
   
-  datosNecesarios = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
+  datosNecesarios = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True) #datos_brutos es un diccionario que contiene los datos necesarios para agregar o modificar
   CampoID = conseguir_campo_ID(nombre_de_la_tabla)
   if not datosNecesarios:
     return
-  datos_a_forzar = preparar_para_sql(datosNecesarios) #Acá se ubica la función de preparar_para_sql, ayuda a forzar agregar o modificar la fecha
+  
+  datos_sql = preparar_para_sql(datosNecesarios) #Acá se ubica la función de preparar_para_sql, ayuda a forzar agregar o modificar la fecha
+  
+  if not validar_datos(nombre_de_la_tabla, datos_sql):
+    return
+  
   try:
     with conectar_base_de_datos() as conexión:
       cursor = conexión.cursor()
-      columnas = ', '.join([f"{k} = %s" for k in datos_a_forzar.keys()])
-      values = list(datos_a_forzar.values()) + [ID_Seleccionado]
+      columnas = ', '.join([f"{k} = %s" for k in datos_sql.keys()])
+      values = list(datos_sql.values()) + [ID_Seleccionado]
       query = f"UPDATE {nombre_de_la_tabla} SET {columnas} WHERE {CampoID} = %s"
       cursor.execute(query, values)
       conexión.commit()
       consultar_tabla(nombre_de_la_tabla)
       mensajeTexto.showinfo("CORRECTO", "SE MODIFICÓ EXITOSAMENTE")
-      for i, (campo, valor) in enumerate(datosNecesarios.items()):
-        entry = cajasDeTexto[nombre_de_la_tabla][i]
-        entry.delete(0, tk.END)
+      # for i, (campo, valor) in enumerate(datosNecesarios.items()):
+      #   entry = cajasDeTexto[nombre_de_la_tabla][i]
+      #   entry.delete(0, tk.END)
       desconectar_base_de_datos(conexión)
   except Exception as e:
     mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL MODIFICAR: {e}")

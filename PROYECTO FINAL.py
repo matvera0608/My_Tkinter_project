@@ -386,9 +386,15 @@ def conseguir_campo_ID(nombre_de_la_tabla):
 def preparar_para_sql(datos):
     datos_convertidos = {}
     for campo, valor in datos.items():
-        if isinstance(valor, str) and (("fecha" in campo.lower()) or ("f_nac" in campo.lower()) or ("nac" in campo.lower())):
+        if isinstance(valor, str) and (("fecha" in campo.lower()) or ("f_nac" in campo.lower()) or ("nac" in campo.lower())):  # Verifica si el campo es una fecha con alternativas sin bastar con una sola.
             try:
-                fecha_obj = datetime.strptime(valor, "%Y-%m-%d")
+              #Esta condición me permite saber si la fecha está en formato "DD/MM/YYYY" o "YYYY-MM-DD"
+                if "/" in valor:
+                    fecha_obj = datetime.strptime(valor, "%d/%m/%Y")
+                elif "-" in valor:
+                    fecha_obj = datetime.strptime(valor, "%Y-%m-%d")
+                else:
+                    raise ValueError("Formato de fecha no reconocido")
                 valor = fecha_obj.strftime("%Y-%m-%d")
             except ValueError:
                 print(f"Error al convertir la fecha en el campo {campo}: {valor}")
@@ -398,17 +404,24 @@ def preparar_para_sql(datos):
 #Esta función se encarga de convertir los datos de entrada para mostrar en el entry
 #en el formato que el usuario espera, por ejemplo, convertir fechas de "YYYY-MM-DD" a "DD/MM/YYYY"
 def convertir_datos(nombre_de_la_tabla):
-    for campo, caja in zip(campos_de_la_base_de_datos[nombre_de_la_tabla], cajasDeTexto[nombre_de_la_tabla]):
-        valor = caja.get()
-        
-        if isinstance(valor, str) and "fecha" in campo.lower():
-            try:
-                fecha_obj = datetime.strptime(valor, "%Y-%m-%d")
-                valor = fecha_obj.strftime("%d/%m/%Y")
-            except ValueError:
-                pass  # Si no es una fecha válida, no la convierte
-        caja.delete(0, tk.END)
-        caja.insert(0, str(valor))
+  for campo, caja in zip(campos_de_la_base_de_datos[nombre_de_la_tabla], cajasDeTexto[nombre_de_la_tabla]):
+    valor = caja.get()
+    # Si el campo es una fecha, lo convierte al formato "DD/MM/YYYY"
+    if isinstance(valor, str) and "fecha" in campo.lower():
+        try:
+            fecha_obj = datetime.strptime(valor, "%Y-%m-%d")
+            valor = fecha_obj.strftime("%d/%m/%Y")
+        except ValueError:
+            continue  # Si no es una fecha válida, no la convierte
+    # Si el campo es una hora, lo convierte al formato "HH:MM"
+    elif isinstance(valor, str) and "hora" in campo.lower():
+        try:
+            hora_obj = datetime.strptime(valor, "%H:%M:%S")
+            valor = hora_obj.strftime("%H:%M")
+        except ValueError:
+            continue  # Si no es una hora válida, no la convierte
+    caja.delete(0, tk.END)  # Limpia el entry
+    caja.insert(0, str(valor))  # Inserta el valor convertido
 
 
 #Esta función sirve para actualizar la hora
@@ -685,16 +698,17 @@ def modificar_datos(nombre_de_la_tabla):
     if ID_Seleccionado is None:
       mensajeTexto.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
       return
-  
   datosNecesarios = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True) #datos_brutos es un diccionario que contiene los datos necesarios para agregar o modificar
-  CampoID = conseguir_campo_ID(nombre_de_la_tabla)
-  if not datosNecesarios:
-    return
   
   datos_sql = preparar_para_sql(datosNecesarios) #Acá se ubica la función de preparar_para_sql, ayuda a forzar agregar o modificar la fecha
   
   if not validar_datos(nombre_de_la_tabla, datos_sql):
     return
+  
+  CampoID = conseguir_campo_ID(nombre_de_la_tabla)
+  if not datosNecesarios:
+    return
+  
   
   try:
     with conectar_base_de_datos() as conexión:

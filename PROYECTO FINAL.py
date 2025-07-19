@@ -1,7 +1,7 @@
 import os
 from mysql.connector import Error as error_sql
-from datetime import datetime, date, time
-from tkinter import messagebox as mensajeTexto, filedialog as diálogo, font
+from datetime import datetime
+from tkinter import messagebox as mensajeTexto, filedialog as diálogo
 from reportlab.pdfgen import canvas
 import tkinter as tk, re
 import mysql.connector as MySql
@@ -233,7 +233,7 @@ def validar_datos(nombre_de_la_tabla, datos):
   patrón_númerosDecimales = re.compile(r'^\d+([.,]\d+)?$')
   patrón_alfanumérico = re.compile(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$') #Esta variable regular contiene la expresión de letras y números
   try:
-    tabla_a_validar = {"alumno":     ["Nombre", "FechaDeNacimiento", ],
+    tabla_a_validar = {"alumno":     ["Nombre", "FechaDeNacimiento",],
                        "carrera":    ["Nombre", "Duración",],
                        "materia":    ["Nombre", "Horario",],
                        "profesor":   ["Nombre",],
@@ -241,8 +241,17 @@ def validar_datos(nombre_de_la_tabla, datos):
                        "nota":       ["valorNota", "TipoNota",]
                       }
     
+
     if nombre_de_la_tabla in tabla_a_validar:
       campo = tabla_a_validar[nombre_de_la_tabla]
+      #FORZAR EL CAMBIO DE FECHA
+      for campo in datos:
+        valor = datos[campo]
+        if isinstance(valor, str) and '/' in valor:
+          try:
+            datos[campo] = datetime.strptime(valor, "%d/%m/%Y").strftime("%Y-%m-%d")
+          except:
+            pass  # No convertir si no es fecha
       
       if len(campo) == 1:
         consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campo[0]} = %s"
@@ -313,7 +322,9 @@ def validar_datos(nombre_de_la_tabla, datos):
         return False
          
   except ValueError as vE:
-    raise ValueError(f"Error de formato: {vE}")
+    mensajeTexto.showerror("Error", f"Formato de uno de los campos no es válido: {vE}")
+  except error_sql as e:
+    mensajeTexto.showerror("Error", f"Error al consultar la base de datos: {e}")
   finally:
     desconectar_base_de_datos(conexión)
 
@@ -347,24 +358,19 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
                  }
 
   
+
   for campo, caja in zip(campos_de_la_base_de_datos[nombre_de_la_tabla], cajasDeTexto[nombre_de_la_tabla]):
-    valor = caja.get()
-    if validarDatos and not valor:
-        mensajeTexto.showwarning("Falta un dato", f"Falta completar el campo: {campo}")
-        return None
-    datos[campo] = valor
-  
+      datos[campo] = caja.get()
+
+
   #En esta condición, valido los datos de la tabla
   #antes de agregarlo a la listBox. Puse un condicional
   #donde si las entrys de cada registro, no me tiren error. Además validarDatos
   #como variable me sirve para que no me tire error de que no existe la tabla antes de indicar un registro de la listBox
   if validarDatos:
-    if validar_datos(nombre_de_la_tabla, datos):
-      return datos
-    else:
+    if not validar_datos(nombre_de_la_tabla, datos):
       return None
-  else:
-    return datos
+  return datos
 
 #Esta función me permite obtener el ID de cualquier tabla que se encuentre en mi base de datos antes de eliminar
 #ya que SQL obliga poner una condición antes de ejecutar una tarea
@@ -385,32 +391,30 @@ def conseguir_campo_ID(nombre_de_la_tabla):
 def preparar_para_sql(datos):
     datos_convertidos = {}
     for campo, valor in datos.items():
-        if isinstance(valor, str) and (("fecha" in campo.lower()) or ("f_nac" in campo.lower()) or ("nac" in campo.lower())):  # Verifica si el campo es una fecha con alternativas sin bastar con una sola.
+        if "fecha" in campo.lower():  # Verifica si el campo es una fecha con alternativas sin bastar con una sola.
+          try:
+              fecha_obj = datetime.strptime(valor, '%d/%m/%Y').strftime('%Y-%m-%d')
+          except ValueError:
+              try:
+                  fecha_obj = datetime.strptime(valor, '%Y-%m-%d').strftime('%Y-%m-%d')
+              except ValueError:
+                  print(f"Error al convertir la fecha en el campo {campo}: {valor}")
+                  continue
+          datos_convertidos[campo] = fecha_obj
+        elif "hora" in campo.lower() or "horario" in campo.lower():  # Verifica si el campo es una hora
             try:
-              fecha_obj = datetime.strptime(valor, "%d/%m/%Y")
-              valor = fecha_obj.strftime("%Y-%m-%d")
+              hora_obj = datetime.strptime(valor.strip(), "%H:%M").strftime("%H:%M")
             except ValueError:
-                print(f"Error al convertir la fecha en el campo {campo}: {valor}")
-                pass
-            try:
-              # Si falla, intenta como YYYY-MM-DD
-              fecha_obj = datetime.strptime(valor, "%Y-%m-%d")
-              valor = fecha_obj.strftime("%Y-%m-%d")
-            except ValueError:
-                print(f"❌ No se pudo convertir el campo {campo}: {valor}")
-        elif isinstance(valor, str) and ("hora" in campo.lower() or "horario" in campo.lower()):  # Verifica si el campo es una hora
-            try:
-                #Esta condición me permite saber si la hora está en formato "HH:MM" o "HH:MM:SS"
-                if ":" in valor:
-                    hora_obj = datetime.strptime(valor, "%H:%M")
-                else:
-                    raise ValueError("Formato de hora no reconocido")
-                valor = hora_obj.strftime("%H:%M")
-            except ValueError:
-                print(f"Error al convertir la hora en el campo {campo}: {valor}")
-                pass
-        datos_convertidos[campo] = valor
-    return datos_convertidos
+              print(f"Error al convertir la hora en el campo {campo}: {valor}")
+              continue
+            datos_convertidos[campo] = hora_obj
+        else:
+            datos_convertidos[campo] = valor.strip()
+        return datos_convertidos
+
+#Estoy teniendo un problema con la función preparar_para_sql, ya que no está manejando correctamente los datos de entrada. Necesito asegurarme de que las fechas y horas se conviertan al formato adecuado antes de enviarlos a la base de datos.
+#QUE HACER AHORA? ESTOY RE ENOJADO PORQUE ME TIRA UN ERROR.
+#Esta función me permite insertar datos en la base de datos
 
 #Esta función se encarga de convertir los datos de entrada para mostrar en el entry
 #en el formato que el usuario espera, por ejemplo, convertir fechas de "YYYY-MM-DD" a "DD/MM/YYYY"
@@ -420,17 +424,17 @@ def convertir_datos(nombre_de_la_tabla):
     # Si el campo es una fecha, lo convierte al formato "DD/MM/YYYY"
     if isinstance(valor, str) and "fecha" in campo.lower():
         try:
-            fecha_obj = datetime.strptime(valor, "%Y-%m-%d")
-            valor = fecha_obj.strftime("%d/%m/%Y")
+            fecha_obj = datetime.strptime(valor, "%Y-%m-%d").strftime("%d/%m/%Y")
         except ValueError:
             continue  # Si no es una fecha válida, no la convierte
+        valor = fecha_obj
     # Si el campo es una hora, lo convierte al formato "HH:MM"
     elif isinstance(valor, str) and "hora" in campo.lower():
         try:
-            hora_obj = datetime.strptime(valor, "%H:%M:%S")
-            valor = hora_obj.strftime("%H:%M")
+            hora_obj = datetime.strptime(valor, "%H:%M:%S").strftime("%H:%M")
         except ValueError:
             continue  # Si no es una hora válida, no la convierte
+        valor = hora_obj
     caja.delete(0, tk.END)  # Limpia el entry
     caja.insert(0, str(valor))  # Inserta el valor convertido
 
@@ -471,11 +475,11 @@ def seleccionar_registro():
       if id is None:
         mensajeTexto.showerror("ERROR", "No se pudo determinar el ID del registro seleccionado.")
         return
-      
-      campos = ', '.join([campo for campo in datos.keys()])
-      consulta = f"SELECT {campos} FROM {nombre_de_la_tabla} WHERE {ID_Campo} = %s"
-      cursor.execute(consulta, (id,))
-      fila_seleccionada = cursor.fetchone()
+      if nombre_de_la_tabla != "nota":
+        campos = ', '.join([campo for campo in datos.keys()])
+        consulta = f"SELECT {campos} FROM {nombre_de_la_tabla} WHERE {ID_Campo} = %s"
+        cursor.execute(consulta, (id,))
+        fila_seleccionada = cursor.fetchone()
       
       if fila_seleccionada is None:
         mensajeTexto.showwarning("ADVERTENCIA", "NO SE ENCONTRÓ LA FILA")
@@ -659,31 +663,27 @@ def pantalla_principal():
     
   return mi_ventana
 
-#Mejoré mi función de insertar datos para agregarlo
-#dinámicamente sin tener que entrar a MySQL
+
 def insertar_datos(nombre_de_la_tabla):
   conexión = conectar_base_de_datos()
+  
   datosNecesarios = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
+  
   if not datosNecesarios:
     return
   
   datos_sql = preparar_para_sql(datosNecesarios) #Acá se ubica la función de preparar_para_sql, ayuda a forzar agregar o modificar la fecha
-  print("Datos convertidos para SQL:")
-  for k, v in datos_sql.items():
-    print(f"{k}: {v}")
-  #En esta condición, valido los datos de la tabla
-  #antes de agregarlo a la listBox. Puse un condicional
-  #donde si las entrys de cada registro, no me tiren error. Además validarDatos
-  #como variable me sirve para que no me tire error de que no existe la tabla antes de indicar un registro de la listBox
+  
   if not validar_datos(nombre_de_la_tabla, datos_sql):
     return
-  
+
+  cursor = conexión.cursor()
+  campos = ', '.join(datos_sql.keys())
+  placeholder = ', '.join(['%s'] * len(datos_sql))
+  values = list(datos_sql.values())
+  query = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({placeholder})"
   try:
-    cursor = conexión.cursor()
-    campos = ', '.join(datos_sql.keys())
-    values = ', '.join([f"'{valor}'" for valor in datos_sql.values()])
-    query = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({values})"
-    cursor.execute(query)
+    cursor.execute(query, values)
     conexión.commit()
     consultar_tabla(nombre_de_la_tabla)
     mensajeTexto.showinfo("CORRECTO", "SE AGREGÓ LOS DATOS NECESARIOS")
@@ -694,49 +694,46 @@ def insertar_datos(nombre_de_la_tabla):
   except Exception as e:
     mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {e}")
 
-#Mejoré mi función de insertar datos para modificarlo
-#dinámicamente sin tener que entrar a MySQL y puse una
-#función que extrae el ID en todas las palabras ya que
-#no siempre tiene un valor fijo
+
 def modificar_datos(nombre_de_la_tabla):
   columna_seleccionada = Lista_de_datos.curselection()
   if not columna_seleccionada:
-    mensajeTexto.showwarning("ADVERTENCIA", "FALTA SELECCIONAR UNA COLUMNA")
+    mensajeTexto.showwarning("ADVERTENCIA", "FALTA SELECCIONAR UNA FILA")
     return
-  else:
-    selección = columna_seleccionada[0]
-    ID_Seleccionado = lista_IDs[selección]
-    if ID_Seleccionado is None:
+    
+  selección = columna_seleccionada[0]
+  ID_Seleccionado = lista_IDs[selección]
+    
+  if ID_Seleccionado is None:
       mensajeTexto.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
       return
-  datosNecesarios = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True) #datos_brutos es un diccionario que contiene los datos necesarios para agregar o modificar
+
+
+  datosNecesarios = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
+  if not datosNecesarios:
+      return
+
+  datos_sql = preparar_para_sql(datosNecesarios)
   
-  datos_sql = preparar_para_sql(datosNecesarios) #Acá se ubica la función de preparar_para_sql, ayuda a forzar agregar o modificar la fecha
+  CampoID = conseguir_campo_ID(nombre_de_la_tabla)  # ej. "id_usuario"
   
   if not validar_datos(nombre_de_la_tabla, datos_sql):
     return
   
-  CampoID = conseguir_campo_ID(nombre_de_la_tabla)
-  if not datosNecesarios:
-    return
-  
-  
   try:
     with conectar_base_de_datos() as conexión:
       cursor = conexión.cursor()
-      columnas = ', '.join([f"{k} = %s" for k in datos_sql.keys()])
-      values = list(datos_sql.values()) + [ID_Seleccionado]
-      query = f"UPDATE {nombre_de_la_tabla} SET {columnas} WHERE {CampoID} = %s"
-      cursor.execute(query, values)
+      campos = ', '.join([f"{campo} = %s" for campo in datos_sql.keys()])
+      valores = list(datos_sql.values()) + [ID_Seleccionado]
+      consulta = f"UPDATE {nombre_de_la_tabla} SET {campos} WHERE {CampoID} = %s"
+      
+      cursor.execute(consulta, valores)
       conexión.commit()
+      
       consultar_tabla(nombre_de_la_tabla)
       mensajeTexto.showinfo("CORRECTO", "SE MODIFICÓ EXITOSAMENTE")
-      # for i, (campo, valor) in enumerate(datosNecesarios.items()):
-      #   entry = cajasDeTexto[nombre_de_la_tabla][i]
-      #   entry.delete(0, tk.END)
-      desconectar_base_de_datos(conexión)
   except Exception as e:
-    mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL MODIFICAR: {e}")
+      mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
   
 #Mejoré mi función de insertar datos para eliminar
 #dinámicamente sin tener que entrar a MySQL y puse una

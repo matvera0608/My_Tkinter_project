@@ -392,14 +392,23 @@ def preparar_para_sql(datos):
                 valor = fecha_obj.strftime("%Y-%m-%d")
             except ValueError:
                 print(f"Error al convertir la fecha en el campo {campo}: {valor}")
-        elif isinstance(valor, str) and "hora" in campo.lower():
-            try:
-                hora_obj = datetime.strptime(valor, "%H:%M")
-                valor = hora_obj.strftime("%H:%M:%S")  # más compatible
-            except ValueError:
-                pass
         datos_convertidos[campo] = valor
     return datos_convertidos
+
+#Esta función se encarga de convertir los datos de entrada para mostrar en el entry
+#en el formato que el usuario espera, por ejemplo, convertir fechas de "YYYY-MM-DD" a "DD/MM/YYYY"
+def convertir_datos(nombre_de_la_tabla):
+    for campo, caja in zip(campos_de_la_base_de_datos[nombre_de_la_tabla], cajasDeTexto[nombre_de_la_tabla]):
+        valor = caja.get()
+        
+        if isinstance(valor, str) and "fecha" in campo.lower():
+            try:
+                fecha_obj = datetime.strptime(valor, "%Y-%m-%d")
+                valor = fecha_obj.strftime("%d/%m/%Y")
+            except ValueError:
+                pass  # Si no es una fecha válida, no la convierte
+        caja.delete(0, tk.END)
+        caja.insert(0, str(valor))
 
 
 #Esta función sirve para actualizar la hora
@@ -448,23 +457,12 @@ def seleccionar_registro():
         mensajeTexto.showwarning("ADVERTENCIA", "NO SE ENCONTRÓ LA FILA")
         return
       
+      #AHORA YA NO ME MUESTRAN NADA DE SQL, SÓLO LAS ENTRYS VACÍAS.
       if selección:
-        obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=False)
-        #Este for me limpia los campos de texto después de agregarlo
-        for campo, (caja, valor) in zip(campos_de_la_base_de_datos[nombre_de_la_tabla], zip(cajasDeTexto[nombre_de_la_tabla], fila_seleccionada)):
-          # Limpia la caja de texto antes de insertar el valor
-          # Verificamos si es un valor tipo fecha (MySQL trae como string 'YYYY-MM-DD')
-          if "fecha" in campo.lower():
-            if isinstance(valor, datetime) or (isinstance(valor, date) and not isinstance(valor, time)): #Este es más seguro ejecutar en comparación con la condición de una sola vez.
-              valor = valor.strftime("%d/%m/%Y")  
-            elif isinstance(valor, str):
-              try:
-                valor_fecha = datetime.strptime(valor, "%Y-%m-%d")
-                valor = valor_fecha.strftime("%d/%m/%Y")
-              except ValueError:
-                pass
+        for caja, valor in zip(cajasDeTexto[nombre_de_la_tabla], fila_seleccionada):
           caja.delete(0, tk.END)
           caja.insert(0, str(valor))
+        convertir_datos(nombre_de_la_tabla)
     except error_sql as error:
       mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL SELECCIONAR: {str(error)}")
     finally:

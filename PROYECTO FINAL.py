@@ -254,39 +254,42 @@ def validar_datos(nombre_de_la_tabla, datos):
     #Pero el usuario necesita que se muestre en formato de Día/Mes/Año. En caso de que sea una hora,
     #SQL te obliga a poner en formato de Hora:Minuto:Segundo, pero el usuario necesita que se muestre en formato de Hora:Minuto.
     if nombre_de_la_tabla in tabla_a_validar:
-      campo = tabla_a_validar[nombre_de_la_tabla]
-      for nombre_campo, valor in datos.items():
-        valor = datos[nombre_campo]
-        if isinstance(valor, str) and '/' in valor:
-            try:
-                # Si tiene 2 barras, probablemente sea fecha, si tiene 1 puede ser hora
-                if valor.count('/') == 2:
-                    datos[nombre_campo] = datetime.strptime(valor, "%d/%m/%Y").strftime("%Y-%m-%d")
-                elif ':' in valor and valor.count(':') == 1:
-                    datos[nombre_campo] = datetime.strptime(valor, "%H:%M").strftime("%H:%M:%S")
-            except:
-                pass  # Dejar el valor original si no se puede convertir
-      
-      calves_autoincrementales = tablas_con_IDs_autoincrementales.get(nombre_de_la_tabla)
-      
-      if len(campo) == 1:
-        if (calves_autoincrementales is None or campo[0] not in calves_autoincrementales) and campo[0] not in datos:
-          # mensajeTexto.showerror("Error", f"Falta la clave primaria {campo[0]} en los datos")
+      superclaves = tabla_a_validar[nombre_de_la_tabla]
+      # Normaliza fechas y horas al formato requerido por SQL
+      for campo, valor in datos.items():
+        if isinstance(valor, str):
+          try:
+            if valor.count('/') == 2:
+                datos[campo] = datetime.strptime(valor.strip(), "%d/%m/%Y").strftime("%Y-%m-%d")
+            elif valor.count(':') == 1:
+                datos[campo] = datetime.strptime(valor.strip(), "%H:%M").strftime("%H:%M:%S")
+          except ValueError as ve:
+            # Solo ignoramos el error si el campo es de tipo fecha u hora
+            if campo.lower().startswith("fecha") or campo.lower().startswith("hora"):
+              continue  # ignoramos el error y seguimos
+            else:
+              return False  # cancelamos la operación
+
+      claves_autoincrementales = tablas_con_IDs_autoincrementales.get(nombre_de_la_tabla)
+      if len(superclaves) == 1:
+        PK = superclaves[0]
+        if (claves_autoincrementales is None or PK not in claves_autoincrementales) and PK not in datos:
+          mensajeTexto.showerror("Error", f"Falta la clave primaria {campo[0]} en los datos")
           return False
-        if calves_autoincrementales is None or campo[0]:
-          consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campo[0]} = %s"
-          cursor.execute(consulta, (datos[campo[0]],))
-      elif len(campo) > 1:
-        if not all(nombre_campo in datos for nombre_campo in campo):
-          # mensajeTexto.showerror("Error", f"Faltan las claves primarias en los datos: {campo}")
+        if claves_autoincrementales is None or PK:
+          consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {PK} = %s"
+          cursor.execute(consulta, (datos[PK],))
+      elif len(superclaves) > 1:
+        if not all(PK in datos for PK in superclaves):
+          mensajeTexto.showerror("Error", f"Faltan las claves primarias en los datos: {campo}")
           return False
-        consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campo[0]} = %s AND {campo[1]} = %s"
-        cursor.execute(consulta, (datos[campo[0]], datos[campo[1]]))
+        consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE " + " AND ".join(
+        [f"{PK} = %s" for PK in superclaves])
+        cursor.execute(consulta, tuple(datos[PK] for PK in superclaves))
       resultado = cursor.fetchone()
     else:
       mensajeTexto.showerror("Error", "La tabla solicitada no se encuentra")
       return False
-    
     validaciones = {
       'alumno': {
               "Nombre": lambda valor:patrón_nombre.match(valor),
@@ -342,24 +345,11 @@ def validar_datos(nombre_de_la_tabla, datos):
       if resultado and resultado[0] > 0:
         mensajeTexto.showwarning("Advertencia", f"El valor '{valor}' en '{campo}' ya existe en la base de datos")
         return False
-         
   except ValueError as vE:
-    mensajeTexto.showerror("Error", f"Formato de uno de los campos no es válido: {vE}")
+    print(f"Error de valor: {vE}")
   finally:
     desconectar_base_de_datos(conexión)
-
   return True
-
-    #MIRÁ, TENGO 2 DICCIONARIOS MÁS, UNO PARA VALIDAR CAMPOS Y EL OTRO PARA GUARDAR ID.
-    #PERO AÚN NO ME DEJA AGREGAR NI MODIFICAR LOS DATOS. ME CUESTA TANTO YA, PERO NECESITO
-    #TERMINAR LO ANTES POSIBLE. EL DICCIONARIO DE VALIDACIONES ESTÁN TODO BIEN HECHO.
-    
-    
-    #nombre_campo => clave
-    #campo => claves_primarias
-    #HA SOLUCIONADO EL PROBLEMA DE KEYERROR, PERO AÚN NO SE MODIFICA VISUALMENTE O SE AGREGA
-    #YA QUE LOS IDS ESTÁN EN AUTOINCREMENTAL, YA NO ES NECESARIO VALIDAR LOS IDS, PORQUE SE INCREMENTAN
-    #AUTOMÁTICAMENTE. POR ESO TIRA EL MENSAJE DE QUE FALTAN LAS CLAVES PRIMARIAS, PERO EN REALIDAD NO.
 
 #En esta función obtengo todos los datos del formulario de MySQL para agregar, modificar
 #y eliminar algunos datos de la tabla
@@ -415,38 +405,6 @@ def conseguir_campo_ID(nombre_de_la_tabla):
         }
   return IDs.get(nombre_de_la_tabla.strip().lower())
 
-#Esta función ayuda a forzar poner la fecha formateada en el país donde uno vive
-#porque SQL te obliga a poner en formato de Año-Mes-Día, esta es la única solución.
-#Lo mismo con la hora, que SQL te obliga a poner en formato de Hora:Minuto:Segundo.
-#Pero el usuario necesita solo que muestre la Hora:Minuto.
-def preparar_para_sql(datos):
-    datos_convertidos = {}
-    for campo, valor in datos.items():
-        if "fecha" in campo.lower():  # Verifica si el campo es una fecha con alternativas sin bastar con una sola.
-          try:
-              fecha_obj = datetime.strptime(valor, '%d/%m/%Y').strftime('%Y-%m-%d')
-          except ValueError:
-              try:
-                  fecha_obj = datetime.strptime(valor, '%Y-%m-%d').strftime('%Y-%m-%d')
-              except ValueError:
-                  print(f"Error al convertir la fecha en el campo {campo}: {valor}")
-                  continue
-          datos_convertidos[campo] = fecha_obj
-        elif "hora" in campo.lower() or "horario" in campo.lower():  # Verifica si el campo es una hora
-            try:
-              hora_obj = datetime.strptime(valor.strip(), "%H:%M").strftime("%H:%M")
-            except ValueError:
-              print(f"Error al convertir la hora en el campo {campo}: {valor}")
-              continue
-            datos_convertidos[campo] = hora_obj
-        else:
-            datos_convertidos[campo] = valor.strip()
-        return datos_convertidos
-
-#Estoy teniendo un problema con la función preparar_para_sql, ya que no está manejando correctamente los datos de entrada. Necesito asegurarme de que las fechas y horas se conviertan al formato adecuado antes de enviarlos a la base de datos.
-#QUE HACER AHORA? ESTOY RE ENOJADO PORQUE ME TIRA UN ERROR.
-#Esta función me permite insertar datos en la base de datos
-
 #Esta función se encarga de convertir los datos de entrada para mostrar en el entry
 #en el formato que el usuario espera, por ejemplo, convertir fechas de "YYYY-MM-DD" a "DD/MM/YYYY"
 def convertir_datos(nombre_de_la_tabla):
@@ -468,7 +426,6 @@ def convertir_datos(nombre_de_la_tabla):
         valor = hora_obj
     caja.delete(0, tk.END)  # Limpia el entry
     caja.insert(0, str(valor))  # Inserta el valor convertido
-
 
 #Esta función sirve para actualizar la hora
 def actualizar_la_hora(interfaz):
@@ -697,21 +654,31 @@ def pantalla_principal():
 
 def insertar_datos(nombre_de_la_tabla):
   conexión = conectar_base_de_datos()
+  datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
   
-  datosNecesarios = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
-  
-  if not datosNecesarios:
+  if not datos:
     return
   
-  datos_sql = preparar_para_sql(datosNecesarios) #Acá se ubica la función de preparar_para_sql, ayuda a forzar agregar o modificar la fecha
-  
-  if not validar_datos(nombre_de_la_tabla, datos_sql):
+  if not validar_datos(nombre_de_la_tabla, datos):
     return
-
+  
+  for campo, valor in datos.items():
+    if isinstance(valor, str):
+      if valor.count('/') == 2:
+        try:
+          datos[campo] = datetime.strptime(valor.strip(), "%d/%m/%Y").strftime("%Y-%m-%d")
+        except ValueError:
+          print(f"Formato de fecha inválido en el campo {campo}: {valor}")
+      elif valor.count(':') == 1:
+        try:
+          datos[campo] = datetime.strptime(valor.strip(), "%H:%M").strftime("%H:%M:%S")
+        except ValueError:
+          print(f"Formato de hora inválido en el campo {campo}: {valor}")
+  
   cursor = conexión.cursor()
-  campos = ', '.join(datos_sql.keys())
-  placeholder = ', '.join(['%s'] * len(datos_sql))
-  values = list(datos_sql.values())
+  campos = ', '.join(datos.keys())
+  placeholder = ', '.join(['%s'] * len(datos))
+  values = list(datos.values())
   query = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({placeholder})"
   try:
     cursor.execute(query, values)
@@ -739,23 +706,33 @@ def modificar_datos(nombre_de_la_tabla):
       mensajeTexto.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
       return
 
-
-  datosNecesarios = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
-  if not datosNecesarios:
+  datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
+  if not datos:
       return
+  
+  CampoID = conseguir_campo_ID(nombre_de_la_tabla)
 
-  datos_sql = preparar_para_sql(datosNecesarios)
-  
-  CampoID = conseguir_campo_ID(nombre_de_la_tabla)  # ej. "id_usuario"
-  
-  if not validar_datos(nombre_de_la_tabla, datos_sql):
+  for campo, valor in datos.items():
+    if isinstance(valor, str):
+      if valor.count('/') == 2:
+        try:
+          datos[campo] = datetime.strptime(valor.strip(), "%d/%m/%Y").strftime("%Y-%m-%d")
+        except ValueError:
+          print(f"Formato de fecha inválido en el campo {campo}: {valor}")
+      elif valor.count(':') == 1:
+        try:
+          datos[campo] = datetime.strptime(valor.strip(), "%H:%M").strftime("%H:%M:%S")
+        except ValueError:
+          print(f"Formato de hora inválido en el campo {campo}: {valor}")
+
+  if not validar_datos(nombre_de_la_tabla, datos):
     return
-  
+
   try:
     with conectar_base_de_datos() as conexión:
       cursor = conexión.cursor()
-      campos = ', '.join([f"{campo} = %s" for campo in datos_sql.keys()])
-      valores = list(datos_sql.values()) + [ID_Seleccionado]
+      campos = ', '.join([f"{campo} = %s" for campo in datos.keys()])
+      valores = list(datos.values()) + [ID_Seleccionado]
       consulta = f"UPDATE {nombre_de_la_tabla} SET {campos} WHERE {CampoID} = %s"
       
       cursor.execute(consulta, valores)

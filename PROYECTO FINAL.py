@@ -233,13 +233,21 @@ def validar_datos(nombre_de_la_tabla, datos):
   patrón_númerosDecimales = re.compile(r'^\d+([.,]\d+)?$')
   patrón_alfanumérico = re.compile(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$') #Esta variable regular contiene la expresión de letras y números
   try:
-    tabla_a_validar = {"alumno":     ["Nombre", "FechaDeNacimiento",],
+    tabla_a_validar = {"alumno":     ["Nombre", "FechaDeNacimiento", ],
                        "carrera":    ["Nombre", "Duración",],
                        "materia":    ["Nombre", "Horario",],
                        "profesor":   ["Nombre",],
-                       "asistencia": ["Fecha_Asistencia", "Estado",],
-                       "nota":       ["valorNota", "TipoNota",]
+                       "asistencia": ["Fecha_Asistencia",],
+                       "nota":       ["valorNota", "TipoNota"]
                       }
+    
+    tablas_con_IDs_autoincrementales = { "alumno": ["ID_Alumno",],
+                                        "profesor": ["ID_Profesor",],
+                                        "nota": None,  # porque tiene claves compuestas (IDAlumno + IDMateria), no autoincremental
+                                        "materia": ["ID_Materia",],
+                                        "carrera": ["ID_Carrera",],
+                                        "asistencia": ["ID_Asistencia",]
+                                        }
     
     # En esta parte he puesto el for para que se pueda validar los datos
     #principalmente la fecha y la hora, ya que SQL te obliga a poner en formato de Año-Mes-Día.
@@ -247,26 +255,37 @@ def validar_datos(nombre_de_la_tabla, datos):
     #SQL te obliga a poner en formato de Hora:Minuto:Segundo, pero el usuario necesita que se muestre en formato de Hora:Minuto.
     if nombre_de_la_tabla in tabla_a_validar:
       campo = tabla_a_validar[nombre_de_la_tabla]
-      #FORZAR EL CAMBIO DE FECHA
-      for campo in datos:
-        valor = datos[campo]
+      for nombre_campo, valor in datos.items():
+        valor = datos[nombre_campo]
         if isinstance(valor, str) and '/' in valor:
-          try:
-            datos[campo] = datetime.strptime(valor, "%d/%m/%Y").strftime("%Y-%m-%d")
-          except:
-            pass  # No convertir si no es fecha
+            try:
+                # Si tiene 2 barras, probablemente sea fecha, si tiene 1 puede ser hora
+                if valor.count('/') == 2:
+                    datos[nombre_campo] = datetime.strptime(valor, "%d/%m/%Y").strftime("%Y-%m-%d")
+                elif ':' in valor and valor.count(':') == 1:
+                    datos[nombre_campo] = datetime.strptime(valor, "%H:%M").strftime("%H:%M:%S")
+            except:
+                pass  # Dejar el valor original si no se puede convertir
+      
+      calves_autoincrementales = tablas_con_IDs_autoincrementales.get(nombre_de_la_tabla)
       
       if len(campo) == 1:
-        consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campo[0]} = %s"
-        cursor.execute(consulta, (datos[campo[0]],))
+        if (calves_autoincrementales is None or campo[0] not in calves_autoincrementales) and campo[0] not in datos:
+          # mensajeTexto.showerror("Error", f"Falta la clave primaria {campo[0]} en los datos")
+          return False
+        if calves_autoincrementales is None or campo[0]:
+          consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campo[0]} = %s"
+          cursor.execute(consulta, (datos[campo[0]],))
       elif len(campo) > 1:
+        if not all(nombre_campo in datos for nombre_campo in campo):
+          # mensajeTexto.showerror("Error", f"Faltan las claves primarias en los datos: {campo}")
+          return False
         consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campo[0]} = %s AND {campo[1]} = %s"
         cursor.execute(consulta, (datos[campo[0]], datos[campo[1]]))
       resultado = cursor.fetchone()
     else:
       mensajeTexto.showerror("Error", "La tabla solicitada no se encuentra")
       return False
-  
     
     validaciones = {
       'alumno': {
@@ -290,7 +309,7 @@ def validar_datos(nombre_de_la_tabla, datos):
       },
       'nota': {
               "valorNota": lambda valor :patrón_númerosDecimales.match(valor),
-              "tipoNota": lambda valor : patrón_alfanumérico.match(valor) #tipoNota sólo acepta letras,
+              "tipoNota": lambda valor : patrón_alfanumérico.match(valor) #tipoNota sólo acepta letras, pero se puede poner números también para no tener que estrictamente escribir Parcial con mayúscula.
       }
     }
     
@@ -312,7 +331,7 @@ def validar_datos(nombre_de_la_tabla, datos):
          mensajeTexto.showerror("Error", "La asistencia sólo permite poner presente o ausente")
          return False
       elif campo in ["valorNota", "tipoNota"]:
-        if "tipoNota" and valor.lower() not in ["Parcial 1", "Parcial 2", "Parcial 3","Parcial 4","Trabajo Práctico 1","Trabajo Práctico 2","Exámen Final"]:
+        if "tipoNota" and valor not in ["Parcial 1", "Parcial 2", "Parcial 3","Parcial 4","Trabajo Práctico 1","Trabajo Práctico 2","Exámen Final"]:
           mensajeTexto.showerror("Error", f"El campo {campo} tiene que ser un número válido")
           return False
         elif (float(valor) < 1 or float(valor) > 10):
@@ -326,12 +345,21 @@ def validar_datos(nombre_de_la_tabla, datos):
          
   except ValueError as vE:
     mensajeTexto.showerror("Error", f"Formato de uno de los campos no es válido: {vE}")
-  except error_sql as e:
-    mensajeTexto.showerror("Error", f"Error al consultar la base de datos: {e}")
   finally:
     desconectar_base_de_datos(conexión)
 
   return True
+
+    #MIRÁ, TENGO 2 DICCIONARIOS MÁS, UNO PARA VALIDAR CAMPOS Y EL OTRO PARA GUARDAR ID.
+    #PERO AÚN NO ME DEJA AGREGAR NI MODIFICAR LOS DATOS. ME CUESTA TANTO YA, PERO NECESITO
+    #TERMINAR LO ANTES POSIBLE. EL DICCIONARIO DE VALIDACIONES ESTÁN TODO BIEN HECHO.
+    
+    
+    #nombre_campo => clave
+    #campo => claves_primarias
+    #HA SOLUCIONADO EL PROBLEMA DE KEYERROR, PERO AÚN NO SE MODIFICA VISUALMENTE O SE AGREGA
+    #YA QUE LOS IDS ESTÁN EN AUTOINCREMENTAL, YA NO ES NECESARIO VALIDAR LOS IDS, PORQUE SE INCREMENTAN
+    #AUTOMÁTICAMENTE. POR ESO TIRA EL MENSAJE DE QUE FALTAN LAS CLAVES PRIMARIAS, PERO EN REALIDAD NO.
 
 #En esta función obtengo todos los datos del formulario de MySQL para agregar, modificar
 #y eliminar algunos datos de la tabla

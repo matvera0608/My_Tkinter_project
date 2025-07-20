@@ -241,7 +241,10 @@ def validar_datos(nombre_de_la_tabla, datos):
                        "nota":       ["valorNota", "TipoNota",]
                       }
     
-
+    # En esta parte he puesto el for para que se pueda validar los datos
+    #principalmente la fecha y la hora, ya que SQL te obliga a poner en formato de Año-Mes-Día.
+    #Pero el usuario necesita que se muestre en formato de Día/Mes/Año. En caso de que sea una hora,
+    #SQL te obliga a poner en formato de Hora:Minuto:Segundo, pero el usuario necesita que se muestre en formato de Hora:Minuto.
     if nombre_de_la_tabla in tabla_a_validar:
       campo = tabla_a_validar[nombre_de_la_tabla]
       #FORZAR EL CAMBIO DE FECHA

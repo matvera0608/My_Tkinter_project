@@ -10,7 +10,7 @@ from reportlab.lib.pagesizes import letter
 
 # --- COLORES EN HEXADECIMALES ---
 colores = {
-    "rosado_claro": "#FFECEC",
+    "rosado_claro": "#FFEBEB",
     "rojo_claro": "#FFAEAE",
     "verde": "#00FF00",
     "rojo": "#FF0000",
@@ -164,7 +164,6 @@ def seleccionar_y_consultar():
   except Exception as e:
     mensajeTexto.showerror(f"Error al consultar la tabla: {e}")
     return None
-
 #Definí una función para poder mostrar 
 #cuando uno de los radioButtons esté seleccionado
 def habilitar_botones_e_inputs():
@@ -183,11 +182,13 @@ def habilitar_botones_e_inputs():
 
   botón_seleccionado = opción.get()
   
-  botón_agregar.place(x = 40, y = 100)
-  botón_modificar.place(x = 40, y = 160)
-  botón_eliminar.place(x = 40, y = 220)
-  botón_ordenar.place(x = 40, y = 280)
-  botón_exportar.place(x= 20, y= 50)
+  # Botón Exportar (arriba a la izquierda)
+  botón_exportar.place(relx=0.025, rely=0.05)
+  botón_agregar.place(relx=0.025, rely=0.17)
+  botón_modificar.place(relx=0.025, rely=0.29)
+  botón_eliminar.place(relx=0.025, rely=0.41)
+  botón_ordenar.place(relx=0.025, rely=0.53)
+
   
   label_Obligatoriedad.pack(padx= 100, pady= 50)
   
@@ -200,11 +201,12 @@ def habilitar_botones_e_inputs():
                                          6: [(txBox_Valor, label_Valor, 100), (txBox_Tipo, label_Tipo, 150)]
                                        }
   
+  #Esta condición lo que hace es mover de forma proporcional el entry y label
   if botón_seleccionado in opciones_del_widget:
     #Este for me permite dinámicamente agregar los entrys y labels dependiendo de la tabla seleccionada
     for entry, label, y_pos in opciones_del_widget[botón_seleccionado]:
-      entry.place(x=150, y=y_pos)
-      label.place(relx=0.25, rely=0.15 + (y_pos - 50) / 500)
+      label.place(relx=0.3, rely=0.15 + (y_pos - 50) / 500)
+      entry.place(relx=0.1, rely=0.15 + (y_pos - 50) / 500)
 
 #Este obtiene la tabla a seleccionar cuando voy a seleccionar RadioButton
 def obtener_tabla_seleccionada():
@@ -225,173 +227,157 @@ def obtener_tabla_seleccionada():
 
 #Esta función validar_datos valida los datos antes de agregarlo a la listbox para evitar redundancias
 def validar_datos(nombre_de_la_tabla, datos):
-  #El patrón_nombre contiene una expresión regular para permitir
-  #letras con acentos y otros caracteres especiales
-  conexión = conectar_base_de_datos()
-  cursor = conexión.cursor()
-  patrón_nombre = re.compile(r'^[A-Za-záéíóúÁÉÍÓÚñÑüÜ\s]+$') #Esta variable regular contiene la expresión de solo para letras
-  patrón_númerosDecimales = re.compile(r'^\d+([.,]\d+)?$')
-  patrón_alfanumérico = re.compile(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$') #Esta variable regular contiene la expresión de letras y números
   try:
-    tabla_a_validar = {"alumno":     ["Nombre", "FechaDeNacimiento", ],
-                       "carrera":    ["Nombre", "Duración",],
-                       "materia":    ["Nombre", "Horario",],
-                       "profesor":   ["Nombre",],
-                       "asistencia": ["Fecha_Asistencia",],
-                       "nota":       ["valorNota", "TipoNota"]
-                      }
+    #El patrón_nombre contiene una expresión regular para permitir
+    #letras con acentos y otros caracteres especiales
+    conexión = conectar_base_de_datos()
+    cursor = conexión.cursor()
+    patrón_nombre = re.compile(r'^[A-Za-záéíóúÁÉÍÓÚñÑüÜ\s]+$') #Esta variable regular contiene la expresión de solo para letras
+    patrón_númerosDecimales = re.compile(r'^\d+([.,]\d+)?$')
+    patrón_alfanumérico = re.compile(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$') #Esta variable regular contiene la expresión de letras y números
     
-    tablas_con_IDs_autoincrementales = { "alumno": ["ID_Alumno",],
-                                        "profesor": ["ID_Profesor",],
-                                        "nota": None,  # porque tiene claves compuestas (IDAlumno + IDMateria), no autoincremental
-                                        "materia": ["ID_Materia",],
-                                        "carrera": ["ID_Carrera",],
-                                        "asistencia": ["ID_Asistencia",]
-                                        }
-    
-    # En esta parte he puesto el for para que se pueda validar los datos
-    #principalmente la fecha y la hora, ya que SQL te obliga a poner en formato de Año-Mes-Día.
-    #Pero el usuario necesita que se muestre en formato de Día/Mes/Año. En caso de que sea una hora,
-    #SQL te obliga a poner en formato de Hora:Minuto:Segundo, pero el usuario necesita que se muestre en formato de Hora:Minuto.
+    tabla_a_validar = {"alumno":     ["Nombre", "FechaDeNacimiento"],
+                        "carrera":    ["Nombre", "Duración"],
+                        "materia":    ["Nombre", "Horario"],
+                        "profesor":   ["Nombre",],
+                        "asistencia": [],
+                        "nota":       ["valorNota", "TipoNota"]
+                        }
+      
+    tablas_con_IDs_autoincrementales = { "alumno": ["ID_Alumno"],
+                                          "profesor": ["ID_Profesor"],
+                                          "materia": ["ID_Materia"],
+                                          "carrera": ["ID_Carrera"],
+                                          "asistencia": ["ID_Asistencia"],
+                                          "nota": None  # porque tiene claves compuestas (IDAlumno + IDMateria), no autoincremental
+                                          }
+      
+      # En esta parte he puesto el for para que se pueda validar los datos
+      #principalmente la fecha y la hora, ya que SQL te obliga a poner en formato de Año-Mes-Día.
+      #Pero el usuario necesita que se muestre en formato de Día/Mes/Año. En caso de que sea una hora,
+      #SQL te obliga a poner en formato de Hora:Minuto:Segundo, pero el usuario necesita que se muestre en formato de Hora:Minuto.
     if nombre_de_la_tabla in tabla_a_validar:
-      superclaves = tabla_a_validar[nombre_de_la_tabla]
-      # Normaliza fechas y horas al formato requerido por SQL
-      for campo, valor in datos.items():
-        if isinstance(valor, str):
-          try:
-            if valor.count('/') == 2:
-                datos[campo] = datetime.strptime(valor.strip(), "%d/%m/%Y").strftime("%Y-%m-%d")
-            elif valor.count(':') == 1:
-                datos[campo] = datetime.strptime(valor.strip(), "%H:%M").strftime("%H:%M:%S")
-          except ValueError as ve:
-            # Solo ignoramos el error si el campo es de tipo fecha u hora
-            if campo.lower().startswith("fecha") or campo.lower().startswith("hora"):
-              continue  # ignoramos el error y seguimos
-            else:
-              return False  # cancelamos la operación
-
-      claves_autoincrementales = tablas_con_IDs_autoincrementales.get(nombre_de_la_tabla)
-      if len(superclaves) == 1:
-        PK = superclaves[0]
-        if (claves_autoincrementales is None or PK not in claves_autoincrementales) and PK not in datos:
-          mensajeTexto.showerror("Error", f"Falta la clave primaria {campo[0]} en los datos")
-          return False
-        if claves_autoincrementales is None or PK:
-          consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {PK} = %s"
-          cursor.execute(consulta, (datos[PK],))
-      elif len(superclaves) > 1:
-        if not all(PK in datos for PK in superclaves):
-          mensajeTexto.showerror("Error", f"Faltan las claves primarias en los datos: {campo}")
-          return False
-        consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE " + " AND ".join(
-        [f"{PK} = %s" for PK in superclaves])
-        cursor.execute(consulta, tuple(datos[PK] for PK in superclaves))
+      campos = tabla_a_validar[nombre_de_la_tabla]
+      #Este for recorre los campos de la tabla y los datos. Además valida la fecha y la hora
+      #si el campo es una fecha o una hora, lo convierte al formato requerido.
+      claves = tablas_con_IDs_autoincrementales.get(nombre_de_la_tabla)
+      if len(campos) == 1:
+          if (claves is None or campos[0] not in claves) and campos[0] not in datos:
+              return False
+          if claves is None or campos[0]:
+              consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campos[0]} = %s"
+              cursor.execute(consulta, (datos[campos[0]],))
+      elif len(campos) > 1:
+          if not all(nombre_campo in datos for nombre_campo in campos):
+              return False
+          consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campos[0]} = %s AND {campos[1]} = %s"
+          cursor.execute(consulta, (datos[campos[0]], datos[campos[1]]))
       resultado = cursor.fetchone()
     else:
       mensajeTexto.showerror("Error", "La tabla solicitada no se encuentra")
       return False
+    
     validaciones = {
       'alumno': {
-              "Nombre": lambda valor:patrón_nombre.match(valor),
-              "FechaDeNacimiento": lambda valor: valor.strip() and datetime.strptime(valor, '%d/%m/%Y'),
+              "FechaDeNacimiento": validar_fecha,
+              "Nombre": lambda valor: bool(patrón_nombre.match(valor)),
       },
       'asistencia': {
-              "Estado": lambda valor: valor.isalpha(),
-              "Fecha_Asistencia": lambda valor: datetime.strptime(valor, '%d/%m/%Y')
+              "Fecha_Asistencia": validar_fecha,
+              "Estado": lambda valor: bool(valor.isalpha()),
       },
       'carrera': {
-              "Nombre": lambda valor :patrón_nombre.match(valor),
-              "Duración": lambda valor :patrón_alfanumérico.match(valor), #en Duración cambié la expresión regular para que acepte letras, números y espacios.
+              "Nombre": lambda valor :bool(patrón_nombre.match(valor)),
+              "Duración": lambda valor :bool(patrón_nombre.match(valor)), #en Duración cambié la expresión regular para que acepte letras, números y espacios.
       },
       'materia': {
-              "Nombre": lambda valor :patrón_nombre.match(valor),
-              "Horario": lambda valor :datetime.strptime(valor, '%H:%M'),
+              "Horario": validar_hora,
+              "Nombre": lambda valor: bool(patrón_nombre.match(valor)),
       },
       'profesor': {
-              "Nombre": lambda valor :patrón_nombre.match(valor),
+              "Nombre": lambda valor: bool(patrón_nombre.match(valor)),
       },
       'nota': {
-              "valorNota": lambda valor :patrón_númerosDecimales.match(valor),
-              "tipoNota": lambda valor : patrón_alfanumérico.match(valor) #tipoNota sólo acepta letras, pero se puede poner números también para no tener que estrictamente escribir Parcial con mayúscula.
+              "valorNota": lambda valor :bool(patrón_númerosDecimales.match(valor)),
+              "tipoNota": lambda valor : bool(patrón_alfanumérico.match(valor)), #tipoNota sólo acepta letras, pero se puede poner números también para no tener que estrictamente escribir Parcial con mayúscula.
       }
     }
-    
+      
     if not nombre_de_la_tabla in validaciones:
-      mensajeTexto.showerror("Error", "La tabla solicitada no se encuentra")
-      return False
-    #en este for controlo que los datos estén puestos correctamente, en caso contrario
-    #no me agregan o modifican. Condiciones a llevar en cuenta:
-    #no se puede agregar con campos totalmente vacíos
-    #el formato debe cumplir estrictamente con las validaciones, que es un diccionario para control
+        mensajeTexto.showerror("Error", "La tabla solicitada no se encuentra")
+        return False
+      #en este for controlo que los datos estén puestos correctamente, en caso contrario
+      #no me agregan o modifican. Condiciones a llevar en cuenta:
+      #no se puede agregar con campos totalmente vacíos
+      #el formato debe cumplir estrictamente con las validaciones, que es un diccionario para 
+      
+    #ESTO ESTÁ FUNCIONANDO MAL, PORQUE CUANDO PRESIONO LOS BOTONES CRUD, NO ME IMPRIME MÁS LOS CAMPOS NO PUEDEN ESTAR VACÍOS.
+    #SINO UNA EXCEPCIÓN DE LAS FECHAS. ADEMÁS CUANDO HICE ALGUNAS MODIFICACIONES PARA FORZAR LA VALIDACIÓN DE FECHAS Y HORAS, YA ESTO NO FUNCIONA TAN BIEN COMO ESPERO.
+    #SIGUE SIN FUNCIONAR.
     for campo, valor in datos.items():
-      if campo in validaciones[nombre_de_la_tabla] and not valor.strip():
-        mensajeTexto.showerror("Error", "Los campos no pueden estar vacíos")
-        return False
-      elif campo in validaciones[nombre_de_la_tabla] and not validaciones[nombre_de_la_tabla][campo](valor):
-        mensajeTexto.showerror("Error", f"El campo {campo} tiene un formato inválido con valor {valor}")
-        return False
-      elif campo == "Estado" and valor.lower() not in ["presente", "ausente"]:
-         mensajeTexto.showerror("Error", "La asistencia sólo permite poner presente o ausente")
-         return False
-      elif campo in ["valorNota", "tipoNota"]:
-        if "tipoNota" and valor not in ["Parcial 1", "Parcial 2", "Parcial 3","Parcial 4","Trabajo Práctico 1","Trabajo Práctico 2","Exámen Final"]:
-          mensajeTexto.showerror("Error", f"El campo {campo} tiene que ser un número válido")
-          return False
-        elif (float(valor) < 1 or float(valor) > 10):
-          mensajeTexto.showerror("Error", f"El campo que tiene una nota menor que 1 o mayor que 10 es {campo}")
-          return False
-        
-      #en esta condición verifico si el valor ya existe en la base de datos o si un registro se repite o no
-      if resultado and resultado[0] > 0:
-        mensajeTexto.showwarning("Advertencia", f"El valor '{valor}' en '{campo}' ya existe en la base de datos")
-        return False
-  except ValueError as vE:
-    print(f"Error de valor: {vE}")
-  finally:
-    desconectar_base_de_datos(conexión)
+      if campo in validaciones[nombre_de_la_tabla]:
+          if isinstance(valor, str):
+            if not valor.strip():
+              mensajeTexto.showerror("Error", f"El campo '{campo}' está vacío.")
+              return False
+          else:
+            if valor is None:
+              mensajeTexto.showerror("Error", f"El campo '{campo}' está vacío o es inválido.")
+              return False
+      
+  except ValueError as error_de_validación:
+    print(f"Error de validación: {error_de_validación}")
+    return False
+  desconectar_base_de_datos(conexión)
   return True
 
 #En esta función obtengo todos los datos del formulario de MySQL para agregar, modificar
 #y eliminar algunos datos de la tabla
+#ASÍ TENGO ESTA FUNCIÓN BIEN CORREGIDA.
 def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
   global cajasDeTexto, datos, campos_de_la_base_de_datos
-  ##Tengo 3 diccionarios, pero cada uno cumple sus funciones
-
 
   campos_de_la_base_de_datos = {
-                                      'alumno':     ["FechaDeNacimiento", "Nombre"],
-                                      'asistencia': ["Estado", "Fecha_Asistencia"],
-                                      'carrera':    ["Nombre", "Duración"],
-                                      'materia':    ["Nombre", "Horario"],
-                                      'profesor':   ["Nombre"],
-                                      'nota':       ["valorNota", "tipoNota"]
-                               }
-  
-  datos = {}
+      'alumno':     ["FechaDeNacimiento", "Nombre"],
+      'asistencia': ["Estado", "Fecha_Asistencia"],
+      'carrera':    ["Nombre", "Duración"],
+      'materia':    ["Nombre", "Horario"],
+      'profesor':   ["Nombre"],
+      'nota':       ["valorNota", "tipoNota"]
+  }
 
   cajasDeTexto = {
-                              'alumno':  (txBox_FechaNacimiento, txBox_NombreAlumno),
-                              'asistencia': (txBox_EstadoDeAsistencia , txBox_FechaAsistencia),
-                              'carrera':  (txBox_NombreCarrera, txBox_Duración),
-                              'materia': (txBox_NombreMateria, txBox_HorarioCorrespondiente),
-                              'profesor': (txBox_NombreProfesor,),
-                              'nota':     (txBox_Valor, txBox_Tipo)
-                 }
+      'alumno':  (txBox_FechaNacimiento, txBox_NombreAlumno),
+      'asistencia': (txBox_EstadoDeAsistencia, txBox_FechaAsistencia),
+      'carrera':  (txBox_NombreCarrera, txBox_Duración),
+      'materia': (txBox_NombreMateria, txBox_HorarioCorrespondiente),
+      'profesor': (txBox_NombreProfesor,),
+      'nota':     (txBox_Valor, txBox_Tipo)
+  }
 
-  
+  datos = {}
 
   for campo, caja in zip(campos_de_la_base_de_datos[nombre_de_la_tabla], cajasDeTexto[nombre_de_la_tabla]):
-      datos[campo] = caja.get()
+    texto = caja.get().strip()
 
+    # Detectar y convertir fechas y horas
+    try:
+        if texto.count("/") == 2:
+            texto = datetime.strptime(texto, "%d/%m/%Y").date()
+        elif texto.count(":") == 1 and len(texto) <= 5:
+            texto = datetime.strptime(texto, "%H:%M").time()
+    except ValueError:
+        mensajeTexto.showerror("Error", f"Formato inválido en '{campo}': {texto}")
+        return None
 
-  #En esta condición, valido los datos de la tabla
-  #antes de agregarlo a la listBox. Puse un condicional
-  #donde si las entrys de cada registro, no me tiren error. Además validarDatos
-  #como variable me sirve para que no me tire error de que no existe la tabla antes de indicar un registro de la listBox
+    datos[campo] = texto  # <<--- ACÁ lo guardás ya convertido
+
   if validarDatos:
     if not validar_datos(nombre_de_la_tabla, datos):
       return None
+
   return datos
+
 
 #Esta función me permite obtener el ID de cualquier tabla que se encuentre en mi base de datos antes de eliminar
 #ya que SQL obliga poner una condición antes de ejecutar una tarea
@@ -404,28 +390,6 @@ def conseguir_campo_ID(nombre_de_la_tabla):
               'profesor': "ID_Profesor"
         }
   return IDs.get(nombre_de_la_tabla.strip().lower())
-
-#Esta función se encarga de convertir los datos de entrada para mostrar en el entry
-#en el formato que el usuario espera, por ejemplo, convertir fechas de "YYYY-MM-DD" a "DD/MM/YYYY"
-def convertir_datos(nombre_de_la_tabla):
-  for campo, caja in zip(campos_de_la_base_de_datos[nombre_de_la_tabla], cajasDeTexto[nombre_de_la_tabla]):
-    valor = caja.get()
-    # Si el campo es una fecha, lo convierte al formato "DD/MM/YYYY"
-    if isinstance(valor, str) and "fecha" in campo.lower():
-        try:
-            fecha_obj = datetime.strptime(valor, "%Y-%m-%d").strftime("%d/%m/%Y")
-        except ValueError:
-            continue  # Si no es una fecha válida, no la convierte
-        valor = fecha_obj
-    # Si el campo es una hora, lo convierte al formato "HH:MM"
-    elif isinstance(valor, str) and "hora" in campo.lower():
-        try:
-            hora_obj = datetime.strptime(valor, "%H:%M:%S").strftime("%H:%M")
-        except ValueError:
-            continue  # Si no es una hora válida, no la convierte
-        valor = hora_obj
-    caja.delete(0, tk.END)  # Limpia el entry
-    caja.insert(0, str(valor))  # Inserta el valor convertido
 
 #Esta función sirve para actualizar la hora
 def actualizar_la_hora(interfaz):
@@ -486,6 +450,70 @@ def seleccionar_registro():
         cursor.close()
       desconectar_base_de_datos(conexión)
 
+#Esta función se encarga de convertir los datos de entrada para mostrar en el entry
+#en el formato que el usuario espera, por ejemplo, convertir fechas de "YYYY-MM-DD" a "DD/MM/YYYY"
+def convertir_datos(nombre_de_la_tabla):
+  for campo, caja in zip(campos_de_la_base_de_datos[nombre_de_la_tabla], cajasDeTexto[nombre_de_la_tabla]):
+    valor = caja.get()
+    # Si el campo es una fecha, lo convierte al formato "DD/MM/YYYY"
+    if isinstance(valor, str) and "fecha" in campo.lower():
+        try:
+            fecha_obj = datetime.strptime(valor, "%Y-%m-%d").strftime("%d/%m/%Y")
+        except ValueError:
+            continue  # Si no es una fecha válida, no la convierte
+        valor = fecha_obj
+    # Si el campo es una hora, lo convierte al formato "HH:MM"
+    elif isinstance(valor, str) and "hora" in campo.lower():
+        try:
+            hora_obj = datetime.strptime(valor, "%H:%M:%S").strftime("%H:%M")
+        except ValueError:
+            continue  # Si no es una hora válida, no la convierte
+        valor = hora_obj
+    caja.delete(0, tk.END)  # Limpia el entry
+    caja.insert(0, str(valor))  # Inserta el valor convertido
+
+def normalizar_datos_nota(datos):
+    if "tipo_nota" in datos:
+        valor = datos["tipo_nota"].strip().lower()
+
+        if "parcial" in valor:
+            datos["tipo_nota"] = "Parcial 1" if "1" in valor else "Parcial 2" if "2" in valor else "Parcial"
+        elif "final" in valor:
+            datos["tipo_nota"] = "Final"
+        elif "tp" in valor or "trabajo" in valor:
+            datos["tipo_nota"] = "TP"
+        else:
+            datos["tipo_nota"] = datos["tipo_nota"].capitalize()
+
+    if "valor_nota" in datos:
+        valor = datos["valor_nota"].strip().lower()
+
+        if valor in ("ausente", "a"):
+            datos["valor_nota"] = "Ausente"
+        elif valor in ("ausente con aviso", "ac", "con aviso"):
+            datos["valor_nota"] = "Ausente con aviso"
+        elif valor.replace(",", ".").replace(".", "").isdigit():
+            # acepta 7.5 o 7,5 y los transforma
+            datos["valor_nota"] = valor.replace(",", ".")
+        else:
+            datos["valor_nota"] = datos["valor_nota"].capitalize()
+    return datos
+
+##Crearé funciones auxiliares para validación de campos
+def validar_fecha(valor):
+  try:
+      datetime.strptime(valor, '%d/%m/%Y')
+      return True
+  except ValueError:
+      return False
+
+def validar_hora(valor):
+  try:
+      datetime.strptime(valor, '%H:%M')
+      return True
+  except ValueError:
+      return False
+
 # --- CONFIGURACIÓN DE INTERFAZ Y ELEMENTOS IMPORTANTES DE tkINTER
 # PARA LAS INSTRUCCIONES GUARDADOS EN LA FUNCIÓN pantalla_principal()---
 def pantalla_principal():
@@ -495,12 +523,10 @@ def pantalla_principal():
   mi_ventana = tk.Tk()
   mi_ventana.title("Sistema Gestor de Asistencia")
   mi_ventana.geometry("1250x400")
-  mi_ventana.minsize(1250, 400)
-  mi_ventana.maxsize(1250, 400)
+  mi_ventana.minsize(1250, 100)
   mi_ventana.configure(bg=colores["rosado_claro"])
   mi_ventana.iconbitmap(ícono)
   mi_ventana.attributes("-alpha", 1)
-  mi_ventana.resizable(False, False)
 
   # --- BOTONES NECESARIOS ---
   global botón_agregar, botón_eliminar, botón_modificar, botón_ordenar, botón_exportar
@@ -521,7 +547,7 @@ def pantalla_principal():
   botón_eliminar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
   #Comparar
-  botón_ordenar = tk.Button(mi_ventana, text="Ordenar", command=lambda:ordenar_datos(obtener_tabla_seleccionada()), width=10, height=1)
+  botón_ordenar = tk.Button(mi_ventana, text="Ordenar", command=lambda:ordenar_datos(obtener_tabla_seleccionada(), tabla=obtener_tabla_seleccionada()), width=10, height=1)
   botón_ordenar.config(fg="black", bg=colores["dorado"], font=("Arial", 8), cursor='hand2', activebackground=colores["dorado_claro"])
   botón_ordenar.bind("<Return>", ejecutar_acción_presionando_Enter)
   
@@ -537,7 +563,7 @@ def pantalla_principal():
   label_NombreAlumno = tk.Label(mi_ventana, text="Nombre del Alumno *")
   label_NombreAlumno.config(fg="Black",bg=colores["rosado_claro"], font=("Arial", 12))
 
-  label_FechaNacimiento = tk.Label(mi_ventana, text="Fecha que nació: Formato Año-Mes-Día *")
+  label_FechaNacimiento = tk.Label(mi_ventana, text="Fecha que nació: Formato Día-Mes-Año *")
   label_FechaNacimiento.config(fg="Black",bg=colores["rosado_claro"], font=("Arial", 12))
 
   #Etiquetas para la tabla de asistencias
@@ -634,12 +660,12 @@ def pantalla_principal():
   Botón_Tabla_de_Notas.config(bg=colores["rosado_claro"], font=("Arial", 12), cursor='hand2')
 
 
-  Botón_Tabla_de_Alumno.place(x= 40, y = 350)
-  Botón_Tabla_de_Asistencia.place(x = 150, y = 350)
-  Botón_Tabla_de_Carrera.place(x = 260, y = 350)
-  Botón_Tabla_de_Materia.place(x = 370, y = 350)
-  Botón_Tabla_de_Profesor.place(x = 480, y = 350)
-  Botón_Tabla_de_Notas.place(x = 590, y = 350)
+  Botón_Tabla_de_Alumno.place(relx=0.01, rely=0.9, relwidth=0.1)
+  Botón_Tabla_de_Asistencia.place(relx=0.11, rely=0.9, relwidth=0.1)
+  Botón_Tabla_de_Carrera.place(relx=0.21, rely=0.9, relwidth=0.1)
+  Botón_Tabla_de_Materia.place(relx=0.31, rely=0.9, relwidth=0.1)
+  Botón_Tabla_de_Profesor.place(relx=0.41, rely=0.9, relwidth=0.1)
+  Botón_Tabla_de_Notas.place(relx=0.51, rely=0.9, relwidth=0.1)
   Botón_Tabla_de_Alumno.focus_set()
   
   #--- LISTBOX ---
@@ -651,57 +677,70 @@ def pantalla_principal():
     
   return mi_ventana
 
+#HEMOS CREADO UNA LISTA PARA valores_sql y campo_sql CON EL FIN DE EVITAR ERRORES DE VALIDACIÓN
 
+#LOS DATOS QUE NO ME DEJAN INSERTAR NI MODIFICAR O LOS CAMPOS QUE ME BLOQUEAN SON:
+#Fecha de Nacimiento
+#Fecha de Asistencia
+#Horario de la Materia
+#SIEMPRE ME DA ESA EXCEPCIÓN DE SQL QUE DETECTA TIPOS DE VALOR DATE INCORRECTOS. YA ESTOY RE ENOJADO HASTA ESTOY PRESIONANDO MIS DIENTES FUERTEMENTE.
+#PRESIONANDO LAS TECLAS CON ENORME EXPLOSIÓN.
+#Los valores que intento de insertar o modificar son Fecha de Nacimiento, de Asistencia y entre otros. MySQL 👾 YA ESTOY RE ENOJADO CONTIGO 😤😡. RE APURADO ME SIENTO
 def insertar_datos(nombre_de_la_tabla):
   conexión = conectar_base_de_datos()
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
-  
-  if not datos:
-    return
-  
-  if not validar_datos(nombre_de_la_tabla, datos):
-    return
-  
+
+  if not datos or not validar_datos(nombre_de_la_tabla, datos):
+      return
+
+  valores_sql = []
+  campos_sql = []
   for campo, valor in datos.items():
     if isinstance(valor, str):
-      if valor.count('/') == 2:
-        try:
-          datos[campo] = datetime.strptime(valor.strip(), "%d/%m/%Y").strftime("%Y-%m-%d")
-        except ValueError:
-          print(f"Formato de fecha inválido en el campo {campo}: {valor}")
-      elif valor.count(':') == 1:
-        try:
-          datos[campo] = datetime.strptime(valor.strip(), "%H:%M").strftime("%H:%M:%S")
-        except ValueError:
-          print(f"Formato de hora inválido en el campo {campo}: {valor}")
-  
-  cursor = conexión.cursor()
+      try:
+        if "/" in valor and valor.count("/") == 2:
+            valor = datetime.strptime(valor, "%d/%m/%Y").date()  # devuelve objeto date
+        elif ":" in valor and valor.count(":") == 1:
+            valor = datetime.strptime(valor, "%H:%M").time()  # devuelve objeto time
+      except ValueError:
+          pass
+    valores_sql.append(valor)
+    campos_sql.append(campo)
+
+
   campos = ', '.join(datos.keys())
   placeholder = ', '.join(['%s'] * len(datos))
-  values = list(datos.values())
-  query = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({placeholder})"
+  consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({placeholder})"
+  
+  print("Tipos de valores enviados:", [type(v) for v in valores_sql])
+  print("Valores reales:", valores_sql)
+
+  
+  cursor.execute(consulta, tuple(valores_sql))
+  
+  print("Consulta SQL:", consulta)
+  print("Valores SQL:", valores_sql)
+
   try:
-    cursor.execute(query, values)
-    conexión.commit()
-    consultar_tabla(nombre_de_la_tabla)
-    mensajeTexto.showinfo("CORRECTO", "SE AGREGÓ LOS DATOS NECESARIOS")
-    # for i, (campo, valor) in enumerate(datosNecesarios.items()):
-    #   entry = cajasDeTexto[nombre_de_la_tabla][i]
-    #   entry.delete(0, tk.END)
-    desconectar_base_de_datos(conexión)
+      cursor = conexión.cursor()
+      conexión.commit()
+      consultar_tabla(nombre_de_la_tabla)
+      mensajeTexto.showinfo("CORRECTO", "SE AGREGÓ LOS DATOS NECESARIOS")
   except Exception as e:
-    mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {e}")
+      mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {e}")
+  finally:
+      desconectar_base_de_datos(conexión)
 
 
 def modificar_datos(nombre_de_la_tabla):
   columna_seleccionada = Lista_de_datos.curselection()
   if not columna_seleccionada:
-    mensajeTexto.showwarning("ADVERTENCIA", "FALTA SELECCIONAR UNA FILA")
-    return
-    
+      mensajeTexto.showwarning("ADVERTENCIA", "FALTA SELECCIONAR UNA FILA")
+      return
+
   selección = columna_seleccionada[0]
   ID_Seleccionado = lista_IDs[selección]
-    
+
   if ID_Seleccionado is None:
       mensajeTexto.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
       return
@@ -709,44 +748,50 @@ def modificar_datos(nombre_de_la_tabla):
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
   if not datos:
       return
-  
-  CampoID = conseguir_campo_ID(nombre_de_la_tabla)
+
+  if not validar_datos(nombre_de_la_tabla, datos):
+      return
+
+  # Convertir fechas y horas antes de enviarlas al SQL
+  valores_sql = []
+  campos_sql = []
 
   for campo, valor in datos.items():
     if isinstance(valor, str):
-      if valor.count('/') == 2:
         try:
-          datos[campo] = datetime.strptime(valor.strip(), "%d/%m/%Y").strftime("%Y-%m-%d")
-        except ValueError:
-          print(f"Formato de fecha inválido en el campo {campo}: {valor}")
-      elif valor.count(':') == 1:
-        try:
-          datos[campo] = datetime.strptime(valor.strip(), "%H:%M").strftime("%H:%M:%S")
-        except ValueError:
-          print(f"Formato de hora inválido en el campo {campo}: {valor}")
+            if valor.count("/") == 2:
+                valor = datetime.strptime(valor, "%d/%m/%Y").date()  # Convierte a objeto DATE
+            elif valor.count(":") == 1 and len(valor) <= 5:
+                valor = datetime.strptime(valor, "%H:%M").time()  # Convierte a objeto TIME
+        except Exception:
+            pass  # Si falla, deja el valor original
+    print("Tipos de valores enviados:", [type(v) for v in valores_sql])
+    print("Valores reales:", valores_sql)
 
-  if not validar_datos(nombre_de_la_tabla, datos):
-    return
+    
+    valores_sql.append(valor)
+    campos_sql.append(f"{campo} = %s")
+
+  CampoID = conseguir_campo_ID(nombre_de_la_tabla)
 
   try:
     with conectar_base_de_datos() as conexión:
-      cursor = conexión.cursor()
-      campos = ', '.join([f"{campo} = %s" for campo in datos.keys()])
-      valores = list(datos.values()) + [ID_Seleccionado]
-      consulta = f"UPDATE {nombre_de_la_tabla} SET {campos} WHERE {CampoID} = %s"
-      
-      cursor.execute(consulta, valores)
-      conexión.commit()
-      
-      consultar_tabla(nombre_de_la_tabla)
-      mensajeTexto.showinfo("CORRECTO", "SE MODIFICÓ EXITOSAMENTE")
+        cursor = conexión.cursor()
+        set_sql = ', '.join(campos_sql)
+        consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE {CampoID} = %s"
+        valores_sql.append(ID_Seleccionado)  # Agregar el ID al final
+        print("Consulta SQL:", consulta)
+        print("Valores enviados:", valores_sql)
+        cursor.execute(consulta, tuple(valores_sql))
+        conexión.commit()
+        consultar_tabla(nombre_de_la_tabla)
+        mensajeTexto.showinfo("CORRECTO", "SE MODIFICÓ EXITOSAMENTE")
   except Exception as e:
       mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
-  
-#Mejoré mi función de insertar datos para eliminar
-#dinámicamente sin tener que entrar a MySQL y puse una
-#función que extrae el ID en todas las palabras ya que
-#no siempre tiene un valor fijo
+  finally:
+      desconectar_base_de_datos(conexión)
+
+
 def eliminar_datos(nombre_de_la_tabla):
   columna_seleccionada = Lista_de_datos.curselection()
   datosNecesarios = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=False)
@@ -764,8 +809,6 @@ def eliminar_datos(nombre_de_la_tabla):
             if ID_Seleccionado is not None:
               query = f"DELETE FROM {nombre_de_la_tabla} where {CampoID} = %s"
               cursor.execute(query, (ID_Seleccionado,))
-              #Este for me limpia los campos de texto después de agregarlo
-              #para que no quede el último valor que se agregó y se repita continuamente
               for i, (campo, valor) in enumerate(datosNecesarios.items()):
                 entry = cajasDeTexto[nombre_de_la_tabla][i]
                 entry.delete(0, tk.END)
@@ -782,22 +825,49 @@ def eliminar_datos(nombre_de_la_tabla):
 
 #En esta función comparar relaciono una tabla con la otra
 #pero coincidiendo cada valor para que se pueda leer con facilidad
-#y saber si uno de los alumnos están presentes o no
-def ordenar_datos(nombre_de_la_tabla):
-  try:
-    conexión = conectar_base_de_datos()
-    if conexión is None:
-      mensajeTexto.showerror("ERROR DE CONEXIÓN", "NO SE PUDO CONECTAR A LA BASE DE DATOS")
+#y saber si uno de los alumnos están presentes o no.
+#MEJORA SUPLANTADA: la función tiene una lógica de emparejar las filas en su posición original.
+def ordenar_datos(nombre_de_la_tabla, tabla, campo=None, ascendencia=True):
+  conexión = conectar_base_de_datos()
+  cursor = conexión.cursor()
+  if conexión is None:
+    mensajeTexto.showerror("ERROR DE CONEXIÓN", "NO SE PUDO CONECTAR A LA BASE DE DATOS")
+    return
+
+  Lista_de_datos.delete(0, tk.END)
+
+  #Controla que se obtenga nombre reales de las columnas
+  cursor.execute(f"SHOW COLUMNS FROM {nombre_de_la_tabla}")
+  columna = [col[0] for col in cursor.fetchall()]
+  
+  #Si el campo no se especifica, entonces va a preguntar el usuario que campo quiere ordenar la tabla
+  if campo is None:
+    nombre_columna = ', '.join(columna)
+    campo = tk.simpledialog.askstring("Ordenar", f"¿Qué campo querés ordenar los datos de {nombre_de_la_tabla}?\nCampos válidos: {nombre_columna}")
+    if not campo:
       return
-    cursor = conexión.cursor()
-    ordenar_Campo = tk.simpledialog.askstring("Ordenar", f"Que campo quieres ordenar los datos en {nombre_de_la_tabla}? ")
-    campos_de_la_base_de_datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=False)
+    campo = campo.strip()
+  
+  coincidencia = [col for col in columna if col.lower() == campo.lower()]
+  
+  if not coincidencia:
+    mensajeTexto.showerror("ERROR", f"No existe el campo {campo} en la tabla {nombre_de_la_tabla}")
+    return
+  campo_real = coincidencia[0]
+  orden = "ASC" if ascendencia else "DESC"
+  try:
+    consulta = {
+      "alumno": f"SELECT a.id, a.nombre, a.edad FROM {nombre_de_la_tabla} AS a ORDER BY {campo_real} {orden}",
+      "asistencia": f"SELECT a.id, a.fecha, a.presente FROM {nombre_de_la_tabla} AS a ORDER BY {campo_real} {orden}",
+      "profesor": f"SELECT p.id, p.nombre, p.asignatura FROM {nombre_de_la_tabla} AS p ORDER BY {campo_real} {orden}",
+      "materia": f"SELECT m.id, m.nombre, m.creditos FROM {nombre_de_la_tabla} AS m ORDER BY {campo_real} {orden}",
+      "nota": f"SELECT n.id, n.alumno_id, n.materia_id, n.calificacion FROM {nombre_de_la_tabla} AS n ORDER BY {campo_real} {orden}"
+    }
+    cursor.execute(consulta)
+    resultado = cursor.fetchall()
     
-    if ordenar_Campo is None:
-      return None
-    else:
-      ordenar_Campo = ordenar_Campo.strip().lower()
-      tabla_a_seleccionar = {
+    
+    tabla_a_seleccionar = {
         "alumno": Botón_Tabla_de_Alumno,
         "asistencia": Botón_Tabla_de_Asistencia,
         "carrera": Botón_Tabla_de_Carrera,
@@ -805,32 +875,53 @@ def ordenar_datos(nombre_de_la_tabla):
         "materia": Botón_Tabla_de_Materia,
         "nota": Botón_Tabla_de_Notas
       }
-      
-      #Esta variable guarda el botón seleccionado dependiendo de la tabla que elija el usuario
-      #y si no existe, me tira un error de que no se ha ingresado ninguna tabla
-      botónSeleccionado = tabla_a_seleccionar.get(ordenar_Campo)
-      
-      if not botónSeleccionado:
-        mensajeTexto.showerror("ERROR", "NO SE HA INGRESADO NINGUNA TABLA")
-        return
-      
-      botónSeleccionado.select() #Esto selecciona el botón correspondiente a la tabla elegida por el usuario
-        
-    # cursor.execute(consulta)
-    resultado = cursor.fetchall()
-
+    
     #Controlo que haya resultados, en caso contrario, me imprime un mensaje de que no hay resultados para criterios específicos
     if not resultado:
       mensajeTexto.showinfo("SIN RESULTADOS", "NO SE ENCONTRARON REGISTROS PARA LOS CRITERIOS ESPECÍFICOS")
       return
     
-    Lista_de_datos.delete(0, tk.END)
+    #Esta lógica ya pertenece al formato de filas, para que quede bien derechito con el fin de evitar cualquier mezcla o confusión al usuario.
     
+    filaVisible = resultado[0][1:] if nombre_de_la_tabla != "nota" else resultado[0]
+    
+    ancho_de_tablas = [0] * len(filaVisible)
+    
+
     for fila in resultado:
-      Lista_de_datos.insert(tk.END, " | ".join(map(lambda x: str(x) if x is not None else "", fila )))
+      filaVisible = list(fila[1:] if nombre_de_la_tabla != "nota" else fila)
+      
+      for i, valor in enumerate(filaVisible):
+        valorTipoCadena = str(valor)
+        ancho_de_tablas[i] = max(ancho_de_tablas[i], len(valorTipoCadena))
+      
+      
+      formato = "|".join("{:<" + str(ancho) + "}" for ancho in ancho_de_tablas)
+      
+    #Recorro las filas.
+    for fila in resultado:
+      filaVisible = list(fila[1:] if nombre_de_la_tabla != "nota" else fila)
+    
+      match nombre_de_la_tabla.lower():
+        case "alumno":
+          filaVisible[2] = f"{filaVisible[2]} años"
+        case "materia":
+          filaVisible[1] = f"{filaVisible[1]} horas"
+      filaTipoCadena = [str(valor) for valor in filaVisible]
+      #Se agrega una separación para que no se vea pegado
+      if len(filaTipoCadena) == len(ancho_de_tablas):
+        filas_formateadas = formato.format(*filaTipoCadena)
+        Lista_de_datos.insert(tk.END, filas_formateadas)
+      else:
+        print("❗ Columnas desalineadas:", filaTipoCadena)
+        print("🔍 Longitudes -> fila:", len(filaTipoCadena), "| ancho_de_tablas:", len(ancho_de_tablas))
+  
+    radioButton_seleccionado = tabla_a_seleccionar.get(nombre_de_la_tabla.lower()) 
+    if radioButton_seleccionado:
+      radioButton_seleccionado.select()
     
   except error_sql as e:
-     mensajeTexto.showerror("ERROR", f"HA OCURRIDO UN ERROR AL RELACIONAR LA TABLA CON LA OTRA: {str(e)}")
+     mensajeTexto.showerror("ERROR", f"HA OCURRIDO UN ERROR AL ORDENAR LA TABLA: {str(e)}")
   finally:
     desconectar_base_de_datos(conexión)
 
@@ -885,7 +976,7 @@ def barraDesplazadora():
   # Definimos un frame con tamaño fijo y evitamos que se redimensione automáticamente
   Frame_Lista = tk.Frame(mi_ventana, width=400, height=500)
   Frame_Lista.pack(side=tk.RIGHT, padx=10, pady=10)
-  Frame_Lista.pack_propagate(False)
+  Frame_Lista.pack_propagate(True)
   
   barraVertical = tk.Scrollbar(Frame_Lista, orient="vertical")
   barraVertical.pack(side=tk.RIGHT, fill=tk.Y)
@@ -896,9 +987,9 @@ def barraDesplazadora():
   barraHorizontal.pack(side=tk.BOTTOM, fill=tk.X)
   
   # La ListBox se define con dimensiones menores para no ocupar toda la pantalla
-  Lista_de_datos = tk.Listbox(Frame_Lista, exportselection=0, width=90, height=40)
+  Lista_de_datos = tk.Listbox(Frame_Lista, exportselection=0, width=45, height=60)
   Lista_de_datos.config(fg="blue", bg=colores["amarillo_claro"], font=("Courier New", 12, "bold"))
-  Lista_de_datos.pack(side=tk.LEFT, fill=tk.BOTH, expand=False)
+  Lista_de_datos.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
   
   Lista_de_datos.config(yscrollcommand=barraVertical.set)
   Lista_de_datos.config(xscrollcommand=barraHorizontal.set)

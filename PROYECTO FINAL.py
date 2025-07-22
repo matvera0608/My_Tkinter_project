@@ -714,15 +714,12 @@ def insertar_datos(nombre_de_la_tabla):
   
   print("Tipos de valores enviados:", [type(v) for v in valores_sql])
   print("Valores reales:", valores_sql)
-
-  
-  cursor.execute(consulta, tuple(valores_sql))
-  
   print("Consulta SQL:", consulta)
   print("Valores SQL:", valores_sql)
 
   try:
       cursor = conexión.cursor()
+      cursor.execute(consulta, tuple(valores_sql))
       conexión.commit()
       consultar_tabla(nombre_de_la_tabla)
       mensajeTexto.showinfo("CORRECTO", "SE AGREGÓ LOS DATOS NECESARIOS")

@@ -277,53 +277,54 @@ def validar_datos(nombre_de_la_tabla, datos):
       mensajeTexto.showerror("Error", "La tabla solicitada no se encuentra")
       return False
     
+    
+    ##Este bloque de validación está bien? ME GUSTARÍA QUE VUELVA A FUNCIONAR COMO ESTABA ANTES
+    ##SIN AFECTAR LA CONVERSIÓN DE FECHA Y HORA
     validaciones = {
       'alumno': {
+              "Nombre": lambda valor : patrón_nombre.match(valor),
               "FechaDeNacimiento": validar_fecha,
-              "Nombre": lambda valor: bool(patrón_nombre.match(valor)),
       },
       'asistencia': {
+              "Estado": lambda valor: valor.isalpha(),
               "Fecha_Asistencia": validar_fecha,
-              "Estado": lambda valor: bool(valor.isalpha()),
       },
       'carrera': {
-              "Nombre": lambda valor :bool(patrón_nombre.match(valor)),
-              "Duración": lambda valor :bool(patrón_nombre.match(valor)), #en Duración cambié la expresión regular para que acepte letras, números y espacios.
+              "Nombre": lambda valor :patrón_nombre.match(valor),
+              "Duración": lambda valor :re.match(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$', valor), #en Duración cambié la expresión regular para que acepte letras, números y espacios.
       },
       'materia': {
+              "Nombre": lambda valor :patrón_nombre.match(valor),
               "Horario": validar_hora,
-              "Nombre": lambda valor: bool(patrón_nombre.match(valor)),
       },
       'profesor': {
-              "Nombre": lambda valor: bool(patrón_nombre.match(valor)),
+              "Nombre": lambda valor :patrón_nombre.match(valor),
       },
       'nota': {
-              "valorNota": lambda valor :bool(patrón_númerosDecimales.match(valor)),
-              "tipoNota": lambda valor : bool(patrón_alfanumérico.match(valor)), #tipoNota sólo acepta letras, pero se puede poner números también para no tener que estrictamente escribir Parcial con mayúscula.
+              "valorNota": lambda valor: patrón_alfanumérico.match(valor),
+              "tipoNota": lambda valor: patrón_númerosDecimales.match(valor),
       }
     }
-      
+    
+    validador = validaciones[nombre_de_la_tabla][campo]
+    
     if not nombre_de_la_tabla in validaciones:
         mensajeTexto.showerror("Error", "La tabla solicitada no se encuentra")
         return False
-      #en este for controlo que los datos estén puestos correctamente, en caso contrario
-      #no me agregan o modifican. Condiciones a llevar en cuenta:
-      #no se puede agregar con campos totalmente vacíos
-      #el formato debe cumplir estrictamente con las validaciones, que es un diccionario para 
       
-    #ESTO ESTÁ FUNCIONANDO MAL, PORQUE CUANDO PRESIONO LOS BOTONES CRUD, NO ME IMPRIME MÁS LOS CAMPOS NO PUEDEN ESTAR VACÍOS.
-    #SINO UNA EXCEPCIÓN DE LAS FECHAS. ADEMÁS CUANDO HICE ALGUNAS MODIFICACIONES PARA FORZAR LA VALIDACIÓN DE FECHAS Y HORAS, YA ESTO NO FUNCIONA TAN BIEN COMO ESPERO.
-    #SIGUE SIN FUNCIONAR.
+    #en este for controlo que los datos estén puestos correctamente, en caso contrario
+    #no me agregan o modifican. Condiciones a llevar en cuenta:
+    #no se puede agregar con campos totalmente vacíos.
     for campo, valor in datos.items():
       if campo in validaciones[nombre_de_la_tabla]:
-          if isinstance(valor, str):
-            if not valor.strip():
-              mensajeTexto.showerror("Error", f"El campo '{campo}' está vacío.")
-              return False
-          else:
-            if valor is None:
-              mensajeTexto.showerror("Error", f"El campo '{campo}' está vacío o es inválido.")
-              return False
+        if isinstance(valor, str):
+          if not valor.strip():
+            mensajeTexto.showerror("Error", f"El campo '{campo}' está vacío.")
+            return False
+      else:
+        if not validador(valor):
+          mensajeTexto.showerror("Error", f"El campo '{campo}' está vacío o es inválido.")
+          return False
       
   except ValueError as error_de_validación:
     print(f"Error de validación: {error_de_validación}")
@@ -369,9 +370,8 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
     except ValueError:
         mensajeTexto.showerror("Error", f"Formato inválido en '{campo}': {texto}")
         return None
-
-    datos[campo] = texto  # <<--- ACÁ lo guardás ya convertido
-
+    datos[campo] = texto
+  
   if validarDatos:
     if not validar_datos(nombre_de_la_tabla, datos):
       return None
@@ -393,9 +393,9 @@ def conseguir_campo_ID(nombre_de_la_tabla):
 
 #Esta función sirve para actualizar la hora
 def actualizar_la_hora(interfaz):
-  label_Hora.config(text=hora_del_sistema.strftime("%I:%M:%S %p"))
+  label_Hora.config(text=hora_del_sistema.strftime("%I:%M:%S"))
   label_Hora.pack()
-  interfaz.after(1000, actualizar_la_hora, interfaz)
+  interfaz.after(500, actualizar_la_hora, interfaz)
   
 #acción_doble es una función que me muestra cada registro de la tabla
 #y a la vez habiltar los botones y entrys
@@ -679,13 +679,6 @@ def pantalla_principal():
 
 #HEMOS CREADO UNA LISTA PARA valores_sql y campo_sql CON EL FIN DE EVITAR ERRORES DE VALIDACIÓN
 
-#LOS DATOS QUE NO ME DEJAN INSERTAR NI MODIFICAR O LOS CAMPOS QUE ME BLOQUEAN SON:
-#Fecha de Nacimiento
-#Fecha de Asistencia
-#Horario de la Materia
-#SIEMPRE ME DA ESA EXCEPCIÓN DE SQL QUE DETECTA TIPOS DE VALOR DATE INCORRECTOS. YA ESTOY RE ENOJADO HASTA ESTOY PRESIONANDO MIS DIENTES FUERTEMENTE.
-#PRESIONANDO LAS TECLAS CON ENORME EXPLOSIÓN.
-#Los valores que intento de insertar o modificar son Fecha de Nacimiento, de Asistencia y entre otros. MySQL 👾 YA ESTOY RE ENOJADO CONTIGO 😤😡. RE APURADO ME SIENTO
 def insertar_datos(nombre_de_la_tabla):
   conexión = conectar_base_de_datos()
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
@@ -711,11 +704,6 @@ def insertar_datos(nombre_de_la_tabla):
   campos = ', '.join(datos.keys())
   placeholder = ', '.join(['%s'] * len(datos))
   consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({placeholder})"
-  
-  print("Tipos de valores enviados:", [type(v) for v in valores_sql])
-  print("Valores reales:", valores_sql)
-  print("Consulta SQL:", consulta)
-  print("Valores SQL:", valores_sql)
 
   try:
       cursor = conexión.cursor()
@@ -723,6 +711,9 @@ def insertar_datos(nombre_de_la_tabla):
       conexión.commit()
       consultar_tabla(nombre_de_la_tabla)
       mensajeTexto.showinfo("CORRECTO", "SE AGREGÓ LOS DATOS NECESARIOS")
+      for i, (campo, valor) in enumerate(datos.items()):
+        entry = cajasDeTexto[nombre_de_la_tabla][i]
+        entry.delete(0, tk.END)
   except Exception as e:
       mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {e}")
   finally:
@@ -757,15 +748,11 @@ def modificar_datos(nombre_de_la_tabla):
     if isinstance(valor, str):
         try:
             if valor.count("/") == 2:
-                valor = datetime.strptime(valor, "%d/%m/%Y").date()  # Convierte a objeto DATE
+                valor = datetime.strptime(valor, "%d/%m/%Y").date()
             elif valor.count(":") == 1 and len(valor) <= 5:
-                valor = datetime.strptime(valor, "%H:%M").time()  # Convierte a objeto TIME
+                valor = datetime.strptime(valor, "%H:%M").time()
         except Exception:
-            pass  # Si falla, deja el valor original
-    print("Tipos de valores enviados:", [type(v) for v in valores_sql])
-    print("Valores reales:", valores_sql)
-
-    
+            pass 
     valores_sql.append(valor)
     campos_sql.append(f"{campo} = %s")
 
@@ -776,13 +763,14 @@ def modificar_datos(nombre_de_la_tabla):
         cursor = conexión.cursor()
         set_sql = ', '.join(campos_sql)
         consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE {CampoID} = %s"
-        valores_sql.append(ID_Seleccionado)  # Agregar el ID al final
-        print("Consulta SQL:", consulta)
-        print("Valores enviados:", valores_sql)
+        valores_sql.append(ID_Seleccionado)
         cursor.execute(consulta, tuple(valores_sql))
         conexión.commit()
         consultar_tabla(nombre_de_la_tabla)
         mensajeTexto.showinfo("CORRECTO", "SE MODIFICÓ EXITOSAMENTE")
+        for i, (campo, valor) in enumerate(datos.items()):
+          entry = cajasDeTexto[nombre_de_la_tabla][i]
+          entry.delete(0, tk.END)
   except Exception as e:
       mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
   finally:
@@ -791,7 +779,7 @@ def modificar_datos(nombre_de_la_tabla):
 
 def eliminar_datos(nombre_de_la_tabla):
   columna_seleccionada = Lista_de_datos.curselection()
-  datosNecesarios = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=False)
+  datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=False)
   CampoID = conseguir_campo_ID(nombre_de_la_tabla)
   if not CampoID:
     mensajeTexto.showerror("ERROR", "No se ha podido determinar el campo ID para esta tabla")
@@ -806,7 +794,7 @@ def eliminar_datos(nombre_de_la_tabla):
             if ID_Seleccionado is not None:
               query = f"DELETE FROM {nombre_de_la_tabla} where {CampoID} = %s"
               cursor.execute(query, (ID_Seleccionado,))
-              for i, (campo, valor) in enumerate(datosNecesarios.items()):
+              for i, (campo, valor) in enumerate(datos.items()):
                 entry = cajasDeTexto[nombre_de_la_tabla][i]
                 entry.delete(0, tk.END)
             else:

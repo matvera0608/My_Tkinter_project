@@ -306,8 +306,6 @@ def validar_datos(nombre_de_la_tabla, datos):
       }
     }
     
-    validador = validaciones[nombre_de_la_tabla][campo]
-    
     if not nombre_de_la_tabla in validaciones:
         mensajeTexto.showerror("Error", "La tabla solicitada no se encuentra")
         return False
@@ -319,13 +317,17 @@ def validar_datos(nombre_de_la_tabla, datos):
       if campo in validaciones[nombre_de_la_tabla]:
         if isinstance(valor, str):
           if not valor.strip():
-            mensajeTexto.showerror("Error", f"El campo '{campo}' está vacío.")
-            return False
-      else:
-        if not validador(valor):
+              mensajeTexto.showerror("Error", f"El campo '{campo}' está vacío.")
+              return False
+        elif valor is None:
           mensajeTexto.showerror("Error", f"El campo '{campo}' está vacío o es inválido.")
           return False
-      
+        
+        validador = validaciones[nombre_de_la_tabla][campo]
+        if not validador(valor):
+          mensajeTexto.showerror("Error", f"El campo '{campo}' tiene un valor inválido.")
+          return False
+
   except ValueError as error_de_validación:
     print(f"Error de validación: {error_de_validación}")
     return False
@@ -502,14 +504,14 @@ def normalizar_datos_nota(datos):
 ##Crearé funciones auxiliares para validación de campos
 def validar_fecha(valor):
   try:
-      datetime.strptime(valor, '%d/%m/%Y')
+      datetime.strptime(valor, '%d/%m/%Y').date()
       return True
   except ValueError:
       return False
 
 def validar_hora(valor):
   try:
-      datetime.strptime(valor, '%H:%M')
+      datetime.strptime(valor, '%H:%M').time()
       return True
   except ValueError:
       return False

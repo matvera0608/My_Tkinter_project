@@ -1,6 +1,6 @@
 import os
 from mysql.connector import Error as error_sql
-from datetime import datetime
+from datetime import datetime, date as fecha, time as hora
 from tkinter import messagebox as mensajeTexto, filedialog as diálogo
 from reportlab.pdfgen import canvas
 import tkinter as tk, re
@@ -235,6 +235,7 @@ def validar_datos(nombre_de_la_tabla, datos):
     patrón_nombre = re.compile(r'^[A-Za-záéíóúÁÉÍÓÚñÑüÜ\s]+$') #Esta variable regular contiene la expresión de solo para letras
     patrón_númerosDecimales = re.compile(r'^\d+([.,]\d+)?$')
     patrón_alfanumérico = re.compile(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$') #Esta variable regular contiene la expresión de letras y números
+    patron_alfanumerico_con_espacios = re.compile(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$')
     
     tabla_a_validar = {"alumno":     ["Nombre", "FechaDeNacimiento"],
                         "carrera":    ["Nombre", "Duración"],
@@ -291,7 +292,7 @@ def validar_datos(nombre_de_la_tabla, datos):
       },
       'carrera': {
               "Nombre": lambda valor :patrón_nombre.match(valor),
-              "Duración": lambda valor :re.match(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$', valor), #en Duración cambié la expresión regular para que acepte letras, números y espacios.
+              "Duración": lambda valor :patron_alfanumerico_con_espacios.match(valor),
       },
       'materia': {
               "Nombre": lambda valor :patrón_nombre.match(valor),
@@ -305,29 +306,29 @@ def validar_datos(nombre_de_la_tabla, datos):
               "tipoNota": lambda valor: patrón_númerosDecimales.match(valor),
       }
     }
-    
-    if not nombre_de_la_tabla in validaciones:
-        mensajeTexto.showerror("Error", "La tabla solicitada no se encuentra")
-        return False
-      
-    #en este for controlo que los datos estén puestos correctamente, en caso contrario
-    #no me agregan o modifican. Condiciones a llevar en cuenta:
-    #no se puede agregar con campos totalmente vacíos.
+
     for campo, valor in datos.items():
       if campo in validaciones[nombre_de_la_tabla]:
-        if isinstance(valor, str):
-          if not valor.strip():
-              mensajeTexto.showerror("Error", f"El campo '{campo}' está vacío.")
-              return False
-        elif valor is None:
-          mensajeTexto.showerror("Error", f"El campo '{campo}' está vacío o es inválido.")
-          return False
-        
+        # Validar vacío solo si es str
+        if isinstance(valor, str) and not valor.strip():
+            mensajeTexto.showerror("Error", f"El campo '{campo}' está vacío.")
+            return False
         validador = validaciones[nombre_de_la_tabla][campo]
-        if not validador(valor):
-          mensajeTexto.showerror("Error", f"El campo '{campo}' tiene un valor inválido.")
-          return False
 
+        esVálido = False
+        if callable(validador):
+          esVálido = validador(valor)
+        elif hasattr(validador, "match"):
+          esVálido = bool(validador.match(valor))
+
+        if not esVálido:
+          mensajeTexto.showerror("Error", f"El campo '{campo}' tiene un valor inválido.")
+          return
+        
+      if resultado[0] > 0:
+        mensajeTexto.showinfo("Aviso", "")
+        return 
+        
   except ValueError as error_de_validación:
     print(f"Error de validación: {error_de_validación}")
     return False
@@ -410,7 +411,6 @@ def acción_doble():
 def seleccionar_registro():
   nombre_de_la_tabla = obtener_tabla_seleccionada()
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=False)
-  ID_Campo = conseguir_campo_ID(nombre_de_la_tabla)
   selección = Lista_de_datos.curselection()
   
   if not selección:
@@ -421,30 +421,57 @@ def seleccionar_registro():
   conexión = conectar_base_de_datos()
   if conexión:
     try:
-      cursor = conexión.cursor()
-      if not ID_Campo:
-        mensajeTexto.showerror("ERROR", "No se pudo determinar el campo ID para esta tabla.")
-        return
-
-      if id is None:
-        mensajeTexto.showerror("ERROR", "No se pudo determinar el ID del registro seleccionado.")
-        return
-      if nombre_de_la_tabla != "nota":
-        campos = ', '.join([campo for campo in datos.keys()])
-        consulta = f"SELECT {campos} FROM {nombre_de_la_tabla} WHERE {ID_Campo} = %s"
-        cursor.execute(consulta, (id,))
-        fila_seleccionada = cursor.fetchone()
+      #Diccionario de claves primarias según la tabla
+      PKs = {
+        "alumno": "ID_Alumno",
+        "asistencia": "ID_Asistencia",
+        "carrera": "ID_Carrera",
+        "materia": "ID_Materia",
+        "profesor": "ID_Profesor",
+        "nota": ["IDAlumno", "IDMateria"]
+      }
       
+      clave = PKs.get(nombre_de_la_tabla)
+      ## Estas condiciones sobre el ID de cada tabla, cuando voy a Nota ya me tira el mensaje de que no se pudo
+      ## detectar el campo ID de esta tabla
+      if not clave:
+        mensajeTexto.showerror("ERROR", "No se pudo determinar la superclave para esta tabla.")
+        return
+      cursor = conexión.cursor()
+      
+      #Verificamos si una clave es simple o compuesta como en el caso de la tabla Nota
+      if isinstance(clave, list):
+        if not isinstance(id, tuple):
+          print("Se esperaba una clave compuesta en forma de tupla (IDAlumno, IDMateria)")
+          return
+        
+        datos["IDAlumno"], datos["IDMateria"] = id
+        
+        if None in id: #En caso de que falten datos
+          mensajeTexto.showerror("ERROR", "Faltan datos de clave para la tabla.")
+          return
+        
+        condiciones = ' AND '.join([f"{campo} = %s" for campo in clave])
+        valores = tuple(datos.get(campo) for campo in clave)
+        campos = ', '.join(datos.keys())
+        consulta = f"SELECT {campos} FROM {nombre_de_la_tabla} WHERE {condiciones}"
+        cursor.execute(consulta, valores)
+      else:
+        datos[clave] = id
+        if not id:
+          mensajeTexto.showerror("ERROR", "ID no especificado")
+          return
+        campos = ', '.join(datos.keys())
+        consulta = f"SELECT {campos} FROM {nombre_de_la_tabla} WHERE {clave} = %s"
+        cursor.execute(consulta, (id,))
+      fila_seleccionada = cursor.fetchone()
       if fila_seleccionada is None:
         mensajeTexto.showwarning("ADVERTENCIA", "NO SE ENCONTRÓ LA FILA")
         return
-      
-      #AHORA YA NO ME MUESTRAN NADA DE SQL, SÓLO LAS ENTRYS VACÍAS.
-      if selección:
-        for caja, valor in zip(cajasDeTexto[nombre_de_la_tabla], fila_seleccionada):
-          caja.delete(0, tk.END)
-          caja.insert(0, str(valor))
-        convertir_datos(nombre_de_la_tabla)
+      for caja, valor in zip(cajasDeTexto[nombre_de_la_tabla], fila_seleccionada):
+        caja.delete(0, tk.END)
+        caja.insert(0, str(valor))
+      convertir_datos(nombre_de_la_tabla)
     except error_sql as error:
       mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL SELECCIONAR: {str(error)}")
     finally:
@@ -475,17 +502,17 @@ def convertir_datos(nombre_de_la_tabla):
     caja.insert(0, str(valor))  # Inserta el valor convertido
 
 def normalizar_datos_nota(datos):
-    if "tipo_nota" in datos:
-        valor = datos["tipo_nota"].strip().lower()
+    if "tipoNota" in datos:
+        valor = datos["tipoNota"].strip().lower()
 
         if "parcial" in valor:
-            datos["tipo_nota"] = "Parcial 1" if "1" in valor else "Parcial 2" if "2" in valor else "Parcial"
+            datos["tipoNota"] = "Parcial 1" if "1" in valor else "Parcial 2" if "2" in valor else "Parcial"
         elif "final" in valor:
-            datos["tipo_nota"] = "Final"
+            datos["tipoNota"] = "Final"
         elif "tp" in valor or "trabajo" in valor:
-            datos["tipo_nota"] = "TP"
+            datos["tipoNota"] = "TP"
         else:
-            datos["tipo_nota"] = datos["tipo_nota"].capitalize()
+            datos["tipoNota"] = datos["tipoNota"].capitalize()
 
     if "valor_nota" in datos:
         valor = datos["valor_nota"].strip().lower()
@@ -503,18 +530,26 @@ def normalizar_datos_nota(datos):
 
 ##Crearé funciones auxiliares para validación de campos
 def validar_fecha(valor):
-  try:
-      datetime.strptime(valor, '%d/%m/%Y').date()
-      return True
-  except ValueError:
-      return False
+  if isinstance(valor, fecha):
+      return True # ya es una fecha válida
+  if isinstance(valor, str):
+      try:
+          datetime.strptime(valor, '%d/%m/%Y').date()
+          return True
+      except ValueError:
+          return False
+  return False
 
 def validar_hora(valor):
-  try:
-      datetime.strptime(valor, '%H:%M').time()
-      return True
-  except ValueError:
-      return False
+  if isinstance(valor, hora):
+      return True # ya es una fecha válida
+  if isinstance(valor, str):
+      try:
+        datetime.strptime(valor, '%H:%M').time()
+        return True
+      except ValueError:
+        return False
+  return False
 
 # --- CONFIGURACIÓN DE INTERFAZ Y ELEMENTOS IMPORTANTES DE tkINTER
 # PARA LAS INSTRUCCIONES GUARDADOS EN LA FUNCIÓN pantalla_principal()---
@@ -702,10 +737,9 @@ def insertar_datos(nombre_de_la_tabla):
     valores_sql.append(valor)
     campos_sql.append(campo)
 
-
   campos = ', '.join(datos.keys())
-  placeholder = ', '.join(['%s'] * len(datos))
-  consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({placeholder})"
+  valores = ', '.join(['%s'] * len(datos))
+  consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({valores})"
 
   try:
       cursor = conexión.cursor()
@@ -725,15 +759,15 @@ def insertar_datos(nombre_de_la_tabla):
 def modificar_datos(nombre_de_la_tabla):
   columna_seleccionada = Lista_de_datos.curselection()
   if not columna_seleccionada:
-      mensajeTexto.showwarning("ADVERTENCIA", "FALTA SELECCIONAR UNA FILA")
-      return
+    mensajeTexto.showwarning("ADVERTENCIA", "FALTA SELECCIONAR UNA FILA")
+    return
 
   selección = columna_seleccionada[0]
   ID_Seleccionado = lista_IDs[selección]
 
   if ID_Seleccionado is None:
-      mensajeTexto.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
-      return
+    mensajeTexto.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
+    return
 
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
   if not datos:
@@ -806,7 +840,7 @@ def eliminar_datos(nombre_de_la_tabla):
             print(f"Eliminando de {nombre_de_la_tabla} con {CampoID} = {ID_Seleccionado}")
             mensajeTexto.showinfo("ÉXITOS", "Ha sido eliminada exitosamente")
       except error_sql as e:
-         mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL ELIMINAR: {e}")
+         mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL ELIMINAR: {str(e)}")
   else:
     mensajeTexto.showwarning("ADVERTENCIA", "NO SELECCIONASTE NINGUNA COLUMNA")
 
@@ -1043,13 +1077,13 @@ def mover_con_flechas(event=None):
                           Botón_Tabla_de_Notas
                         ]
   
-  cajasDeTexto = [ txBox_FechaNacimiento, txBox_NombreAlumno, 
-                             txBox_EstadoDeAsistencia, txBox_FechaAsistencia, 
-                             txBox_NombreCarrera, txBox_Duración, 
-                             txBox_NombreMateria, txBox_HorarioCorrespondiente, 
-                             txBox_NombreProfesor, 
-                             txBox_Valor, txBox_Tipo
-                  ]
+  cajasDeTexto = [  txBox_FechaNacimiento, txBox_NombreAlumno, 
+                    txBox_EstadoDeAsistencia, txBox_FechaAsistencia, 
+                    txBox_NombreCarrera, txBox_Duración, 
+                    txBox_NombreMateria, txBox_HorarioCorrespondiente, 
+                    txBox_NombreProfesor, 
+                    txBox_Valor, txBox_Tipo
+                 ]
   
   caja_activa = []
   

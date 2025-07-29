@@ -7,6 +7,7 @@ import tkinter as tk, re
 import mysql.connector as MySql
 import time as hora_del_sistema
 from reportlab.lib.pagesizes import letter
+from PIL import Image, ImageTk
 
 # --- COLORES EN HEXADECIMALES ---
 colores = {
@@ -30,6 +31,9 @@ colores = {
 dirección_del_ícono = os.path.dirname(__file__)
 ícono = os.path.join(dirección_del_ícono,"escuela.ico")
 
+ruta_base = os.path.dirname(__file__)
+ruta_imagen = os.path.join(ruta_base, "imágenes")
+
 def conectar_base_de_datos():
   try:
     cadena_de_conexión = MySql.connect(
@@ -48,10 +52,6 @@ def desconectar_base_de_datos(conexión):
   desconectando_db = conexión.is_connected()
   if desconectando_db:
     conexión.close()
-
-#Se creó una lista para que la función extraerIDs
-#funcione correctamente cuando están ocultos esos
-# #campos clave.
 
 #--- FUNCIONES DEL ABM (ALTA, BAJA Y MODIFICACIÓN) ---
 
@@ -551,45 +551,65 @@ def validar_hora(valor):
         return False
   return False
 
+mi_ventana = tk.Tk()
+#Esta función me permite cargar las imágenes de forma dinámica
+#y que se puedan usar en los radioButtons.
+def cargar_imagen(nombre_imagen):
+  ruta = os.path.join(ruta_imagen, nombre_imagen)
+  if(not os.path.exists(ruta)):
+    print(f"Imagen no encontrada: {ruta}")
+    return None
+  imagen = Image.open(ruta)
+  imagen = imagen.resize((50, 50), Image.Resampling.LANCZOS)
+  return ImageTk.PhotoImage(imagen)
+
+#Estas son imagenes implementadas para colocar en el
+#radioButton.
+alumno_imagen = cargar_imagen("alumno.png")
+asistencia_imagen = cargar_imagen("asistencia.png")
+carrera_imagen = cargar_imagen("carrera.png")
+materia_imagen = cargar_imagen("materia.png")
+profesor_imagen = cargar_imagen("profesor.png")
+nota_imagen = cargar_imagen("nota.png")
+
 # --- CONFIGURACIÓN DE INTERFAZ Y ELEMENTOS IMPORTANTES DE tkINTER
-# PARA LAS INSTRUCCIONES GUARDADOS EN LA FUNCIÓN pantalla_principal()---
-def pantalla_principal():
-  
-  global mi_ventana
+# PARA LAS INSTRUCCIONES GUARDADOS EN LA FUNCIÓN pantalla_principal() ---
+def pantalla_principal(ventana):
+
   # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
-  mi_ventana = tk.Tk()
-  mi_ventana.title("Sistema Gestor de Asistencia")
-  mi_ventana.geometry("1250x400")
-  mi_ventana.minsize(1250, 100)
-  mi_ventana.configure(bg=colores["rosado_claro"])
-  mi_ventana.iconbitmap(ícono)
-  mi_ventana.attributes("-alpha", 1)
+  ventana = mi_ventana
+  ventana.title("Sistema Gestor de Asistencia")
+  ventana.geometry("1250x400")
+  ventana.minsize(1250, 100)
+  ventana.configure(bg=colores["rosado_claro"])
+  ventana.iconbitmap(ícono)
+  ventana.attributes("-alpha", 1)
 
   # --- BOTONES NECESARIOS ---
   global botón_agregar, botón_eliminar, botón_modificar, botón_ordenar, botón_exportar
 
   #Agregar
-  botón_agregar = tk.Button(mi_ventana, text="Agregar", command=lambda:insertar_datos(obtener_tabla_seleccionada()), width=10, height=1)
+  botón_agregar = tk.Button(ventana, text="Agregar", command=lambda:insertar_datos(obtener_tabla_seleccionada()), width=10, height=1)
   botón_agregar.config(fg="black", bg=colores["verde"], font=("Arial", 8), cursor='hand2', activebackground=colores["verde"])
   botón_agregar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
   #Modificar
-  botón_modificar = tk.Button(mi_ventana, text="Modificar", command=lambda:modificar_datos(obtener_tabla_seleccionada()), width=10, height=1)
+  botón_modificar = tk.Button(ventana, text="Modificar", command=lambda:modificar_datos(obtener_tabla_seleccionada()), width=10, height=1)
   botón_modificar.config(fg="black", bg="red", font=("Arial", 8), cursor='hand2', activebackground=colores["rojo"])
   botón_modificar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
   #Eliminar
-  botón_eliminar = tk.Button(mi_ventana, text="Eliminar", command=lambda:eliminar_datos(obtener_tabla_seleccionada()), width=10, height=1)
+  botón_eliminar = tk.Button(ventana, text="Eliminar", command=lambda:eliminar_datos(obtener_tabla_seleccionada()), width=10, height=1)
   botón_eliminar.config(fg="black", bg="blue", font=("Arial", 8), cursor='hand2', activebackground=colores["azul"])
   botón_eliminar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
   #Comparar
-  botón_ordenar = tk.Button(mi_ventana, text="Ordenar", command=lambda:ordenar_datos(obtener_tabla_seleccionada(), tabla=obtener_tabla_seleccionada()), width=10, height=1)
+  botón_ordenar = tk.Button( ventana, text="Ordenar", command=lambda:ordenar_datos(obtener_tabla_seleccionada(), tabla=obtener_tabla_seleccionada()), width=10, height=1)
   botón_ordenar.config(fg="black", bg=colores["dorado"], font=("Arial", 8), cursor='hand2', activebackground=colores["dorado_claro"])
   botón_ordenar.bind("<Return>", ejecutar_acción_presionando_Enter)
   
   #Exportar como PDF
-  botón_exportar = tk.Button(mi_ventana, text="Exportar", command=lambda:exportar_en_PDF(obtener_tabla_seleccionada()), width=10, height=1)
+  botón_exportar = tk.Button(ventana, text="Exportar", command=lambda:exportar_en_PDF(obtener_tabla_seleccionada()), width=10, height=1)
   botón_exportar.config(fg="black", bg=colores["agua"], font=("Arial", 8), cursor='hand2', activebackground=colores["agua_claro"])
   botón_exportar.bind("<Return>", ejecutar_acción_presionando_Enter)
   
@@ -597,103 +617,103 @@ def pantalla_principal():
   # --- ETIQUETAS ---
   global label_NombreAlumno, label_FechaNacimiento, label_EstadoDeAsistencia, label_Fecha, label_NombreCarrera, label_Duración, label_NombreMateria, label_HorarioCorrespondiente, label_NombreProfesor, label_Valor, label_Tipo, label_Hora, label_Obligatoriedad
   #Etiquetas para la tabla de alumno
-  label_NombreAlumno = tk.Label(mi_ventana, text="Nombre del Alumno *")
+  label_NombreAlumno = tk.Label(ventana, text="Nombre del Alumno *")
   label_NombreAlumno.config(fg="Black",bg=colores["rosado_claro"], font=("Arial", 12))
 
-  label_FechaNacimiento = tk.Label(mi_ventana, text="Fecha que nació: Formato Día-Mes-Año *")
+  label_FechaNacimiento = tk.Label(ventana, text="Fecha que nació: Formato Día-Mes-Año *")
   label_FechaNacimiento.config(fg="Black",bg=colores["rosado_claro"], font=("Arial", 12))
 
   #Etiquetas para la tabla de asistencias
-  
-  label_EstadoDeAsistencia = tk.Label(mi_ventana, text="Estado de Asistencia *")
+
+  label_EstadoDeAsistencia = tk.Label(ventana, text="Estado de Asistencia *")
   label_EstadoDeAsistencia.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
-  
-  label_Fecha = tk.Label(mi_ventana, text="Fecha que asistió *")
+
+  label_Fecha = tk.Label(ventana, text="Fecha que asistió *")
   label_Fecha.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
   #Etiquetas para la tabla de carrera
-  label_NombreCarrera = tk.Label(mi_ventana, text="Nombre de la Carrera *")
+  label_NombreCarrera = tk.Label(ventana, text="Nombre de la Carrera *")
   label_NombreCarrera.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
-  label_Duración = tk.Label(mi_ventana, text="Duración *")
+  label_Duración = tk.Label(ventana, text="Duración *")
   label_Duración.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
   #Etiquetas para la tabla de materia
-  label_NombreMateria = tk.Label(mi_ventana, text="Nombre de la Materia *")
+  label_NombreMateria = tk.Label(ventana, text="Nombre de la Materia *")
   label_NombreMateria.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
-  label_HorarioCorrespondiente = tk.Label(mi_ventana, text="Horario correspondiente: Formato %H:%M *")
+  label_HorarioCorrespondiente = tk.Label(ventana, text="Horario correspondiente: Formato %H:%M *")
   label_HorarioCorrespondiente.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
   #Etiquetas para la tabla de profesor
-  label_NombreProfesor = tk.Label(mi_ventana, text="Nombre del Profesor *")
+  label_NombreProfesor = tk.Label(ventana, text="Nombre del Profesor *")
   label_NombreProfesor.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
   #Etiquetas para la tabla de nota
-  label_Valor = tk.Label(mi_ventana, text="Nota*")
+  label_Valor = tk.Label(ventana, text="Nota*")
   label_Valor.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
-  label_Tipo = tk.Label(mi_ventana, text="Tipo*")
+  label_Tipo = tk.Label(ventana, text="Tipo*")
   label_Tipo.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 12))
 
   #Etiqueta para mostrar la hora
-  label_Hora = tk.Label(mi_ventana, text="")
+  label_Hora = tk.Label(ventana, text="")
   label_Hora.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 10))
   #Etiqueta para indicar que significa el asterisco
-  label_Obligatoriedad = tk.Label(mi_ventana, text="el * significa que es obligatorio seleccionar los datos")
+  label_Obligatoriedad = tk.Label(ventana, text="el * significa que es obligatorio seleccionar los datos")
   label_Obligatoriedad.config(fg="Black", bg=colores["rosado_claro"], font=("Arial", 8))
 
   #--- ENTRIES ---
   global txBox_NombreAlumno, txBox_FechaNacimiento, txBox_EstadoDeAsistencia, txBox_FechaAsistencia, txBox_NombreCarrera, txBox_Duración, txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_NombreProfesor, txBox_Valor, txBox_Tipo, opción, Lista_de_datos
   #Tabla alumno
-  txBox_NombreAlumno = tk.Entry(mi_ventana)
-  txBox_FechaNacimiento = tk.Entry(mi_ventana)
+  txBox_NombreAlumno = tk.Entry(ventana)
+  txBox_FechaNacimiento = tk.Entry(ventana)
 
   #Tabla asistencia
-  txBox_EstadoDeAsistencia = tk.Entry(mi_ventana)
-  txBox_FechaAsistencia = tk.Entry(mi_ventana)
+  txBox_EstadoDeAsistencia = tk.Entry(ventana)
+  txBox_FechaAsistencia = tk.Entry(ventana)
 
   #Tabla carrera
-  txBox_NombreCarrera = tk.Entry(mi_ventana)
-  txBox_Duración = tk.Entry(mi_ventana)
+  txBox_NombreCarrera = tk.Entry(ventana)
+  txBox_Duración = tk.Entry(ventana)
   
   #Tabla materia
-  txBox_NombreMateria = tk.Entry(mi_ventana)
-  txBox_HorarioCorrespondiente = tk.Entry(mi_ventana)
+  txBox_NombreMateria = tk.Entry(ventana)
+  txBox_HorarioCorrespondiente = tk.Entry(ventana)
   
   #Tabla profesor
-  txBox_NombreProfesor = tk.Entry(mi_ventana)
+  txBox_NombreProfesor = tk.Entry(ventana)
 
   #Tabla nota
-  txBox_Valor = tk.Entry(mi_ventana)
-  txBox_Tipo = tk.Entry(mi_ventana)
+  txBox_Valor = tk.Entry(ventana)
+  txBox_Tipo = tk.Entry(ventana)
 
   # --- RADIOBUTTONS ---
   global Botón_Tabla_de_Alumno, Botón_Tabla_de_Asistencia, Botón_Tabla_de_Carrera, Botón_Tabla_de_Materia, Botón_Tabla_de_Profesor, Botón_Tabla_de_Notas, opción
   
   opción = tk.IntVar()
 
-  Botón_Tabla_de_Alumno = tk.Radiobutton(mi_ventana, text="Alumno", variable=opción, value= 1, command=lambda:acción_doble())
+  Botón_Tabla_de_Alumno = tk.Radiobutton(ventana, text="Alumno", image=alumno_imagen, variable=opción, value= 1, command=lambda:acción_doble())
   Botón_Tabla_de_Alumno.config(bg=colores["rosado_claro"], font=("Arial", 12), cursor='hand2')
 
 
-  Botón_Tabla_de_Asistencia = tk.Radiobutton(mi_ventana, text="Asistencia", variable=opción, value= 2, command=lambda: acción_doble())
+  Botón_Tabla_de_Asistencia = tk.Radiobutton(ventana, text="Asistencia", image=asistencia_imagen, variable=opción, value= 2, command=lambda: acción_doble())
   Botón_Tabla_de_Asistencia.config(bg=colores["rosado_claro"], font=("Arial", 12), cursor='hand2')
 
 
-  Botón_Tabla_de_Carrera = tk.Radiobutton(mi_ventana, text="Carrera", variable=opción, value= 3, command=lambda:acción_doble())
+  Botón_Tabla_de_Carrera = tk.Radiobutton(ventana, text="Carrera", image=carrera_imagen, variable=opción, value= 3, command=lambda:acción_doble())
   Botón_Tabla_de_Carrera.config(bg=colores["rosado_claro"], font=("Arial", 12), cursor='hand2')
 
 
-  Botón_Tabla_de_Materia = tk.Radiobutton(mi_ventana, text="Materia", variable=opción, value= 4, command=lambda:acción_doble())
+  Botón_Tabla_de_Materia = tk.Radiobutton(ventana, text="Materia", image=materia_imagen, variable=opción, value= 4, command=lambda:acción_doble())
   Botón_Tabla_de_Materia.config(bg=colores["rosado_claro"], font=("Arial", 12), cursor='hand2')
 
 
-  Botón_Tabla_de_Profesor = tk.Radiobutton(mi_ventana, text="Profesor", variable=opción, value= 5, command=lambda:acción_doble())
+  Botón_Tabla_de_Profesor = tk.Radiobutton(ventana, text="Profesor", image=profesor_imagen, variable=opción, value= 5, command=lambda:acción_doble())
   Botón_Tabla_de_Profesor.config(bg=colores["rosado_claro"], font=("Arial", 12), cursor='hand2')
 
 
-  Botón_Tabla_de_Notas = tk.Radiobutton(mi_ventana, text="Nota", variable=opción, value= 6, command=lambda:acción_doble())
+  Botón_Tabla_de_Notas = tk.Radiobutton(ventana, text="Nota", image=nota_imagen, variable=opción, value= 6, command=lambda:acción_doble())
   Botón_Tabla_de_Notas.config(bg=colores["rosado_claro"], font=("Arial", 12), cursor='hand2')
 
 
@@ -708,11 +728,11 @@ def pantalla_principal():
   #--- LISTBOX ---
   barraDesplazadora()
   
-  actualizar_la_hora(mi_ventana)
+  actualizar_la_hora(ventana)
   
-  mi_ventana.bind_all("<Key>", mover_con_flechas)
+  ventana.bind_all("<Key>", mover_con_flechas)
     
-  return mi_ventana
+  return ventana
 
 #HEMOS CREADO UNA LISTA PARA valores_sql y campo_sql CON EL FIN DE EVITAR ERRORES DE VALIDACIÓN
 
@@ -1207,5 +1227,5 @@ def mover_con_flechas(event=None):
       return "break"
 
 # --- INICIO DEL SISTEMA ---
-interfaz = pantalla_principal()
+interfaz = pantalla_principal(mi_ventana)
 interfaz.mainloop()

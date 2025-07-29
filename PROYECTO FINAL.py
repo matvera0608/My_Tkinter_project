@@ -169,12 +169,12 @@ def seleccionar_y_consultar():
 def habilitar_botones_e_inputs():
 
   txBoxes = [
-                     txBox_FechaNacimiento, label_FechaNacimiento, txBox_NombreAlumno, label_NombreAlumno,
-                     txBox_EstadoDeAsistencia, label_EstadoDeAsistencia ,txBox_FechaAsistencia, label_Fecha, txBox_FechaAsistencia, label_Fecha,
-                     txBox_NombreCarrera, label_NombreCarrera, txBox_Duración, label_Duración,
-                     txBox_NombreMateria, label_NombreMateria, txBox_HorarioCorrespondiente, label_HorarioCorrespondiente,
-                     txBox_NombreProfesor, label_NombreProfesor,
-                     txBox_Valor, label_Valor, txBox_Tipo, label_Tipo
+              txBox_FechaNacimiento, label_FechaNacimiento, txBox_NombreAlumno, label_NombreAlumno,
+              txBox_EstadoDeAsistencia, label_EstadoDeAsistencia ,txBox_FechaAsistencia, label_Fecha, txBox_FechaAsistencia, label_Fecha,
+              txBox_NombreCarrera, label_NombreCarrera, txBox_Duración, label_Duración,
+              txBox_NombreMateria, label_NombreMateria, txBox_HorarioCorrespondiente, label_HorarioCorrespondiente,
+              txBox_NombreProfesor, label_NombreProfesor,
+              txBox_Valor, label_Valor, txBox_Tipo, label_Tipo
             ]
 
   for widget in txBoxes:
@@ -183,14 +183,14 @@ def habilitar_botones_e_inputs():
   botón_seleccionado = opción.get()
   
   # Botón Exportar (arriba a la izquierda)
-  botón_exportar.place(relx=0.025, rely=0.05)
-  botón_agregar.place(relx=0.025, rely=0.17)
-  botón_modificar.place(relx=0.025, rely=0.29)
-  botón_eliminar.place(relx=0.025, rely=0.41)
-  botón_ordenar.place(relx=0.025, rely=0.53)
+  botón_exportar.place(relx=0.010, rely=0.05)
+  botón_agregar.place(relx=0.010, rely=0.17)
+  botón_modificar.place(relx=0.010, rely=0.29)
+  botón_eliminar.place(relx=0.010, rely=0.41)
+  botón_ordenar.place(relx=0.010, rely=0.53)
 
   
-  label_Obligatoriedad.pack(padx= 100, pady= 50)
+  label_Obligatoriedad.pack(padx= 100, pady= 40)
   
   opciones_del_widget = {
                                          1: [(txBox_FechaNacimiento, label_FechaNacimiento, 100), (txBox_NombreAlumno,label_NombreAlumno, 150)],
@@ -205,8 +205,8 @@ def habilitar_botones_e_inputs():
   if botón_seleccionado in opciones_del_widget:
     #Este for me permite dinámicamente agregar los entrys y labels dependiendo de la tabla seleccionada
     for entry, label, y_pos in opciones_del_widget[botón_seleccionado]:
-      label.place(relx=0.3, rely=0.15 + (y_pos - 50) / 500)
-      entry.place(relx=0.1, rely=0.15 + (y_pos - 50) / 500)
+      label.place(relx=0.30, rely=0.15 + (y_pos - 50) / 500)
+      entry.place(relx=0.15, rely=0.15 + (y_pos - 50) / 500)
 
 #Este obtiene la tabla a seleccionar cuando voy a seleccionar RadioButton
 def obtener_tabla_seleccionada():
@@ -228,13 +228,11 @@ def obtener_tabla_seleccionada():
 #Esta función validar_datos valida los datos antes de agregarlo a la listbox para evitar redundancias
 def validar_datos(nombre_de_la_tabla, datos):
   try:
-    #El patrón_nombre contiene una expresión regular para permitir
-    #letras con acentos y otros caracteres especiales
     conexión = conectar_base_de_datos()
     cursor = conexión.cursor()
-    patrón_nombre = re.compile(r'^[A-Za-záéíóúÁÉÍÓÚñÑüÜ\s]+$') #Esta variable regular contiene la expresión de solo para letras
+    patrón_nombre = re.compile(r'^[A-Za-záéíóúÁÉÍÓÚñÑüÜ\s]+$')
     patrón_númerosDecimales = re.compile(r'^\d+([.,]\d+)?$')
-    patrón_alfanumérico = re.compile(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$') #Esta variable regular contiene la expresión de letras y números
+    patrón_alfanumérico = re.compile(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$')
     patron_alfanumerico_con_espacios = re.compile(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$')
     
     tabla_a_validar = {"alumno":     ["Nombre", "FechaDeNacimiento"],
@@ -250,13 +248,9 @@ def validar_datos(nombre_de_la_tabla, datos):
                                           "materia": ["ID_Materia"],
                                           "carrera": ["ID_Carrera"],
                                           "asistencia": ["ID_Asistencia"],
-                                          "nota": None  # porque tiene claves compuestas (IDAlumno + IDMateria), no autoincremental
+                                          "nota": None
                                           }
       
-      # En esta parte he puesto el for para que se pueda validar los datos
-      #principalmente la fecha y la hora, ya que SQL te obliga a poner en formato de Año-Mes-Día.
-      #Pero el usuario necesita que se muestre en formato de Día/Mes/Año. En caso de que sea una hora,
-      #SQL te obliga a poner en formato de Hora:Minuto:Segundo, pero el usuario necesita que se muestre en formato de Hora:Minuto.
     if nombre_de_la_tabla in tabla_a_validar:
       campos = tabla_a_validar[nombre_de_la_tabla]
       #Este for recorre los campos de la tabla y los datos. Además valida la fecha y la hora
@@ -364,15 +358,15 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
   for campo, caja in zip(campos_de_la_base_de_datos[nombre_de_la_tabla], cajasDeTexto[nombre_de_la_tabla]):
     texto = caja.get().strip()
 
-    # Detectar y convertir fechas y horas
+    # # Detectar y convertir fechas y horas
     try:
-        if texto.count("/") == 2:
-            texto = datetime.strptime(texto, "%d/%m/%Y").date()
-        elif texto.count(":") == 1 and len(texto) <= 5:
-            texto = datetime.strptime(texto, "%H:%M").time()
+      if texto.count("/") == 2:
+        texto = datetime.strptime(texto, "%d/%m/%Y").date()
+      elif texto.count(":") == 1 and len(texto) <= 5:
+        texto = datetime.strptime(texto, "%H:%M").time()
     except ValueError:
-        mensajeTexto.showerror("Error", f"Formato inválido en '{campo}': {texto}")
-        return None
+      mensajeTexto.showerror("Error", f"Formato inválido en '{campo}': {texto}")
+      return None
     datos[campo] = texto
   
   if validarDatos:
@@ -396,9 +390,9 @@ def conseguir_campo_ID(nombre_de_la_tabla):
 
 #Esta función sirve para actualizar la hora
 def actualizar_la_hora(interfaz):
-  label_Hora.config(text=hora_del_sistema.strftime("%I:%M:%S"))
+  label_Hora.config(text=hora_del_sistema.strftime("%I:%M:%S"), font=("Arial", 24), fg="blue", bg=None)
   label_Hora.pack()
-  interfaz.after(500, actualizar_la_hora, interfaz)
+  interfaz.after(1000, actualizar_la_hora, interfaz)
   
 #acción_doble es una función que me muestra cada registro de la tabla
 #y a la vez habiltar los botones y entrys
@@ -531,24 +525,24 @@ def normalizar_datos_nota(datos):
 ##Crearé funciones auxiliares para validación de campos
 def validar_fecha(valor):
   if isinstance(valor, fecha):
-      return True # ya es una fecha válida
+    return True # ya es una fecha válida
   if isinstance(valor, str):
-      try:
-          datetime.strptime(valor, '%d/%m/%Y').date()
-          return True
-      except ValueError:
-          return False
+    try:
+      datetime.strptime(valor, '%d/%m/%Y').date()
+      return True
+    except ValueError:
+      return False
   return False
 
 def validar_hora(valor):
   if isinstance(valor, hora):
-      return True # ya es una fecha válida
+    return True # ya es una hora válida
   if isinstance(valor, str):
-      try:
-        datetime.strptime(valor, '%H:%M').time()
-        return True
-      except ValueError:
-        return False
+    try:
+      datetime.strptime(valor, '%H:%M').time()
+      return True
+    except ValueError:
+      return False
   return False
 
 mi_ventana = tk.Tk()
@@ -560,7 +554,7 @@ def cargar_imagen(nombre_imagen):
     print(f"Imagen no encontrada: {ruta}")
     return None
   imagen = Image.open(ruta)
-  imagen = imagen.resize((50, 50), Image.Resampling.LANCZOS)
+  imagen = imagen.resize((25, 25), Image.Resampling.LANCZOS)
   return ImageTk.PhotoImage(imagen)
 
 #Estas son imagenes implementadas para colocar en el
@@ -579,7 +573,7 @@ def pantalla_principal(ventana):
   # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
   ventana = mi_ventana
   ventana.title("Sistema Gestor de Asistencia")
-  ventana.geometry("1250x400")
+  ventana.geometry("1250x625")
   ventana.minsize(1250, 100)
   ventana.configure(bg=colores["rosado_claro"])
   ventana.iconbitmap(ícono)
@@ -589,27 +583,27 @@ def pantalla_principal(ventana):
   global botón_agregar, botón_eliminar, botón_modificar, botón_ordenar, botón_exportar
 
   #Agregar
-  botón_agregar = tk.Button(ventana, text="Agregar", command=lambda:insertar_datos(obtener_tabla_seleccionada()), width=10, height=1)
+  botón_agregar = tk.Button(ventana, text="Agregar", command=lambda:insertar_datos(obtener_tabla_seleccionada()), width=15, height=1)
   botón_agregar.config(fg="black", bg=colores["verde"], font=("Arial", 8), cursor='hand2', activebackground=colores["verde"])
   botón_agregar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
   #Modificar
-  botón_modificar = tk.Button(ventana, text="Modificar", command=lambda:modificar_datos(obtener_tabla_seleccionada()), width=10, height=1)
+  botón_modificar = tk.Button(ventana, text="Modificar", command=lambda:modificar_datos(obtener_tabla_seleccionada()), width=15, height=1)
   botón_modificar.config(fg="black", bg="red", font=("Arial", 8), cursor='hand2', activebackground=colores["rojo"])
   botón_modificar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
   #Eliminar
-  botón_eliminar = tk.Button(ventana, text="Eliminar", command=lambda:eliminar_datos(obtener_tabla_seleccionada()), width=10, height=1)
+  botón_eliminar = tk.Button(ventana, text="Eliminar", command=lambda:eliminar_datos(obtener_tabla_seleccionada()), width=15, height=1)
   botón_eliminar.config(fg="black", bg="blue", font=("Arial", 8), cursor='hand2', activebackground=colores["azul"])
   botón_eliminar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
   #Comparar
-  botón_ordenar = tk.Button( ventana, text="Ordenar", command=lambda:ordenar_datos(obtener_tabla_seleccionada(), tabla=obtener_tabla_seleccionada()), width=10, height=1)
+  botón_ordenar = tk.Button( ventana, text="Ordenar", command=lambda:ordenar_datos(obtener_tabla_seleccionada(), tabla=obtener_tabla_seleccionada()), width=15, height=1)
   botón_ordenar.config(fg="black", bg=colores["dorado"], font=("Arial", 8), cursor='hand2', activebackground=colores["dorado_claro"])
   botón_ordenar.bind("<Return>", ejecutar_acción_presionando_Enter)
   
   #Exportar como PDF
-  botón_exportar = tk.Button(ventana, text="Exportar", command=lambda:exportar_en_PDF(obtener_tabla_seleccionada()), width=10, height=1)
+  botón_exportar = tk.Button(ventana, text="Exportar", command=lambda:exportar_en_PDF(obtener_tabla_seleccionada()), width=15, height=1)
   botón_exportar.config(fg="black", bg=colores["agua"], font=("Arial", 8), cursor='hand2', activebackground=colores["agua_claro"])
   botón_exportar.bind("<Return>", ejecutar_acción_presionando_Enter)
   
@@ -667,62 +661,74 @@ def pantalla_principal(ventana):
   global txBox_NombreAlumno, txBox_FechaNacimiento, txBox_EstadoDeAsistencia, txBox_FechaAsistencia, txBox_NombreCarrera, txBox_Duración, txBox_NombreMateria, txBox_HorarioCorrespondiente, txBox_NombreProfesor, txBox_Valor, txBox_Tipo, opción, Lista_de_datos
   #Tabla alumno
   txBox_NombreAlumno = tk.Entry(ventana)
+  txBox_NombreAlumno.config(width=30)
   txBox_FechaNacimiento = tk.Entry(ventana)
+  txBox_FechaNacimiento.config(width=30)
 
   #Tabla asistencia
   txBox_EstadoDeAsistencia = tk.Entry(ventana)
+  txBox_EstadoDeAsistencia.config(width=30)
   txBox_FechaAsistencia = tk.Entry(ventana)
+  txBox_FechaAsistencia.config(width=30)
 
   #Tabla carrera
   txBox_NombreCarrera = tk.Entry(ventana)
+  txBox_NombreCarrera.config(width=30)
   txBox_Duración = tk.Entry(ventana)
+  txBox_Duración.config(width=10)
   
   #Tabla materia
   txBox_NombreMateria = tk.Entry(ventana)
+  txBox_NombreMateria.config(width=30)
   txBox_HorarioCorrespondiente = tk.Entry(ventana)
+  txBox_HorarioCorrespondiente.config(width=10)
   
   #Tabla profesor
   txBox_NombreProfesor = tk.Entry(ventana)
+  txBox_NombreProfesor.config(width=30)
 
   #Tabla nota
   txBox_Valor = tk.Entry(ventana)
+  txBox_Valor.config(width=5)
   txBox_Tipo = tk.Entry(ventana)
+  txBox_Tipo.config(width=5)
 
   # --- RADIOBUTTONS ---
   global Botón_Tabla_de_Alumno, Botón_Tabla_de_Asistencia, Botón_Tabla_de_Carrera, Botón_Tabla_de_Materia, Botón_Tabla_de_Profesor, Botón_Tabla_de_Notas, opción
   
   opción = tk.IntVar()
-
-  Botón_Tabla_de_Alumno = tk.Radiobutton(ventana, text="Alumno", image=alumno_imagen, variable=opción, value= 1, command=lambda:acción_doble())
-  Botón_Tabla_de_Alumno.config(bg=colores["rosado_claro"], font=("Arial", 12), cursor='hand2')
-
-
-  Botón_Tabla_de_Asistencia = tk.Radiobutton(ventana, text="Asistencia", image=asistencia_imagen, variable=opción, value= 2, command=lambda: acción_doble())
-  Botón_Tabla_de_Asistencia.config(bg=colores["rosado_claro"], font=("Arial", 12), cursor='hand2')
+  color_fondo = ventana.cget("bg")
+  
+  Botón_Tabla_de_Alumno = tk.Radiobutton(ventana, text="Alumno", image=alumno_imagen, compound="left", variable=opción, value= 1, command=lambda:acción_doble())
+  Botón_Tabla_de_Alumno.config(bg=color_fondo, activebackground=color_fondo, highlightthickness=0, bd=0, font=("Arial", 12), cursor='hand2')
 
 
-  Botón_Tabla_de_Carrera = tk.Radiobutton(ventana, text="Carrera", image=carrera_imagen, variable=opción, value= 3, command=lambda:acción_doble())
-  Botón_Tabla_de_Carrera.config(bg=colores["rosado_claro"], font=("Arial", 12), cursor='hand2')
+  Botón_Tabla_de_Asistencia = tk.Radiobutton(ventana, text="Asistencia", image=asistencia_imagen, compound="left", variable=opción, value= 2, command=lambda: acción_doble())
+  Botón_Tabla_de_Asistencia.config(bg=color_fondo, activebackground=color_fondo, highlightthickness=0, bd=0, font=("Arial", 12), cursor='hand2')
 
 
-  Botón_Tabla_de_Materia = tk.Radiobutton(ventana, text="Materia", image=materia_imagen, variable=opción, value= 4, command=lambda:acción_doble())
-  Botón_Tabla_de_Materia.config(bg=colores["rosado_claro"], font=("Arial", 12), cursor='hand2')
+  Botón_Tabla_de_Carrera = tk.Radiobutton(ventana, text="Carrera", image=carrera_imagen, compound="left", variable=opción, value= 3, command=lambda:acción_doble())
+  Botón_Tabla_de_Carrera.config(bg=color_fondo, activebackground=color_fondo, highlightthickness=0, bd=0, font=("Arial", 12), cursor='hand2')
 
 
-  Botón_Tabla_de_Profesor = tk.Radiobutton(ventana, text="Profesor", image=profesor_imagen, variable=opción, value= 5, command=lambda:acción_doble())
-  Botón_Tabla_de_Profesor.config(bg=colores["rosado_claro"], font=("Arial", 12), cursor='hand2')
+  Botón_Tabla_de_Materia = tk.Radiobutton(ventana, text="Materia", image=materia_imagen, compound="left", variable=opción, value= 4, command=lambda:acción_doble())
+  Botón_Tabla_de_Materia.config(bg=color_fondo, activebackground=color_fondo, highlightthickness=0, bd=0, font=("Arial", 12), cursor='hand2')
 
 
-  Botón_Tabla_de_Notas = tk.Radiobutton(ventana, text="Nota", image=nota_imagen, variable=opción, value= 6, command=lambda:acción_doble())
-  Botón_Tabla_de_Notas.config(bg=colores["rosado_claro"], font=("Arial", 12), cursor='hand2')
+  Botón_Tabla_de_Profesor = tk.Radiobutton(ventana, text="Profesor", image=profesor_imagen, compound="left", variable=opción, value= 5, command=lambda:acción_doble())
+  Botón_Tabla_de_Profesor.config(bg=color_fondo, activebackground=color_fondo, highlightthickness=0, bd=0, font=("Arial", 12), cursor='hand2')
 
 
-  Botón_Tabla_de_Alumno.place(relx=0.01, rely=0.9, relwidth=0.1)
-  Botón_Tabla_de_Asistencia.place(relx=0.11, rely=0.9, relwidth=0.1)
-  Botón_Tabla_de_Carrera.place(relx=0.21, rely=0.9, relwidth=0.1)
-  Botón_Tabla_de_Materia.place(relx=0.31, rely=0.9, relwidth=0.1)
-  Botón_Tabla_de_Profesor.place(relx=0.41, rely=0.9, relwidth=0.1)
-  Botón_Tabla_de_Notas.place(relx=0.51, rely=0.9, relwidth=0.1)
+  Botón_Tabla_de_Notas = tk.Radiobutton(ventana, text="Nota", image=nota_imagen, compound="left", variable=opción, value= 6, command=lambda:acción_doble())
+  Botón_Tabla_de_Notas.config(bg=color_fondo, activebackground=color_fondo, highlightthickness=0, bd=0, font=("Arial", 12), cursor='hand2')
+
+
+  Botón_Tabla_de_Alumno.place(relx=0.01, rely=0.85, relwidth=0.1)
+  Botón_Tabla_de_Asistencia.place(relx=0.11, rely=0.85, relwidth=0.1)
+  Botón_Tabla_de_Carrera.place(relx=0.21, rely=0.85, relwidth=0.1)
+  Botón_Tabla_de_Materia.place(relx=0.31, rely=0.85, relwidth=0.1)
+  Botón_Tabla_de_Profesor.place(relx=0.41, rely=0.85, relwidth=0.1)
+  Botón_Tabla_de_Notas.place(relx=0.51, rely=0.85, relwidth=0.1)
   Botón_Tabla_de_Alumno.focus_set()
   
   #--- LISTBOX ---
@@ -746,14 +752,6 @@ def insertar_datos(nombre_de_la_tabla):
   valores_sql = []
   campos_sql = []
   for campo, valor in datos.items():
-    if isinstance(valor, str):
-      try:
-        if "/" in valor and valor.count("/") == 2:
-            valor = datetime.strptime(valor, "%d/%m/%Y").date()  # devuelve objeto date
-        elif ":" in valor and valor.count(":") == 1:
-            valor = datetime.strptime(valor, "%H:%M").time()  # devuelve objeto time
-      except ValueError:
-          pass
     valores_sql.append(valor)
     campos_sql.append(campo)
 
@@ -771,7 +769,7 @@ def insertar_datos(nombre_de_la_tabla):
         entry = cajasDeTexto[nombre_de_la_tabla][i]
         entry.delete(0, tk.END)
   except Exception as e:
-      mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {e}")
+      mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {str(e)}")
   finally:
       desconectar_base_de_datos(conexión)
 
@@ -801,19 +799,11 @@ def modificar_datos(nombre_de_la_tabla):
   campos_sql = []
 
   for campo, valor in datos.items():
-    if isinstance(valor, str):
-        try:
-            if valor.count("/") == 2:
-                valor = datetime.strptime(valor, "%d/%m/%Y").date()
-            elif valor.count(":") == 1 and len(valor) <= 5:
-                valor = datetime.strptime(valor, "%H:%M").time()
-        except Exception:
-            pass 
     valores_sql.append(valor)
     campos_sql.append(f"{campo} = %s")
 
   CampoID = conseguir_campo_ID(nombre_de_la_tabla)
-
+  
   try:
     with conectar_base_de_datos() as conexión:
         cursor = conexión.cursor()
@@ -882,6 +872,9 @@ def ordenar_datos(nombre_de_la_tabla, tabla, campo=None, ascendencia=True):
   columna = [col[0] for col in cursor.fetchall()]
   
   #Si el campo no se especifica, entonces va a preguntar el usuario que campo quiere ordenar la tabla
+  
+  consultar_tabla(nombre_de_la_tabla)
+  
   if campo is None:
     nombre_columna = ', '.join(columna)
     campo = tk.simpledialog.askstring("Ordenar", f"¿Qué campo querés ordenar los datos de {nombre_de_la_tabla}?\nCampos válidos: {nombre_columna}")

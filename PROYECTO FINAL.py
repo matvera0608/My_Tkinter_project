@@ -60,9 +60,6 @@ def consultar_tabla(nombre_de_la_tabla):
   global lista_IDs
   try:
     conexión = conectar_base_de_datos()
-    #Mejora de la función consultar_tabla para que sea más escalable,
-    #voy a hacer que cada consulta sea dinámica depediendo de la tabla que se seleccione
-    #y también las consultas serán relacionadas dependiendo del ID que coincida con la tabla
     if conexión:
         cursor = conexión.cursor()
         match nombre_de_la_tabla.lower():
@@ -235,26 +232,24 @@ def validar_datos(nombre_de_la_tabla, datos):
     patrón_alfanumérico = re.compile(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$')
     patron_alfanumerico_con_espacios = re.compile(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$')
     
-    tabla_a_validar = {"alumno":     ["Nombre", "FechaDeNacimiento"],
-                        "carrera":    ["Nombre", "Duración"],
-                        "materia":    ["Nombre", "Horario"],
-                        "profesor":   ["Nombre",],
-                        "asistencia": [],
-                        "nota":       ["valorNota", "TipoNota"]
-                        }
+    tabla_a_validar = {"alumno":    ["Nombre", "FechaDeNacimiento"],
+                      "carrera":    ["Nombre", "Duración"],
+                      "materia":    ["Nombre", "Horario"],
+                      "profesor":   ["Nombre",],
+                      "asistencia": [],
+                      "nota":       ["valorNota", "TipoNota"]
+                      }
       
     tablas_con_IDs_autoincrementales = { "alumno": ["ID_Alumno"],
-                                          "profesor": ["ID_Profesor"],
-                                          "materia": ["ID_Materia"],
-                                          "carrera": ["ID_Carrera"],
-                                          "asistencia": ["ID_Asistencia"],
-                                          "nota": None
-                                          }
+                                        "profesor": ["ID_Profesor"],
+                                        "materia": ["ID_Materia"],
+                                        "carrera": ["ID_Carrera"],
+                                        "asistencia": ["ID_Asistencia"],
+                                        "nota": None
+                                        }
       
     if nombre_de_la_tabla in tabla_a_validar:
       campos = tabla_a_validar[nombre_de_la_tabla]
-      #Este for recorre los campos de la tabla y los datos. Además valida la fecha y la hora
-      #si el campo es una fecha o una hora, lo convierte al formato requerido.
       claves = tablas_con_IDs_autoincrementales.get(nombre_de_la_tabla)
       if len(campos) == 1:
           if (claves is None or campos[0] not in claves) and campos[0] not in datos:
@@ -275,6 +270,9 @@ def validar_datos(nombre_de_la_tabla, datos):
     
     ##Este bloque de validación está bien? ME GUSTARÍA QUE VUELVA A FUNCIONAR COMO ESTABA ANTES
     ##SIN AFECTAR LA CONVERSIÓN DE FECHA Y HORA
+    if nombre_de_la_tabla == "nota":
+      datos = normalizar_datos_nota(datos)
+    
     validaciones = {
       'alumno': {
               "Nombre": lambda valor : patrón_nombre.match(valor),
@@ -308,20 +306,17 @@ def validar_datos(nombre_de_la_tabla, datos):
             mensajeTexto.showerror("Error", f"El campo '{campo}' está vacío.")
             return False
         validador = validaciones[nombre_de_la_tabla][campo]
-
-        esVálido = False
-        if callable(validador):
-          esVálido = validador(valor)
-        elif hasattr(validador, "match"):
-          esVálido = bool(validador.match(valor))
-
+        esVálido = validador(valor) if callable(validador)  else bool(validador.match(valor))
         if not esVálido:
           mensajeTexto.showerror("Error", f"El campo '{campo}' tiene un valor inválido.")
           return
-        
+    if nombre_de_la_tabla in ["alumno", "profesor", "materia", "carrera"]: 
+      campo_único = "Nombre"
+      cursor.execute(f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campo_único} = %s", (datos[campo_único],))
+      resultado = cursor.fetchone()
       if resultado[0] > 0:
         mensajeTexto.showinfo("Aviso", "")
-        return 
+        return False
         
   except ValueError as error_de_validación:
     print(f"Error de validación: {error_de_validación}")
@@ -358,7 +353,6 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
   for campo, caja in zip(campos_de_la_base_de_datos[nombre_de_la_tabla], cajasDeTexto[nombre_de_la_tabla]):
     texto = caja.get().strip()
 
-    # # Detectar y convertir fechas y horas
     try:
       if texto.count("/") == 2:
         texto = datetime.strptime(texto, "%d/%m/%Y").date()
@@ -483,7 +477,7 @@ def convertir_datos(nombre_de_la_tabla):
         try:
             fecha_obj = datetime.strptime(valor, "%Y-%m-%d").strftime("%d/%m/%Y")
         except ValueError:
-            continue  # Si no es una fecha válida, no la convierte
+            continue
         valor = fecha_obj
     # Si el campo es una hora, lo convierte al formato "HH:MM"
     elif isinstance(valor, str) and "hora" in campo.lower():
@@ -510,13 +504,7 @@ def normalizar_datos_nota(datos):
 
     if "valor_nota" in datos:
         valor = datos["valor_nota"].strip().lower()
-
-        if valor in ("ausente", "a"):
-            datos["valor_nota"] = "Ausente"
-        elif valor in ("ausente con aviso", "ac", "con aviso"):
-            datos["valor_nota"] = "Ausente con aviso"
-        elif valor.replace(",", ".").replace(".", "").isdigit():
-            # acepta 7.5 o 7,5 y los transforma
+        if valor.replace(",", ".").replace(".", "").isdigit():
             datos["valor_nota"] = valor.replace(",", ".")
         else:
             datos["valor_nota"] = datos["valor_nota"].capitalize()
@@ -691,7 +679,7 @@ def pantalla_principal(ventana):
   txBox_Valor = tk.Entry(ventana)
   txBox_Valor.config(width=5)
   txBox_Tipo = tk.Entry(ventana)
-  txBox_Tipo.config(width=5)
+  txBox_Tipo.config(width=15)
 
   # --- RADIOBUTTONS ---
   global Botón_Tabla_de_Alumno, Botón_Tabla_de_Asistencia, Botón_Tabla_de_Carrera, Botón_Tabla_de_Materia, Botón_Tabla_de_Profesor, Botón_Tabla_de_Notas, opción
@@ -699,27 +687,33 @@ def pantalla_principal(ventana):
   opción = tk.IntVar()
   color_fondo = ventana.cget("bg")
   
-  Botón_Tabla_de_Alumno = tk.Radiobutton(ventana, text="Alumno", image=alumno_imagen, compound="left", variable=opción, value= 1, command=lambda:acción_doble())
+  Botón_Tabla_de_Alumno = tk.Radiobutton(ventana, text="Alumno", image=alumno_imagen, compound="left",
+                                                       variable=opción, value= 1, command=lambda:acción_doble())
   Botón_Tabla_de_Alumno.config(bg=color_fondo, activebackground=color_fondo, highlightthickness=0, bd=0, font=("Arial", 12), cursor='hand2')
 
 
-  Botón_Tabla_de_Asistencia = tk.Radiobutton(ventana, text="Asistencia", image=asistencia_imagen, compound="left", variable=opción, value= 2, command=lambda: acción_doble())
+  Botón_Tabla_de_Asistencia = tk.Radiobutton(ventana, text="Asistencia", image=asistencia_imagen, compound="left",
+                                                           variable=opción, value= 2, command=lambda: acción_doble())
   Botón_Tabla_de_Asistencia.config(bg=color_fondo, activebackground=color_fondo, highlightthickness=0, bd=0, font=("Arial", 12), cursor='hand2')
 
 
-  Botón_Tabla_de_Carrera = tk.Radiobutton(ventana, text="Carrera", image=carrera_imagen, compound="left", variable=opción, value= 3, command=lambda:acción_doble())
+  Botón_Tabla_de_Carrera = tk.Radiobutton(ventana, text="Carrera", image=carrera_imagen, compound="left",
+                                                      variable=opción, value= 3, command=lambda:acción_doble())
   Botón_Tabla_de_Carrera.config(bg=color_fondo, activebackground=color_fondo, highlightthickness=0, bd=0, font=("Arial", 12), cursor='hand2')
 
 
-  Botón_Tabla_de_Materia = tk.Radiobutton(ventana, text="Materia", image=materia_imagen, compound="left", variable=opción, value= 4, command=lambda:acción_doble())
+  Botón_Tabla_de_Materia = tk.Radiobutton(ventana, text="Materia", image=materia_imagen, compound="left",
+                                                      variable=opción, value= 4, command=lambda:acción_doble())
   Botón_Tabla_de_Materia.config(bg=color_fondo, activebackground=color_fondo, highlightthickness=0, bd=0, font=("Arial", 12), cursor='hand2')
 
 
-  Botón_Tabla_de_Profesor = tk.Radiobutton(ventana, text="Profesor", image=profesor_imagen, compound="left", variable=opción, value= 5, command=lambda:acción_doble())
+  Botón_Tabla_de_Profesor = tk.Radiobutton(ventana, text="Profesor", image=profesor_imagen, compound="left",
+                                                       variable=opción, value= 5, command=lambda:acción_doble())
   Botón_Tabla_de_Profesor.config(bg=color_fondo, activebackground=color_fondo, highlightthickness=0, bd=0, font=("Arial", 12), cursor='hand2')
 
 
-  Botón_Tabla_de_Notas = tk.Radiobutton(ventana, text="Nota", image=nota_imagen, compound="left", variable=opción, value= 6, command=lambda:acción_doble())
+  Botón_Tabla_de_Notas = tk.Radiobutton(ventana, text="Nota", image=nota_imagen, compound="left",
+                                                      variable=opción, value= 6, command=lambda:acción_doble())
   Botón_Tabla_de_Notas.config(bg=color_fondo, activebackground=color_fondo, highlightthickness=0, bd=0, font=("Arial", 12), cursor='hand2')
 
 

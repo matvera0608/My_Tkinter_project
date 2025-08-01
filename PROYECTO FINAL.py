@@ -84,7 +84,7 @@ def consultar_tabla(nombre_de_la_tabla):
                               JOIN materia AS m ON e.IDMateria = m.ID_Materia;""")
           
           case "nota":
-            cursor.execute("""SELECT n.valorNota, n.tipoNota, al.Nombre, m.Nombre
+            cursor.execute("""SELECT REPLACE(CAST(n.valorNota AS CHAR(10)), '.', ',') AS valorNota, tipoNota, al.Nombre, m.Nombre
                               FROM nota as n
                               JOIN alumno as al ON n.IDAlumno = al.ID_Alumno
                               JOIN materia as m ON n.IDMateria = m.ID_Materia;""")
@@ -262,7 +262,6 @@ def validar_datos(nombre_de_la_tabla, datos):
               return False
           consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campos[0]} = %s AND {campos[1]} = %s"
           cursor.execute(consulta, (datos[campos[0]], datos[campos[1]]))
-      resultado = cursor.fetchone()
     else:
       mensajeTexto.showerror("Error", "La tabla solicitada no se encuentra")
       return False
@@ -406,6 +405,20 @@ def seleccionar_registro():
   índice = selección[0]
   id = lista_IDs[índice]
 
+  if nombre_de_la_tabla == "nota":
+    seleccionado = Lista_de_datos.get(índice)
+    partes = seleccionado.split("|")
+    
+    if len(partes) > 2:
+      nota = partes[0].strip()
+      tipo = partes[1].strip()
+      cajasDeTexto["nota"][0].delete(0, tk.END)
+      cajasDeTexto["nota"][0].insert(0, nota)
+
+      cajasDeTexto["nota"][1].delete(0, tk.END)
+      cajasDeTexto["nota"][1].insert(0, tipo)
+    return
+
   conexión = conectar_base_de_datos()
   if conexión:
     try:
@@ -416,7 +429,7 @@ def seleccionar_registro():
         "carrera": "ID_Carrera",
         "materia": "ID_Materia",
         "profesor": "ID_Profesor",
-        "nota": ["IDAlumno", "IDMateria"]
+        "nota": ["IDAlumno", "IDMateria"] ## QUÉ TAL SI CAMBIO ESAS CLAVES COMPUESTAS por el Nombre del alumno y de la materia? creés que va a tirar un error o que no va a mostrar en las entrys que corresponde
       }
       
       clave = PKs.get(nombre_de_la_tabla)
@@ -427,18 +440,17 @@ def seleccionar_registro():
         return
       cursor = conexión.cursor()
       
-      #Verificamos si una clave es simple o compuesta como en el caso de la tabla Nota
+      # Verificamos si una clave es simple o compuesta como en el caso de la tabla Nota
       if isinstance(clave, list):
         if not isinstance(id, tuple):
-          print("Se esperaba una clave compuesta en forma de tupla (IDAlumno, IDMateria)")
           return
-        
         datos["IDAlumno"], datos["IDMateria"] = id
-        
-        if None in id: #En caso de que falten datos
+
+        if None in id:
           mensajeTexto.showerror("ERROR", "Faltan datos de clave para la tabla.")
           return
         
+
         condiciones = ' AND '.join([f"{campo} = %s" for campo in clave])
         valores = tuple(datos.get(campo) for campo in clave)
         campos = ', '.join(datos.keys())

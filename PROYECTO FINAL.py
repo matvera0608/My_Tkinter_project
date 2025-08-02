@@ -377,7 +377,8 @@ def conseguir_campo_ID(nombre_de_la_tabla):
               'asistencia': "ID_Asistencia",
               'carrera': "ID_Carrera",
               'materia': "ID_Materia",
-              'profesor': "ID_Profesor"
+              'profesor': "ID_Profesor",
+              'nota': ["IDAlumno", "IDMateria"]  # Clave compuesta para la tabla Nota
         }
   return IDs.get(nombre_de_la_tabla.strip().lower())
 
@@ -691,7 +692,7 @@ def pantalla_principal(ventana):
   txBox_Valor = tk.Entry(ventana)
   txBox_Valor.config(width=5)
   txBox_Tipo = tk.Entry(ventana)
-  txBox_Tipo.config(width=15)
+  txBox_Tipo.config(width=20)
 
   # --- RADIOBUTTONS ---
   global Botón_Tabla_de_Alumno, Botón_Tabla_de_Asistencia, Botón_Tabla_de_Carrera, Botón_Tabla_de_Materia, Botón_Tabla_de_Profesor, Botón_Tabla_de_Notas, opción

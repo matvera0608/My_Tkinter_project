@@ -495,7 +495,7 @@ def normalizar_datos_nota(datos):
         elif "parcial" in valor:
             datos["tipoNota"] = "Parcial"
         elif "final" in valor or valor == "examen final":
-            datos["tipoNota"] = "Final"
+            datos["tipoNota"] = "Examen Final"
         elif "tp" in valor or "trabajo" in valor:
             datos["tipoNota"] = "TP"
         else:

@@ -248,6 +248,10 @@ def validar_datos(nombre_de_la_tabla, datos):
     ##SIN AFECTAR LA CONVERSIÓN DE FECHA Y HORA
     if nombre_de_la_tabla == "nota":
       datos = normalizar_datos_nota(datos)
+      if not datos:
+        return
+    
+    tipos_validos = {"Parcial", "Parcial 1", "Parcial 2", "Final", "TP"}
     
     validaciones = {
       'alumno': {
@@ -270,7 +274,7 @@ def validar_datos(nombre_de_la_tabla, datos):
               "Nombre": lambda valor :patrón_nombre.match(valor),
       },
       'nota': {
-              "tpoNota": lambda valor: patrón_alfanumérico.match(valor),
+              "tpoNota": lambda valor: valor.strip().title() in tipos_validos,
               "valorNota": lambda valor: patrón_númerosDecimales.match(valor),
       }
     }
@@ -771,13 +775,19 @@ def modificar_datos(nombre_de_la_tabla):
   selección = columna_seleccionada[0]
   ID_Seleccionado = lista_IDs[selección]
 
-  if ID_Seleccionado is None:
+  if nombre_de_la_tabla != "nota" and ID_Seleccionado is None:
     mensajeTexto.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
     return
 
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
   if not datos:
       return
+
+  if nombre_de_la_tabla == "nota":
+    datos = normalizar_datos_nota(datos)
+    if not datos:
+        mensajeTexto.showerror("Error", "❌ Tipo de nota o valor inválido.")
+        return
 
   if not validar_datos(nombre_de_la_tabla, datos):
       return
@@ -789,14 +799,21 @@ def modificar_datos(nombre_de_la_tabla):
     valores_sql.append(valor)
     campos_sql.append(f"{campo} = %s")
 
+
+
   CampoID = conseguir_campo_ID(nombre_de_la_tabla)
   
   try:
     with conectar_base_de_datos() as conexión:
         cursor = conexión.cursor()
         set_sql = ', '.join(campos_sql)
-        consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE {CampoID} = %s"
-        valores_sql.append(ID_Seleccionado)
+        if nombre_de_la_tabla == "nota":
+          consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE IDAlumno = %s AND IDMateria = %s"
+          valores_sql.append(datos["IDAlumno"])
+          valores_sql.append(datos["IDMateria"])
+        else:
+          consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE {CampoID} = %s"
+          valores_sql.append(ID_Seleccionado)
         cursor.execute(consulta, tuple(valores_sql))
         conexión.commit()
         consultar_tabla(nombre_de_la_tabla)
@@ -804,6 +821,7 @@ def modificar_datos(nombre_de_la_tabla):
         for i, (campo, valor) in enumerate(datos.items()):
           entry = cajasDeTexto[nombre_de_la_tabla][i]
           entry.delete(0, tk.END)
+        cursor.close()
   except Exception as e:
       mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
   finally:
@@ -825,7 +843,13 @@ def eliminar_datos(nombre_de_la_tabla):
           for index in columna_seleccionada:
             ID_Seleccionado = lista_IDs[index]
             if ID_Seleccionado is not None:
-              query = f"DELETE FROM {nombre_de_la_tabla} where {CampoID} = %s"
+              if nombre_de_la_tabla == "nota":
+                query = f"DELETE FROM {nombre_de_la_tabla} WHERE IDAlumno = %s AND IDMateria = %s"
+                if not isinstance(ID_Seleccionado, tuple):
+                  mensajeTexto.showerror("ERROR", "ID de nota no es una tupla válida")
+                  return
+              else:
+                query = f"DELETE FROM {nombre_de_la_tabla} where {CampoID} = %s"
               cursor.execute(query, (ID_Seleccionado,))
               for i, (campo, valor) in enumerate(datos.items()):
                 entry = cajasDeTexto[nombre_de_la_tabla][i]

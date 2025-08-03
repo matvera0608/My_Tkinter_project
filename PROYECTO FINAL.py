@@ -82,7 +82,6 @@ def consultar_tabla(nombre_de_la_tabla):
                               FROM profesor AS pro
                               JOIN enseñanza AS e ON e.IDProfesor = pro.ID_Profesor
                               JOIN materia AS m ON e.IDMateria = m.ID_Materia;""")
-          
           case "nota":
             cursor.execute("""SELECT REPLACE(CAST(n.valorNota AS CHAR(10)), '.', ',') AS valorNota, tipoNota, al.Nombre, m.Nombre
                               FROM nota as n
@@ -196,7 +195,7 @@ def habilitar_botones_e_inputs():
                                          4: [(txBox_NombreMateria, label_NombreMateria,100), (txBox_HorarioCorrespondiente, label_HorarioCorrespondiente, 150)],
                                          5: [(txBox_NombreProfesor, label_NombreProfesor, 100)],
                                          6: [(txBox_Valor, label_Valor, 100), (txBox_Tipo, label_Tipo, 150)]
-                                       }
+                        }
   
   #Esta condición lo que hace es mover de forma proporcional el entry y label
   if botón_seleccionado in opciones_del_widget:
@@ -239,30 +238,8 @@ def validar_datos(nombre_de_la_tabla, datos):
                       "asistencia": [],
                       "nota":       ["valorNota", "TipoNota"]
                       }
-      
-    tablas_con_IDs_autoincrementales = { "alumno": ["ID_Alumno"],
-                                        "profesor": ["ID_Profesor"],
-                                        "materia": ["ID_Materia"],
-                                        "carrera": ["ID_Carrera"],
-                                        "asistencia": ["ID_Asistencia"],
-                                        "nota": None
-                                        }
-      
-    if nombre_de_la_tabla in tabla_a_validar:
-      campos = tabla_a_validar[nombre_de_la_tabla]
-      claves = tablas_con_IDs_autoincrementales.get(nombre_de_la_tabla)
-      if len(campos) == 1:
-          if (claves is None or campos[0] not in claves) and campos[0] not in datos:
-              return False
-          if claves is None or campos[0]:
-              consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campos[0]} = %s"
-              cursor.execute(consulta, (datos[campos[0]],))
-      elif len(campos) > 1:
-          if not all(nombre_campo in datos for nombre_campo in campos):
-              return False
-          consulta = f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campos[0]} = %s AND {campos[1]} = %s"
-          cursor.execute(consulta, (datos[campos[0]], datos[campos[1]]))
-    else:
+    
+    if nombre_de_la_tabla not in tabla_a_validar:
       mensajeTexto.showerror("Error", "La tabla solicitada no se encuentra")
       return False
     
@@ -293,8 +270,8 @@ def validar_datos(nombre_de_la_tabla, datos):
               "Nombre": lambda valor :patrón_nombre.match(valor),
       },
       'nota': {
-              "valorNota": lambda valor: patrón_alfanumérico.match(valor),
-              "tipoNota": lambda valor: patrón_númerosDecimales.match(valor),
+              "tpoNota": lambda valor: patrón_alfanumérico.match(valor),
+              "valorNota": lambda valor: patrón_númerosDecimales.match(valor),
       }
     }
 
@@ -308,15 +285,19 @@ def validar_datos(nombre_de_la_tabla, datos):
         esVálido = validador(valor) if callable(validador)  else bool(validador.match(valor))
         if not esVálido:
           mensajeTexto.showerror("Error", f"El campo '{campo}' tiene un valor inválido.")
+          cursor.close()
           return
-    if nombre_de_la_tabla in ["alumno", "profesor", "materia", "carrera"]: 
+    if nombre_de_la_tabla in ["alumno", "profesor", "carrera"]: 
       campo_único = "Nombre"
       cursor.execute(f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campo_único} = %s", (datos[campo_único],))
       resultado = cursor.fetchone()
       if resultado[0] > 0:
-        mensajeTexto.showinfo("Aviso", "")
+        mensajeTexto.showinfo("Aviso", "Ya existe datos repetidos")
+        cursor.close()
         return False
-        
+      cursor.close()
+      desconectar_base_de_datos(conexión)
+      return True
   except ValueError as error_de_validación:
     print(f"Error de validación: {error_de_validación}")
     return False
@@ -378,7 +359,7 @@ def conseguir_campo_ID(nombre_de_la_tabla):
               'carrera': "ID_Carrera",
               'materia': "ID_Materia",
               'profesor': "ID_Profesor",
-              'nota': ["IDAlumno", "IDMateria"]  # Clave compuesta para la tabla Nota
+              'nota': ["IDAlumno", "IDMateria"]
         }
   return IDs.get(nombre_de_la_tabla.strip().lower())
 
@@ -430,7 +411,7 @@ def seleccionar_registro():
         "carrera": "ID_Carrera",
         "materia": "ID_Materia",
         "profesor": "ID_Profesor",
-        "nota": ["IDAlumno", "IDMateria"] ## QUÉ TAL SI CAMBIO ESAS CLAVES COMPUESTAS por el Nombre del alumno y de la materia? creés que va a tirar un error o que no va a mostrar en las entrys que corresponde
+        "nota": ["IDAlumno", "IDMateria"]
       }
       
       clave = PKs.get(nombre_de_la_tabla)
@@ -450,8 +431,6 @@ def seleccionar_registro():
         if None in id:
           mensajeTexto.showerror("ERROR", "Faltan datos de clave para la tabla.")
           return
-        
-
         condiciones = ' AND '.join([f"{campo} = %s" for campo in clave])
         valores = tuple(datos.get(campo) for campo in clave)
         campos = ', '.join(datos.keys())
@@ -480,8 +459,7 @@ def seleccionar_registro():
         cursor.close()
       desconectar_base_de_datos(conexión)
 
-#Esta función se encarga de convertir los datos de entrada para mostrar en el entry
-#en el formato que el usuario espera, por ejemplo, convertir fechas de "YYYY-MM-DD" a "DD/MM/YYYY"
+
 def convertir_datos(nombre_de_la_tabla):
   for campo, caja in zip(campos_de_la_base_de_datos[nombre_de_la_tabla], cajasDeTexto[nombre_de_la_tabla]):
     valor = caja.get()
@@ -502,31 +480,36 @@ def convertir_datos(nombre_de_la_tabla):
     caja.delete(0, tk.END)  # Limpia el entry
     caja.insert(0, str(valor))  # Inserta el valor convertido
 
+
 def normalizar_datos_nota(datos):
     if "tipoNota" in datos:
         valor = datos["tipoNota"].strip().lower()
-
-        if "parcial" in valor:
-            datos["tipoNota"] = "Parcial 1" if "1" in valor else "Parcial 2" if "2" in valor else "Parcial"
-        elif "final" in valor:
+        if "parcial 1" in valor or valor == "parcial1":
+            datos["tipoNota"] = "Parcial 1"
+        elif "parcial 2" in valor or valor == "parcial2":
+            datos["tipoNota"] = "Parcial 2"
+        elif "parcial" in valor:
+            datos["tipoNota"] = "Parcial"
+        elif "final" in valor or valor == "examen final":
             datos["tipoNota"] = "Final"
         elif "tp" in valor or "trabajo" in valor:
             datos["tipoNota"] = "TP"
         else:
-            datos["tipoNota"] = datos["tipoNota"].capitalize()
-
-    if "valor_nota" in datos:
-        valor = datos["valor_nota"].strip().lower()
-        if valor.replace(",", ".").replace(".", "").isdigit():
-            datos["valor_nota"] = valor.replace(",", ".")
-        else:
-            datos["valor_nota"] = datos["valor_nota"].capitalize()
+            return False
+          
+    if "valorNota" in datos:
+      valor = datos["valorNota"].strip().lower().replace(",", ".")
+      try:
+        número = float(valor)
+        datos["valorNota"] = f"{número:.2f}"
+      except ValueError:
+        return False
     return datos
 
-##Crearé funciones auxiliares para validación de campos
+
 def validar_fecha(valor):
   if isinstance(valor, fecha):
-    return True # ya es una fecha válida
+    return True
   if isinstance(valor, str):
     try:
       datetime.strptime(valor, '%d/%m/%Y').date()
@@ -747,8 +730,6 @@ def pantalla_principal(ventana):
     
   return ventana
 
-#HEMOS CREADO UNA LISTA PARA valores_sql y campo_sql CON EL FIN DE EVITAR ERRORES DE VALIDACIÓN
-
 def insertar_datos(nombre_de_la_tabla):
   conexión = conectar_base_de_datos()
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
@@ -801,7 +782,6 @@ def modificar_datos(nombre_de_la_tabla):
   if not validar_datos(nombre_de_la_tabla, datos):
       return
 
-  # Convertir fechas y horas antes de enviarlas al SQL
   valores_sql = []
   campos_sql = []
 
@@ -861,10 +841,6 @@ def eliminar_datos(nombre_de_la_tabla):
   else:
     mensajeTexto.showwarning("ADVERTENCIA", "NO SELECCIONASTE NINGUNA COLUMNA")
 
-#En esta función comparar relaciono una tabla con la otra
-#pero coincidiendo cada valor para que se pueda leer con facilidad
-#y saber si uno de los alumnos están presentes o no.
-#MEJORA SUPLANTADA: la función tiene una lógica de emparejar las filas en su posición original.
 def ordenar_datos(nombre_de_la_tabla, tabla, campo=None, ascendencia=True):
   conexión = conectar_base_de_datos()
   cursor = conexión.cursor()

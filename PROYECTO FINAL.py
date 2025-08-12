@@ -8,6 +8,13 @@ import mysql.connector as MySql
 import time as hora_del_sistema
 from reportlab.lib.pagesizes import letter
 from PIL import Image, ImageTk
+from reportlab.pdfbase import pdfmetrics as métricasPDF
+from reportlab.pdfbase.ttfonts import TTFont as fuente_TTFont
+
+# Registrar la fuente "Arial" en el PDF
+métricasPDF.registerFont(fuente_TTFont("Arial", "Arial.ttf"))
+
+
 
 # --- COLORES EN HEXADECIMALES ---
 colores = {
@@ -56,87 +63,7 @@ def desconectar_base_de_datos(conexión):
 #--- FUNCIONES DEL ABM (ALTA, BAJA Y MODIFICACIÓN) ---
 
 lista_IDs = []
-def consultar_tabla(nombre_de_la_tabla):
-  global lista_IDs
-  try:
-    conexión = conectar_base_de_datos()
-    if conexión:
-        cursor = conexión.cursor()
-        match nombre_de_la_tabla.lower():
-          case "alumno":
-            cursor.execute("""SELECT a.ID_Alumno, a.Nombre, DATE_FORMAT(a.FechaDeNacimiento, '%d/%m/%Y'), a.Edad
-                          FROM alumno AS a;""")
-          case "asistencia":
-            cursor.execute("""SELECT asis.ID_Asistencia, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y'), al.Nombre
-                          FROM asistencia AS asis
-                          JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno;""")
-          case "carrera":
-            cursor.execute("""SELECT c.ID_Carrera, c.Nombre, c.Duración
-                          FROM carrera AS c;""")
-          case "materia":
-            cursor.execute("""SELECT m.ID_Materia, m.Nombre, TIME_FORMAT(m.Horario,'%H:%i'), c.Nombre
-                          FROM materia AS m
-                          JOIN carrera AS c ON m.IDCarrera = c.ID_Carrera;""")
-          case "profesor":
-            cursor.execute("""SELECT pro.ID_Profesor, pro.Nombre, m.Nombre
-                              FROM profesor AS pro
-                              JOIN enseñanza AS e ON e.IDProfesor = pro.ID_Profesor
-                              JOIN materia AS m ON e.IDMateria = m.ID_Materia;""")
-          case "nota":
-            cursor.execute("""SELECT REPLACE(CAST(n.valorNota AS CHAR(10)), '.', ',') AS valorNota, tipoNota, al.Nombre, m.Nombre
-                              FROM nota as n
-                              JOIN alumno as al ON n.IDAlumno = al.ID_Alumno
-                              JOIN materia as m ON n.IDMateria = m.ID_Materia;""")
-          case _:
-            cursor.execute(f"SELECT * FROM {nombre_de_la_tabla};")
-        
-        resultado = cursor.fetchall()
-        Lista_de_datos.delete(0, tk.END)
 
-        if not resultado:
-          mensajeTexto.showinfo("Sin datos", "No hay datos disponibles para mostrar.")
-          return
-
-        lista_IDs.clear()
-        
-        #Creé una variable para alinear bien los registros.
-        ancho_de_tablas = []
-        
-        #Este for hace que el ID se tome en cuenta a la hora de hacer
-        #UPDATE o DELETE, es decir, tomar en cuenta o guardar el ID en paralelo.
-        
-        for fila in resultado:
-          idReal = fila[0]
-          lista_IDs.append(idReal)
-          filaVisible = fila[1:]
-          while len(ancho_de_tablas) < len(filaVisible):
-            ancho_de_tablas.append(0)
-          
-          for i, valor in enumerate(filaVisible):
-            valorTipoCadena = str(valor)
-            ancho_de_tablas[i] = max(ancho_de_tablas[i], len(valorTipoCadena))
-        
-        formato = "|".join("{:<" + str(ancho) + "}" for ancho in ancho_de_tablas)
- 
-        for fila in resultado:
-          filaVisible = list(fila[1:])
-          match nombre_de_la_tabla.lower():
-            case "alumno":
-              filaVisible[2] = f"{filaVisible[2]} años"
-            case "materia":
-              filaVisible[1] = f"{filaVisible[1]} horas"
-          filaTipoCadena = [str(valor) for valor in filaVisible]
-          #Se agrega una separación para que no se vea pegado
-          if len(filaTipoCadena) == len(ancho_de_tablas):
-            filas_formateadas = formato.format(*filaTipoCadena)
-            Lista_de_datos.insert(tk.END, filas_formateadas)
-          else:
-            print("❗ Columnas desalineadas:", filaTipoCadena)
-            print("🔍 Longitudes -> fila:", len(filaTipoCadena), "| ancho_de_tablas:", len(ancho_de_tablas))
-    
-    desconectar_base_de_datos(conexión)
-  except Exception as Exc:
-    mensajeTexto.showerror("ERROR", f"Algo no está correcto o no tiene nada de datos: {Exc}")
   
 def seleccionar_y_consultar():
   botón_seleccionado = opción.get()
@@ -764,64 +691,7 @@ def insertar_datos(nombre_de_la_tabla):
       desconectar_base_de_datos(conexión)
 
 
-def modificar_datos(nombre_de_la_tabla):
-  columna_seleccionada = Lista_de_datos.curselection()
-  if not columna_seleccionada:
-      mensajeTexto.showwarning("ADVERTENCIA", "FALTA SELECCIONAR UNA FILA")
-      return
-    
-  selección = columna_seleccionada[0]
-  ID_Seleccionado = lista_IDs[selección]
 
-  datos = normalizar_datos_nota(datos)
-  if not datos:
-    mensajeTexto.showerror("Error", "❌ Tipo de nota o valor inválido.")
-    return
-
-  datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
-  if not datos:
-      return
-
-  if not validar_datos(nombre_de_la_tabla, datos):
-      return
-
-  valores_sql = []
-  campos_sql = []
-
-  for campo, valor in datos.items():
-      valores_sql.append(valor)
-      campos_sql.append(f"{campo} = %s")
-
-  CampoID = conseguir_campo_ID(nombre_de_la_tabla)
-
-  try:
-    with conectar_base_de_datos() as conexión:
-      cursor = conexión.cursor()
-      set_sql = ', '.join(campos_sql)
-
-      if nombre_de_la_tabla == "nota":
-        id_alumno, id_materia = ID_Seleccionado  # Recuperar IDs de la selección
-        consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE IDAlumno = %s AND IDMateria = %s"
-        valores_sql.extend([id_alumno, id_materia])
-      else:
-        consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE {CampoID} = %s"
-        valores_sql.append(ID_Seleccionado)
-      
-      cursor.execute(consulta, tuple(valores_sql))
-      conexión.commit()
-      consultar_tabla(nombre_de_la_tabla)
-      mensajeTexto.showinfo("CORRECTO", "✅ SE MODIFICÓ EXITOSAMENTE")
-
-      # Limpiar entradas del formulario
-      for i, (campo, valor) in enumerate(datos.items()):
-          entry = cajasDeTexto[nombre_de_la_tabla][i]
-          entry.delete(0, tk.END)
-
-      cursor.close()
-  except Exception as e:
-    mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
-  finally:
-    desconectar_base_de_datos(conexión)
 
 
 def eliminar_datos(nombre_de_la_tabla):
@@ -964,47 +834,69 @@ def ordenar_datos(nombre_de_la_tabla, tabla, campo=None, ascendencia=True):
     desconectar_base_de_datos(conexión)
 
 
-#En este código voy a exportar en PDF el archivo de datos tkinter
 def exportar_en_PDF(nombre_de_la_tabla):
   try:
-    conexión = conectar_base_de_datos()
-    if conexión is None:
-      return
-    cursor = conexión.cursor()
-    cursor.execute()
-    fila = cursor.fetchall()
-    
-    datos = Lista_de_datos.get(0, tk.END)
-    
-    ventana_exportar = diálogo.asksaveasfilename(
-      defaultextension=".pdf",
-      filetypes=[("Archivo PDF","*.pdf")],
-      initialfile="Sistema Gestor de Asistencia",
-      title="Exportar archivo PDF"
-    )
-    
-    #Cuando presione cancelar, se ejecuta este código
-    if not ventana_exportar:
-      return
-    
-    #aquí empiezo a crear el archivo PDF para exportar la información del Sistema Gestor de Asistencias 
-    canva = canvas.Canvas(ventana_exportar)
-    canva.setFont("Arial", 20)
-    y = 780
-    
-    canva = canvas.Canvas(ventana_exportar, pagesize=letter)
-    y -= 20
-    #Aquí empiezo a iterar los datos para luego imprimir el reporte
-    for fila in datos:
-      canva.drawString(100, y, f"{fila}")
-      y -= 20
+      # Paso 1: Obtener los datos directamente del Listbox
+      # Esta es la fuente principal de datos para este PDF, no la DB en este caso.
+      datos_a_exportar = Lista_de_datos.get(0, tk.END)
       
-    canva.save()
-    
-    mensajeTexto.showwarning("ÉXITOS", "EXPORTADO CORRECTAMENTE")
-    
-  except error_sql as e:
-    mensajeTexto.showerror("OCURRIÓ UN ERROR", f"Error al exportar en PDF la información detallada: {str(e)}")
+      if not datos_a_exportar:
+          mensajeTexto.showwarning("ADVERTENCIA", "No hay datos para exportar en el Listbox.")
+          return
+
+      # Paso 2: Abrir el diálogo para seleccionar la ruta y nombre del archivo PDF
+      ruta_archivo_pdf = diálogo.asksaveasfilename(
+          defaultextension=".pdf",
+          filetypes=[("Archivo PDF", "*.pdf")],
+          initialfile=f"Reporte_{nombre_de_la_tabla}_{datetime.now().strftime('%Y%m%d_%H%M%S')}", # Nombre de archivo más descriptivo
+          title="Exportar informe en PDF"
+      )
+      
+      # Si el usuario presiona "Cancelar" en el diálogo de guardar
+      if not ruta_archivo_pdf:
+          return # Salir de la función si no se seleccionó un archivo
+
+      # Paso 3: Crear el objeto Canvas de ReportLab y dibujar el contenido
+      # Se debe instanciar canvas.Canvas solo una vez.
+      pdf_canvas = canvas.Canvas(ruta_archivo_pdf, pagesize=letter)
+      
+      # Establecer la fuente. "Helvetica" es una fuente estándar garantizada en ReportLab.
+      # "Arial" no está incluida por defecto y necesita ser registrada si es obligatoria.
+      pdf_canvas.setFont("Arial", 12) # Tamaño de fuente más legible para el cuerpo
+
+      # Coordenadas de inicio para el contenido
+      margen_x = 50 # Margen desde la izquierda
+      y_inicio = letter[1] - 50 # Margen desde arriba (altura de la página - margen superior)
+      line_height = 15 # Espacio entre líneas
+      
+      # Añadir un título al PDF
+      pdf_canvas.setFont("Arial", 16)
+      pdf_canvas.drawString(margen_x, y_inicio + 10, f"Informe: {nombre_de_la_tabla.capitalize()}")
+      pdf_canvas.setFont("Arial", 12)
+
+      y = y_inicio
+
+      # Iterar sobre los datos y dibujarlos en el PDF
+      for i, fila in enumerate(datos_a_exportar):
+          if y < margen_x: # Si nos quedamos sin espacio en la página, crear una nueva página
+              pdf_canvas.showPage() # Inicia una nueva página
+              pdf_canvas.setFont("Arial", 12)
+              y = y_inicio
+              pdf_canvas.drawString(margen_x, y, f"Informe de Tabla: {nombre_de_la_tabla.capitalize()} (Continuación)")
+              y -= line_height
+
+          pdf_canvas.drawString(margen_x, y, f"{i+1}. {fila}") # Añade un número de línea
+          y -= line_height
+
+      # Paso 4: Guardar el archivo PDF
+      pdf_canvas.save()
+      
+      print("ÉXITO", f"El informe de '{nombre_de_la_tabla}' ha sido exportado correctamente a:\n{ruta_archivo_pdf}")
+      
+  except Exception as e: # Captura cualquier tipo de excepción general para depuración
+      print("OCURRIÓ UN ERROR", f"Error al exportar en PDF: {str(e)}")
+  finally:
+    pass
 
 # --- EVENTOS PARA BOTONES ---
 

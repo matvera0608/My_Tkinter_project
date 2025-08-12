@@ -14,7 +14,91 @@ from reportlab.pdfbase.ttfonts import TTFont as fuente_TTFont
 # Registrar la fuente "Arial" en el PDF
 métricasPDF.registerFont(fuente_TTFont("Arial", "Arial.ttf"))
 
+def consultar_tabla(nombre_de_la_tabla):
+  global lista_IDs
+  try:
+      conexión = conectar_base_de_datos()
+      if conexión:
+          cursor = conexión.cursor()
 
+          match nombre_de_la_tabla.lower():
+              case "alumno":
+                  cursor.execute("""SELECT a.ID_Alumno, a.Nombre, DATE_FORMAT(a.FechaDeNacimiento, '%d/%m/%Y'), a.Edad
+                                  FROM alumno AS a;""")
+              case "asistencia":
+                  cursor.execute("""SELECT asis.ID_Asistencia, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y'), al.Nombre
+                                  FROM asistencia AS asis
+                                  JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno;""")
+              case "carrera":
+                  cursor.execute("""SELECT c.ID_Carrera, c.Nombre, c.Duración
+                                  FROM carrera AS c;""")
+              case "materia":
+                  cursor.execute("""SELECT m.ID_Materia, m.Nombre, TIME_FORMAT(m.Horario,'%H:%i'), c.Nombre
+                                  FROM materia AS m
+                                  JOIN carrera AS c ON m.IDCarrera = c.ID_Carrera;""")
+              case "profesor":
+                  cursor.execute("""SELECT pro.ID_Profesor, pro.Nombre, m.Nombre
+                                  FROM profesor AS pro
+                                  JOIN enseñanza AS e ON e.IDProfesor = pro.ID_Profesor
+                                  JOIN materia AS m ON e.IDMateria = m.ID_Materia;""")
+              case "nota":
+                  cursor.execute("""SELECT n.IDAlumno, n.IDMateria, 
+                                          REPLACE(CAST(n.valorNota AS CHAR(10)), '.', ',') AS valorNota, 
+                                          n.tipoNota, 
+                                          al.Nombre AS NombreAlumno, 
+                                          m.Nombre AS NombreMateria
+                                  FROM nota AS n
+                                  JOIN alumno AS al ON n.IDAlumno = al.ID_Alumno
+                                  JOIN materia AS m ON n.IDMateria = m.ID_Materia;""")
+              case _:
+                  cursor.execute(f"SELECT * FROM {nombre_de_la_tabla};")
+
+          resultado = cursor.fetchall()
+          Lista_de_datos.delete(0, tk.END)
+
+          if not resultado:
+              mensajeTexto.showinfo("Sin datos", "No hay datos disponibles para mostrar.")
+              return
+
+          lista_IDs.clear()
+          ancho_de_tablas = []
+
+          for fila in resultado:
+              if nombre_de_la_tabla.lower() == "nota":
+                lista_IDs.append((fila[0], fila[1]))
+                filaVisible = fila[2:]
+              else:
+                lista_IDs.append(fila[0])
+                filaVisible = fila[1:]
+
+              while len(ancho_de_tablas) < len(filaVisible):
+                ancho_de_tablas.append(0)
+
+              for i, valor in enumerate(filaVisible):
+                valorTipoCadena = str(valor)
+                ancho_de_tablas[i] = max(ancho_de_tablas[i], len(valorTipoCadena))
+
+          formato = "|".join("{:<" + str(ancho) + "}" for ancho in ancho_de_tablas) # Formato de visualización
+
+          for fila in resultado:
+            if nombre_de_la_tabla.lower() == "nota":
+              filaVisible = list(fila[2:])
+            else:
+              filaVisible = list(fila[1:])
+
+            # Añadir "años" al campo edad en la tabla alumno (posición 2)
+            if nombre_de_la_tabla.lower() == "alumno" and len(filaVisible) >= 2:
+              filaVisible[2] = f"{filaVisible[2]} años"
+
+            filaTipoCadena = [str(valor) for valor in filaVisible]
+            if len(filaTipoCadena) == len(ancho_de_tablas):
+              filas_formateadas = formato.format(*filaTipoCadena)
+              Lista_de_datos.insert(tk.END, filas_formateadas)
+
+      desconectar_base_de_datos(conexión)
+
+  except Exception as Exc:
+    mensajeTexto.showerror("ERROR", f"Algo no está correcto o no tiene nada de datos: {Exc}")
 
 # --- COLORES EN HEXADECIMALES ---
 colores = {
@@ -691,7 +775,51 @@ def insertar_datos(nombre_de_la_tabla):
       desconectar_base_de_datos(conexión)
 
 
+def modificar_datos(nombre_de_la_tabla):
+    columna_seleccionada = Lista_de_datos.curselection()
+    if not columna_seleccionada:
+      mensajeTexto.showwarning("ADVERTENCIA", "FALTA SELECCIONAR UNA FILA")
+      return
 
+    selección = columna_seleccionada[0]
+    ID_Seleccionado = lista_IDs[selección]
+
+    datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
+    if not datos:
+      return
+
+    if not validar_datos(nombre_de_la_tabla, datos):
+      return
+
+    valores_sql = []
+    campos_sql = []
+
+    for campo, valor in datos.items():
+      valores_sql.append(valor)
+      campos_sql.append(f"{campo} = %s")
+
+    try:
+      with conectar_base_de_datos() as conexión:
+          cursor = conexión.cursor()
+          set_sql = ', '.join(campos_sql)
+
+          if nombre_de_la_tabla.lower() == "nota":
+            id_alumno, id_materia = ID_Seleccionado
+            consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE IDAlumno = %s AND IDMateria = %s"
+            valores_sql.extend([id_alumno, id_materia])
+          else:
+            CampoID = conseguir_campo_ID(nombre_de_la_tabla)
+            consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE {CampoID} = %s"
+            valores_sql.append(ID_Seleccionado)
+            
+          cursor.execute(consulta, tuple(valores_sql))
+          conexión.commit()
+
+          consultar_tabla(nombre_de_la_tabla)
+          mensajeTexto.showinfo("CORRECTO", "✅ SE MODIFICÓ EXITOSAMENTE")
+
+    except Exception as e:
+      mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
 
 
 def eliminar_datos(nombre_de_la_tabla):

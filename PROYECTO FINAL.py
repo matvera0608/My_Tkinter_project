@@ -108,10 +108,7 @@ def consultar_tabla(nombre_de_la_tabla):
         for fila in resultado:
           idReal = fila[0]
           lista_IDs.append(idReal)
-          filaVisible = fila[1:] if nombre_de_la_tabla != "nota" else fila
-          
-          #Este controla que el ancho de las tablas se ajuste
-          #dependiendo de la cantidad de registros que tenga para facilitar la lectura al usuario
+          filaVisible = fila[1:]
           while len(ancho_de_tablas) < len(filaVisible):
             ancho_de_tablas.append(0)
           
@@ -122,7 +119,7 @@ def consultar_tabla(nombre_de_la_tabla):
         formato = "|".join("{:<" + str(ancho) + "}" for ancho in ancho_de_tablas)
  
         for fila in resultado:
-          filaVisible = list(fila[1:] if nombre_de_la_tabla != "nota" else fila)
+          filaVisible = list(fila[1:])
           match nombre_de_la_tabla.lower():
             case "alumno":
               filaVisible[2] = f"{filaVisible[2]} años"
@@ -734,6 +731,7 @@ def pantalla_principal(ventana):
     
   return ventana
 
+
 def insertar_datos(nombre_de_la_tabla):
   conexión = conectar_base_de_datos()
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
@@ -769,25 +767,20 @@ def insertar_datos(nombre_de_la_tabla):
 def modificar_datos(nombre_de_la_tabla):
   columna_seleccionada = Lista_de_datos.curselection()
   if not columna_seleccionada:
-    mensajeTexto.showwarning("ADVERTENCIA", "FALTA SELECCIONAR UNA FILA")
-    return
-
+      mensajeTexto.showwarning("ADVERTENCIA", "FALTA SELECCIONAR UNA FILA")
+      return
+    
   selección = columna_seleccionada[0]
   ID_Seleccionado = lista_IDs[selección]
 
-  if nombre_de_la_tabla != "nota" and ID_Seleccionado is None:
-    mensajeTexto.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
+  datos = normalizar_datos_nota(datos)
+  if not datos:
+    mensajeTexto.showerror("Error", "❌ Tipo de nota o valor inválido.")
     return
 
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
   if not datos:
       return
-
-  if nombre_de_la_tabla == "nota":
-    datos = normalizar_datos_nota(datos)
-    if not datos:
-        mensajeTexto.showerror("Error", "❌ Tipo de nota o valor inválido.")
-        return
 
   if not validar_datos(nombre_de_la_tabla, datos):
       return
@@ -796,36 +789,39 @@ def modificar_datos(nombre_de_la_tabla):
   campos_sql = []
 
   for campo, valor in datos.items():
-    valores_sql.append(valor)
-    campos_sql.append(f"{campo} = %s")
-
-
+      valores_sql.append(valor)
+      campos_sql.append(f"{campo} = %s")
 
   CampoID = conseguir_campo_ID(nombre_de_la_tabla)
-  
+
   try:
     with conectar_base_de_datos() as conexión:
-        cursor = conexión.cursor()
-        set_sql = ', '.join(campos_sql)
-        if nombre_de_la_tabla == "nota":
-          consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE IDAlumno = %s AND IDMateria = %s"
-          valores_sql.append(datos["IDAlumno"])
-          valores_sql.append(datos["IDMateria"])
-        else:
-          consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE {CampoID} = %s"
-          valores_sql.append(ID_Seleccionado)
-        cursor.execute(consulta, tuple(valores_sql))
-        conexión.commit()
-        consultar_tabla(nombre_de_la_tabla)
-        mensajeTexto.showinfo("CORRECTO", "SE MODIFICÓ EXITOSAMENTE")
-        for i, (campo, valor) in enumerate(datos.items()):
+      cursor = conexión.cursor()
+      set_sql = ', '.join(campos_sql)
+
+      if nombre_de_la_tabla == "nota":
+        id_alumno, id_materia = ID_Seleccionado  # Recuperar IDs de la selección
+        consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE IDAlumno = %s AND IDMateria = %s"
+        valores_sql.extend([id_alumno, id_materia])
+      else:
+        consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE {CampoID} = %s"
+        valores_sql.append(ID_Seleccionado)
+      
+      cursor.execute(consulta, tuple(valores_sql))
+      conexión.commit()
+      consultar_tabla(nombre_de_la_tabla)
+      mensajeTexto.showinfo("CORRECTO", "✅ SE MODIFICÓ EXITOSAMENTE")
+
+      # Limpiar entradas del formulario
+      for i, (campo, valor) in enumerate(datos.items()):
           entry = cajasDeTexto[nombre_de_la_tabla][i]
           entry.delete(0, tk.END)
-        cursor.close()
+
+      cursor.close()
   except Exception as e:
-      mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
+    mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
   finally:
-      desconectar_base_de_datos(conexión)
+    desconectar_base_de_datos(conexión)
 
 
 def eliminar_datos(nombre_de_la_tabla):
@@ -864,6 +860,7 @@ def eliminar_datos(nombre_de_la_tabla):
          mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL ELIMINAR: {str(e)}")
   else:
     mensajeTexto.showwarning("ADVERTENCIA", "NO SELECCIONASTE NINGUNA COLUMNA")
+
 
 def ordenar_datos(nombre_de_la_tabla, tabla, campo=None, ascendencia=True):
   conexión = conectar_base_de_datos()
@@ -965,6 +962,7 @@ def ordenar_datos(nombre_de_la_tabla, tabla, campo=None, ascendencia=True):
      mensajeTexto.showerror("ERROR", f"HA OCURRIDO UN ERROR AL ORDENAR LA TABLA: {str(e)}")
   finally:
     desconectar_base_de_datos(conexión)
+
 
 #En este código voy a exportar en PDF el archivo de datos tkinter
 def exportar_en_PDF(nombre_de_la_tabla):

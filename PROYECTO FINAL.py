@@ -86,7 +86,6 @@ def consultar_tabla(nombre_de_la_tabla):
             else:
               filaVisible = list(fila[1:])
 
-            # Añadir "años" al campo edad en la tabla alumno (posición 2)
             if nombre_de_la_tabla.lower() == "alumno" and len(filaVisible) >= 2:
               filaVisible[2] = f"{filaVisible[2]} años"
 

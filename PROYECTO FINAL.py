@@ -236,7 +236,7 @@ def validar_datos(nombre_de_la_tabla, datos):
     cursor = conexión.cursor()
     patrón_nombre = re.compile(r'^[A-Za-záéíóúÁÉÍÓÚñÑüÜ\s]+$')
     patrón_númerosDecimales = re.compile(r'^\d+([.,]\d+)?$')
-    patrón_alfanumérico = re.compile(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$')
+    #patrón_alfanumérico = re.compile(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$')
     patron_alfanumerico_con_espacios = re.compile(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$')
     
     tabla_a_validar = {"alumno":    ["Nombre", "FechaDeNacimiento"],
@@ -259,8 +259,6 @@ def validar_datos(nombre_de_la_tabla, datos):
       if not datos:
         return
     
-    tipos_validos = {"Parcial", "Parcial 1", "Parcial 2", "Final", "TP"}
-    
     validaciones = {
       'alumno': {
               "Nombre": lambda valor : patrón_nombre.match(valor),
@@ -282,7 +280,7 @@ def validar_datos(nombre_de_la_tabla, datos):
               "Nombre": lambda valor :patrón_nombre.match(valor),
       },
       'nota': {
-              "tpoNota": lambda valor: valor.strip().title() in tipos_validos,
+              "tipoNota": lambda valor: valor.isalpha(),
               "valorNota": lambda valor: patrón_númerosDecimales.match(valor),
       }
     }
@@ -494,23 +492,6 @@ def convertir_datos(nombre_de_la_tabla):
 
 
 def normalizar_datos_nota(datos):
-  # Esta función normaliza los datos de la nota para asegurar que se ingresen correctamente
-  # y también quita la obligatoriedad de escribir exactamente en el mismo formato o con la misma capitalización.
-    if "tipoNota" in datos:
-        valor = datos["tipoNota"].strip().lower()
-        if "parcial 1" in valor or valor == "parcial1":
-            datos["tipoNota"] = "Parcial 1"
-        elif "parcial 2" in valor or valor == "parcial2":
-            datos["tipoNota"] = "Parcial 2"
-        elif "parcial" in valor:
-            datos["tipoNota"] = "Parcial"
-        elif "final" in valor or valor == "examen final":
-            datos["tipoNota"] = "Examen Final"
-        elif "tp" in valor or "trabajo" in valor:
-            datos["tipoNota"] = "TP"
-        else:
-            return False
-          
     if "valorNota" in datos:
       valor = datos["valorNota"].strip().lower().replace(",", ".")
       try:
@@ -744,9 +725,7 @@ def pantalla_principal(ventana):
     
   return ventana
 
-##Tengo un problema con insertar_datos:
-##No se están insertando los datos en el SGAE (Sistema Gestor de Asistencias Escolares)
-##A nivel programático sólo me tira el mensaje de que insertó datos pero de mentira, es decir, no se reflejan en la base de datos
+
 def insertar_datos(nombre_de_la_tabla):
   conexión = conectar_base_de_datos()
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
@@ -754,29 +733,27 @@ def insertar_datos(nombre_de_la_tabla):
   if not datos or not validar_datos(nombre_de_la_tabla, datos):
       return
     
-  if nombre_de_la_tabla.lower() == "nota":
-    id_alumno, id_materia = conseguir_campo_ID(datos)
-    normalizar_datos_nota(datos)
-
   valores_sql = []
   campos_sql = []
   for campo, valor in datos.items():
     valores_sql.append(valor)
     campos_sql.append(campo)
-
-  campos = ', '.join(datos.keys())
-  valores = ', '.join(['%s'] * len(datos))
+    
   if nombre_de_la_tabla.lower() == "nota":
+    id_alumno = datos.get("IDAlumno")
+    id_materia = datos.get("IDMateria")
+    # Agregar campos extra
+    campos = ', '.join(list(datos.keys()) + ["IDAlumno", "IDMateria"])
+    valores = ', '.join(['%s'] * (len(datos) + 2))
+    consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({valores})"
     valores_sql.extend([id_alumno, id_materia])
   else:
+    campos = ', '.join(datos.keys())
+    valores = ', '.join(['%s'] * len(datos))
     consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({valores})"
+    valores_sql = list(datos.values())
   try:
     cursor = conexión.cursor()
-    
-    print(f"\n--- Intentando INSERT en {nombre_de_la_tabla} ---")
-    print(f"Consulta SQL: {consulta}")
-    print(f"Valores a insertar: {valores_sql}")
-    
     cursor.execute(consulta, tuple(valores_sql))
     conexión.commit()
     consultar_tabla(nombre_de_la_tabla)

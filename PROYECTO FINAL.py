@@ -14,6 +14,52 @@ from reportlab.pdfbase.ttfonts import TTFont as fuente_TTFont
 # Registrar la fuente "Arial" en el PDF
 métricasPDF.registerFont(fuente_TTFont("Arial", "Arial.ttf"))
 
+# --- COLORES EN HEXADECIMALES ---
+colores = {
+    "rosado_claro": "#FFEBEB",
+    "rojo_claro": "#FFAEAE",
+    "verde": "#00FF00",
+    "rojo": "#FF0000",
+    "verde_claro": "#AEFFAE",
+    "azul": "#0000FF",
+    "amarillo_claro": "#FBFFBF",
+    "dorado": "#FFDF00",
+    "dorado_claro": "#FFF1A9",
+    "agua": "#00FDFD",
+    "agua_claro": "#A9FFFF"
+}
+
+# --- CONEXIÓN CON LA BASE DE DATOS MySQL WORKBENCH
+# --- Y UN ÍCONO PARA LA IMPLEMENTACIÓN ---
+#la variable dirección_del_ícono contiene la dirección de forma dinámica y variable
+#para que no se vea la dirección de la computadora
+dirección_del_ícono = os.path.dirname(__file__)
+ícono = os.path.join(dirección_del_ícono,"escuela.ico")
+
+ruta_base = os.path.dirname(__file__)
+ruta_imagen = os.path.join(ruta_base, "imágenes")
+
+def conectar_base_de_datos():
+  try:
+    cadena_de_conexión = MySql.connect(
+        host = 'localhost',
+        user = 'root',
+        password = 'admin',
+        database = 'escuela')
+    conexión_exitosa = cadena_de_conexión.is_connected()
+    if conexión_exitosa:
+      return cadena_de_conexión
+  except error_sql as e:
+    print(f"Error inesperado al conectar MySql {e}")
+    return None
+
+def desconectar_base_de_datos(conexión):
+  desconectando_db = conexión.is_connected()
+  if desconectando_db:
+    conexión.close()
+
+#--- FUNCIONES DEL ABM (ALTA, BAJA Y MODIFICACIÓN) ---
+
 def consultar_tabla(nombre_de_la_tabla):
   global lista_IDs
   try:
@@ -23,8 +69,9 @@ def consultar_tabla(nombre_de_la_tabla):
 
           match nombre_de_la_tabla.lower():
               case "alumno":
-                  cursor.execute("""SELECT a.ID_Alumno, a.Nombre, DATE_FORMAT(a.FechaDeNacimiento, '%d/%m/%Y'), a.Edad
-                                  FROM alumno AS a;""")
+                  cursor.execute("""SELECT a.ID_Alumno, a.Nombre, DATE_FORMAT(a.FechaDeNacimiento, '%d/%m/%Y'), c.Nombre
+                                  FROM alumno AS a
+                                  JOIN carrera AS c ON a.IDCarrera = c.ID_Carrera;""")
               case "asistencia":
                   cursor.execute("""SELECT asis.ID_Asistencia, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y'), al.Nombre
                                   FROM asistencia AS asis
@@ -86,8 +133,8 @@ def consultar_tabla(nombre_de_la_tabla):
             else:
               filaVisible = list(fila[1:])
 
-            if nombre_de_la_tabla.lower() == "alumno" and len(filaVisible) >= 2:
-              filaVisible[2] = f"{filaVisible[2]} años"
+##            if nombre_de_la_tabla.lower() == "alumno" and len(filaVisible) >= 2:
+##              filaVisible[2] = f"{filaVisible[2]} años"
 
             filaTipoCadena = [str(valor) for valor in filaVisible]
             if len(filaTipoCadena) == len(ancho_de_tablas):
@@ -98,52 +145,6 @@ def consultar_tabla(nombre_de_la_tabla):
 
   except Exception as Exc:
     mensajeTexto.showerror("ERROR", f"Algo no está correcto o no tiene nada de datos: {Exc}")
-
-# --- COLORES EN HEXADECIMALES ---
-colores = {
-    "rosado_claro": "#FFEBEB",
-    "rojo_claro": "#FFAEAE",
-    "verde": "#00FF00",
-    "rojo": "#FF0000",
-    "verde_claro": "#AEFFAE",
-    "azul": "#0000FF",
-    "amarillo_claro": "#FBFFBF",
-    "dorado": "#FFDF00",
-    "dorado_claro": "#FFF1A9",
-    "agua": "#00FDFD",
-    "agua_claro": "#A9FFFF"
-}
-
-# --- CONEXIÓN CON LA BASE DE DATOS MySQL WORKBENCH
-# --- Y UN ÍCONO PARA LA IMPLEMENTACIÓN ---
-#la variable dirección_del_ícono contiene la dirección de forma dinámica y variable
-#para que no se vea la dirección de la computadora
-dirección_del_ícono = os.path.dirname(__file__)
-ícono = os.path.join(dirección_del_ícono,"escuela.ico")
-
-ruta_base = os.path.dirname(__file__)
-ruta_imagen = os.path.join(ruta_base, "imágenes")
-
-def conectar_base_de_datos():
-  try:
-    cadena_de_conexión = MySql.connect(
-        host = 'localhost',
-        user = 'root',
-        password = 'admin',
-        database = 'escuela', )
-    conexión_exitosa = cadena_de_conexión.is_connected()
-    if conexión_exitosa:
-      return cadena_de_conexión
-  except error_sql as e:
-    print(f"Error inesperado al conectar MySql {e}")
-    return None
-
-def desconectar_base_de_datos(conexión):
-  desconectando_db = conexión.is_connected()
-  if desconectando_db:
-    conexión.close()
-
-#--- FUNCIONES DEL ABM (ALTA, BAJA Y MODIFICACIÓN) ---
 
 lista_IDs = []
 
@@ -493,6 +494,8 @@ def convertir_datos(nombre_de_la_tabla):
 
 
 def normalizar_datos_nota(datos):
+  # Esta función normaliza los datos de la nota para asegurar que se ingresen correctamente
+  # y también quita la obligatoriedad de escribir exactamente en el mismo formato o con la misma capitalización.
     if "tipoNota" in datos:
         valor = datos["tipoNota"].strip().lower()
         if "parcial 1" in valor or valor == "parcial1":
@@ -741,13 +744,19 @@ def pantalla_principal(ventana):
     
   return ventana
 
-
+##Tengo un problema con insertar_datos:
+##No se están insertando los datos en el SGAE (Sistema Gestor de Asistencias Escolares)
+##A nivel programático sólo me tira el mensaje de que insertó datos pero de mentira, es decir, no se reflejan en la base de datos
 def insertar_datos(nombre_de_la_tabla):
   conexión = conectar_base_de_datos()
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
 
   if not datos or not validar_datos(nombre_de_la_tabla, datos):
       return
+    
+  if nombre_de_la_tabla.lower() == "nota":
+    id_alumno, id_materia = conseguir_campo_ID(datos)
+    normalizar_datos_nota(datos)
 
   valores_sql = []
   campos_sql = []
@@ -757,17 +766,24 @@ def insertar_datos(nombre_de_la_tabla):
 
   campos = ', '.join(datos.keys())
   valores = ', '.join(['%s'] * len(datos))
-  consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({valores})"
-
+  if nombre_de_la_tabla.lower() == "nota":
+    valores_sql.extend([id_alumno, id_materia])
+  else:
+    consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({valores})"
   try:
-      cursor = conexión.cursor()
-      cursor.execute(consulta, tuple(valores_sql))
-      conexión.commit()
-      consultar_tabla(nombre_de_la_tabla)
-      mensajeTexto.showinfo("CORRECTO", "SE AGREGÓ LOS DATOS NECESARIOS")
-      for i, (campo, valor) in enumerate(datos.items()):
-        entry = cajasDeTexto[nombre_de_la_tabla][i]
-        entry.delete(0, tk.END)
+    cursor = conexión.cursor()
+    
+    print(f"\n--- Intentando INSERT en {nombre_de_la_tabla} ---")
+    print(f"Consulta SQL: {consulta}")
+    print(f"Valores a insertar: {valores_sql}")
+    
+    cursor.execute(consulta, tuple(valores_sql))
+    conexión.commit()
+    consultar_tabla(nombre_de_la_tabla)
+    mensajeTexto.showinfo("CORRECTO", "SE AGREGÓ LOS DATOS NECESARIOS")
+    for i, (campo, valor) in enumerate(datos.items()):
+      entry = cajasDeTexto[nombre_de_la_tabla][i]
+      entry.delete(0, tk.END)
   except Exception as e:
       mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {str(e)}")
   finally:
@@ -892,7 +908,7 @@ def ordenar_datos(nombre_de_la_tabla, tabla, campo=None, ascendencia=True):
   orden = "ASC" if ascendencia else "DESC"
   try:
     consulta = {
-      "alumno": f"SELECT a.id, a.nombre, a.edad FROM {nombre_de_la_tabla} AS a ORDER BY {campo_real} {orden}",
+      "alumno": f"SELECT a.id, a.nombre FROM {nombre_de_la_tabla} AS a ORDER BY {campo_real} {orden}",
       "asistencia": f"SELECT a.id, a.fecha, a.presente FROM {nombre_de_la_tabla} AS a ORDER BY {campo_real} {orden}",
       "profesor": f"SELECT p.id, p.nombre, p.asignatura FROM {nombre_de_la_tabla} AS p ORDER BY {campo_real} {orden}",
       "materia": f"SELECT m.id, m.nombre, m.creditos FROM {nombre_de_la_tabla} AS m ORDER BY {campo_real} {orden}",
@@ -1012,7 +1028,7 @@ def exportar_en_PDF(nombre_de_la_tabla):
               pdf_canvas.drawString(margen_x, y, f"Informe de Tabla: {nombre_de_la_tabla.capitalize()} (Continuación)")
               y -= line_height
 
-          pdf_canvas.drawString(margen_x, y, f"{i+1}. {fila}") # Añade un número de línea
+          pdf_canvas.drawString(margen_x, y, f"{fila}") # Añade un número de línea
           y -= line_height
 
       # Paso 4: Guardar el archivo PDF

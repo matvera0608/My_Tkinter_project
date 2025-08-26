@@ -114,27 +114,31 @@ def mostrar_pestañas(ventana):
   notebook.add(tablaMateria_Profesor, text="Enseñanza")
   notebook.add(tablaProfesor, text="Profesor")
   notebook.add(tablaNota, text="Nota")
+  
+  notebook.bind("<<NotebookTabChanged>>", lambda e: abrir_tablas())
 
 #En esta función deseo meter la lógica de cada ABM, entries, labels, botones del CRUD y una listBox
-def abrir_tablas(ventana):
-  for widget in ventana.winfo_children():
+def abrir_tablas():
+  
+  seleccionado = notebook.select()
+  frameActivo = notebook.nametowidget(seleccionado)
+  
+  for widget in frameActivo.winfo_children():
     widget.destroy()
     
-  def crear_etiqueta(ventana, texto, tamaño_letra):
-    return tk.Label(ventana, text=texto, fg=colores["negro"], bg=colores["blanco"], font=("Arial", tamaño_letra))
+  def crear_etiqueta(frameActivo, texto, tamaño_letra):
+    return tk.Label(frameActivo, text=texto, fg=colores["negro"], bg=colores["blanco"], font=("Arial", tamaño_letra))
   
-  def crear_entrada(ventana, ancho):
-    return tk.Entry(ventana, width=ancho)  
+  def crear_entrada(frameActivo, ancho):
+    return tk.Entry(frameActivo, width=ancho)  
   
-  def crear_botón(ventana, texto, comando, ancho):
-    return tk.Button(ventana, text=texto, width=ancho, command=comando)
+  def crear_botón(frameActivo, texto, comando, ancho):
+    return tk.Button(frameActivo, text=texto, width=ancho, command=comando)
   
-  frame = tk.Frame(ventana, bg=colores["blanco"])
+  frame = tk.Frame(frameActivo, bg=colores["blanco"])
   frame.pack(fill="both", expand=True, padx=20, pady=20)
     
-  
-  tablaSeleccionada = notebook.select()
-  if tablaSeleccionada == str(tablaAlumno):
+  if frameActivo == str(tablaAlumno):
       txBox_NombreAlumno = crear_entrada(frame, 30)
       txBox_NombreAlumno.grid(row=0, column=1, pady=5)
       label_NombreAlumno = crear_etiqueta(frame, "Nombre *", 10)
@@ -145,7 +149,7 @@ def abrir_tablas(ventana):
       label_FechaNacimiento = crear_etiqueta(frame, "Fecha que nació *", 10)
       label_FechaNacimiento.grid(row=1, column=0, sticky="w", pady=5)
 
-  elif tablaSeleccionada == str(tablaAsistencia):
+  elif frameActivo == str(tablaAsistencia):
       txBox_EstadoDeAsistencia = crear_entrada(frame, 30)
       txBox_EstadoDeAsistencia.grid(row=0, column=1, pady=5)
       label_EstadoDeAsistencia = crear_etiqueta(frame, "Estado *", 10)
@@ -156,7 +160,7 @@ def abrir_tablas(ventana):
       label_FechaAsistencia = crear_etiqueta(frame, "Fecha que asistió *", 10)
       label_FechaAsistencia.grid(row=1, column=0, sticky="w", pady=5)
 
-  elif tablaSeleccionada == str(tablaCarrera):
+  elif frameActivo == str(tablaCarrera):
       txBox_NombreCarrera = crear_entrada(frame, 30)
       txBox_NombreCarrera.grid(row=0, column=1, pady=5)
       label_NombreCarrera = crear_etiqueta(frame, "Nombre *", 10)
@@ -167,7 +171,7 @@ def abrir_tablas(ventana):
       label_Duración = crear_etiqueta(frame, "Duración *", 10)
       label_Duración.grid(row=1, column=0, sticky="w", pady=5)
 
-  elif tablaSeleccionada == str(tablaMateria):
+  elif frameActivo == str(tablaMateria):
       txBox_NombreMateria = crear_entrada(frame, 30)
       txBox_NombreMateria.grid(row=0, column=1, pady=5)
       label_NombreMateria = crear_etiqueta(frame, "Nombre *", 10)
@@ -178,13 +182,13 @@ def abrir_tablas(ventana):
       label_HorarioCorrespondiente = crear_etiqueta(frame, "Horario *", 10)
       label_HorarioCorrespondiente.grid(row=1, column=0, sticky="w", pady=5)
 
-  elif tablaSeleccionada == str(tablaProfesor):
+  elif frameActivo == str(tablaProfesor):
       txBox_NombreProfesor = crear_entrada(frame, 30)
       txBox_NombreProfesor.grid(row=0, column=1, pady=5)
       label_NombreProfesor = crear_etiqueta(frame, "Nombre *", 10)
       label_NombreProfesor.grid(row=0, column=0, sticky="w", pady=5)
 
-  elif tablaSeleccionada == str(tablaNota):
+  elif frameActivo == str(tablaNota):
       txBox_Valor = crear_entrada(frame, 30)
       txBox_Valor.grid(row=0, column=1, pady=5)
       label_Valor = crear_etiqueta(frame, "Nota *", 10)
@@ -195,9 +199,25 @@ def abrir_tablas(ventana):
       label_Tipo = crear_etiqueta(frame, "Tipo de evaluación*", 10)
       label_Tipo.grid(row=1, column=0, sticky="w", pady=5)
 
-  label_Obligatoriedad = tk.Label(ventana, text="el * significa que es obligatorio seleccionar los datos")
+  Lista_de_datos = tk.Listbox(frame, width=60, height=15)
+  Lista_de_datos.pack()
+  label_Obligatoriedad = tk.Label(frameActivo, text="el * significa que es obligatorio seleccionar los datos")
   label_Obligatoriedad.config(fg=colores["negro"], bg=colores["blanco"], font=("Arial", 8))
   
+  botón_agregar = crear_botón(frame, "Agregar", None, 15)
+  # botón_agregar.bind("<Return>", ejecutar_acción_presionando_Enter)
+
+  botón_modificar = crear_botón(frame, "Modificar", None, 15)
+  # botón_modificar.bind("<Return>", ejecutar_acción_presionando_Enter)
+
+  botón_eliminar = crear_botón(frame, "Eliminar", None, 15)
+  # botón_eliminar.bind("<Return>", ejecutar_acción_presionando_Enter)
+
+  botón_ordenar = crear_botón(frame, "Ordenar", None, 15)
+  # botón_ordenar.bind("<Return>", ejecutar_acción_presionando_Enter)
+  
+  botón_exportar = crear_botón(frame, "Exportar", None, 15)
+  # botón_exportar.bind("<Return>", ejecutar_acción_presionando_Enter)
   
 
 # --- INICIO DEL SISTEMA ---

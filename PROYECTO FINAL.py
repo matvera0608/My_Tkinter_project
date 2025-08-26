@@ -6,7 +6,6 @@ from tkinter import messagebox as mensajeTexto, filedialog as dialogo
 import tkinter as tk
 from tkinter import ttk
 import re
-
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfbase import pdfmetrics as métricasPDF
@@ -70,7 +69,7 @@ def pantallaLogin():
   #Entry para el usuario
   txBox_usuario = tk.Entry(ventana, font=("Arial", 15), width=20, fg=colores["negro_resaltado"])
   txBox_usuario.grid(row=1, column=0, pady=(0, 20), sticky="n")
-  txBox_usuario.insert(0, "Ingrese su rol")
+  txBox_usuario.insert(0, "docente")
   
   #Esta función controla que rol es cada usuario
   def validarRol():
@@ -92,12 +91,13 @@ def pantallaLogin():
 
 
 def mostrar_pestañas(ventana):
-  
+  global notebook, tablaAlumno, tablaAsistencia, tablaCarrera, tablaMateria, tablaMateria_Profesor, tablaProfesor, tablaNota
   for widget in ventana.winfo_children():
     widget.destroy()
     
   notebook = ttk.Notebook(ventana)
   notebook.pack(expand=True, fill="both")
+  
   
   tablaAlumno = ttk.Frame(notebook)
   tablaAsistencia = ttk.Frame(notebook)
@@ -114,6 +114,89 @@ def mostrar_pestañas(ventana):
   notebook.add(tablaMateria_Profesor, text="Enseñanza")
   notebook.add(tablaProfesor, text="Profesor")
   notebook.add(tablaNota, text="Nota")
+  
+  abrir_tablas(ventana)
+
+#En esta función deseo meter la lógica de cada ABM, entries, labels, botones del CRUD y una listBox
+def abrir_tablas(ventana):
+
+  for widget in ventana.winfo_children():
+    widget.destroy()
+    
+  def crear_etiqueta(ventana, texto, tamaño_letra):
+    return tk.Label(ventana, text=texto, fg=colores["negro"], bg=colores["blanco"], font=("Arial", tamaño_letra))
+  
+  def crear_entrada(ventana, ancho):
+    return tk.Entry(ventana, width=ancho)
+    
+  frame = tk.Frame(ventana, bg=colores["blanco"])
+  frame.pack(fill="both", expand=True, padx=20, pady=20)
+    
+  
+  tablaSeleccionada = notebook.select()
+  if tablaSeleccionada == str(tablaAlumno):
+      txBox_NombreAlumno = crear_entrada(frame, 30)
+      txBox_NombreAlumno.grid(row=0, column=1, pady=5)
+      label_NombreAlumno = crear_etiqueta(frame, "Nombre *", 10)
+      label_NombreAlumno.grid(row=0, column=0, sticky="w", pady=5)
+      
+      txBox_FechaNacimiento = crear_entrada(frame, 30)
+      txBox_FechaNacimiento.grid(row=1, column=1, pady=5)
+      label_FechaNacimiento = crear_etiqueta(frame, "Fecha que nació *", 10)
+      label_FechaNacimiento.grid(row=1, column=0, sticky="w", pady=5)
+
+  elif tablaSeleccionada == str(tablaAsistencia):
+      txBox_EstadoDeAsistencia = crear_entrada(frame, 30)
+      txBox_EstadoDeAsistencia.grid(row=0, column=1, pady=5)
+      label_EstadoDeAsistencia = crear_etiqueta(frame, "Estado *", 10)
+      label_EstadoDeAsistencia.grid(row=0, column=0, sticky="w", pady=5)
+      
+      txBox_FechaAsistencia = crear_entrada(frame, 30)
+      txBox_FechaAsistencia.grid(row=1, column=1, pady=5)
+      label_FechaAsistencia = crear_etiqueta(frame, "Fecha que asistió *", 10)
+      label_FechaAsistencia.grid(row=1, column=0, sticky="w", pady=5)
+
+  elif tablaSeleccionada == str(tablaCarrera):
+      txBox_NombreCarrera = crear_entrada(frame, 30)
+      txBox_NombreCarrera.grid(row=0, column=1, pady=5)
+      label_NombreCarrera = crear_etiqueta(frame, "Nombre *", 10)
+      label_NombreCarrera.grid(row=0, column=0, sticky="w", pady=5)
+
+      txBox_Duración = crear_entrada(frame, 30)
+      txBox_Duración.grid(row=1, column=1, pady=5)
+      label_Duración = crear_etiqueta(frame, "Duración *", 10)
+      label_Duración.grid(row=1, column=0, sticky="w", pady=5)
+
+  elif tablaSeleccionada == str(tablaMateria):
+      txBox_NombreMateria = crear_entrada(frame, 30)
+      txBox_NombreMateria.grid(row=0, column=1, pady=5)
+      label_NombreMateria = crear_etiqueta(frame, "Nombre *", 10)
+      label_NombreMateria.grid(row=0, column=0, sticky="w", pady=5)
+
+      txBox_HorarioCorrespondiente = crear_entrada(frame, 30)
+      txBox_HorarioCorrespondiente.grid(row=1, column=1, pady=5)
+      label_HorarioCorrespondiente = crear_etiqueta(frame, "Horario *", 10)
+      label_HorarioCorrespondiente.grid(row=1, column=0, sticky="w", pady=5)
+
+  elif tablaSeleccionada == str(tablaProfesor):
+      txBox_NombreProfesor = crear_entrada(frame, 30)
+      txBox_NombreProfesor.grid(row=0, column=1, pady=5)
+      label_NombreProfesor = crear_etiqueta(frame, "Nombre *", 10)
+      label_NombreProfesor.grid(row=0, column=0, sticky="w", pady=5)
+
+  elif tablaSeleccionada == str(tablaNota):
+      txBox_Valor = crear_entrada(frame, 30)
+      txBox_Valor.grid(row=0, column=1, pady=5)
+      label_Valor = crear_etiqueta(frame, "Nota *", 10)
+      label_Valor.grid(row=0, column=0, sticky="w", pady=5)
+      
+      txBox_Tipo = crear_entrada(frame, 30)
+      txBox_Tipo.grid(row=1, column=1, pady=5)
+      label_Tipo = crear_etiqueta(frame, "Tipo de evaluación*", 10)
+      label_Tipo.grid(row=1, column=0, sticky="w", pady=5)
+
+  label_Obligatoriedad = tk.Label(ventana, text="el * significa que es obligatorio seleccionar los datos")
+  label_Obligatoriedad.config(fg=colores["negro"], bg=colores["blanco"], font=("Arial", 8))
 
 # --- INICIO DEL SISTEMA ---
 pantallaLogin()

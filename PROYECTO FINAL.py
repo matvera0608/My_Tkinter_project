@@ -114,12 +114,9 @@ def mostrar_pestañas(ventana):
   notebook.add(tablaMateria_Profesor, text="Enseñanza")
   notebook.add(tablaProfesor, text="Profesor")
   notebook.add(tablaNota, text="Nota")
-  
-  abrir_tablas(ventana)
 
 #En esta función deseo meter la lógica de cada ABM, entries, labels, botones del CRUD y una listBox
 def abrir_tablas(ventana):
-
   for widget in ventana.winfo_children():
     widget.destroy()
     
@@ -127,8 +124,11 @@ def abrir_tablas(ventana):
     return tk.Label(ventana, text=texto, fg=colores["negro"], bg=colores["blanco"], font=("Arial", tamaño_letra))
   
   def crear_entrada(ventana, ancho):
-    return tk.Entry(ventana, width=ancho)
-    
+    return tk.Entry(ventana, width=ancho)  
+  
+  def crear_botón(ventana, texto, comando, ancho):
+    return tk.Button(ventana, text=texto, width=ancho, command=comando)
+  
   frame = tk.Frame(ventana, bg=colores["blanco"])
   frame.pack(fill="both", expand=True, padx=20, pady=20)
     
@@ -197,6 +197,8 @@ def abrir_tablas(ventana):
 
   label_Obligatoriedad = tk.Label(ventana, text="el * significa que es obligatorio seleccionar los datos")
   label_Obligatoriedad.config(fg=colores["negro"], bg=colores["blanco"], font=("Arial", 8))
+  
+  
 
 # --- INICIO DEL SISTEMA ---
 pantallaLogin()

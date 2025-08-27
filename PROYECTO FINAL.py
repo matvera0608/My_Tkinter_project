@@ -95,6 +95,7 @@ def pantallaLogin():
   
   return ventana
 
+
 def mostrar_pestañas(ventana):
   global notebook, tablaAlumno, tablaAsistencia, tablaCarrera, tablaMateria, tablaMateria_Profesor, tablaProfesor, tablaNota
 
@@ -131,47 +132,34 @@ def mostrar_pestañas(ventana):
       "Profesor": tablaProfesor,
       "Nota": tablaNota
   }
-    
-  # Lógica para mostrar la interfaz al cambiar de pestaña
-  def on_tab_change(event):
-      # Obtiene el nombre de la pestaña seleccionada
-      nombrePestaña = notebook.tab(notebook.select(), "text")
-      # Obtiene el widget Frame de esa pestaña
-      frameActual = frames_por_nombre.get(nombrePestaña)
-      # Llama a la nueva función centralizada para construir la interfaz
-      abrir_tablas(frameActual, nombrePestaña.lower())
 
-  # Llamamos a la función on_tab_change una vez para la pestaña inicial
-  
-  notebook.bind("<<NotebookTabChanged>>", on_tab_change(None))
-  
-  
+  notebook.bind("<<NotebookTabChanged>>", lambda event: abrir_tablas(frames_por_nombre[notebook.tab(notebook.select(), "text")], notebook.tab(notebook.select(), "text").lower()))
+
   
 #En esta función deseo meter la lógica de cada ABM, entries, labels, botones del CRUD y una listBox
-def abrir_tablas(frame_principal, nombre_de_la_tabla):  
-  ventanaSecundaria = tk.Toplevel()
-  ventanaSecundaria.title(nombre_de_la_tabla)
-  ventanaSecundaria.geometry("400x400")
-  
-  
-  frame_principal = tk.Frame(ventanaSecundaria, bg=colores["blanco"])
-  frame_principal.grid(row=0, column=0, sticky="nsew")
-
-  # Configuración del grid para los widgets
-  frame_principal.grid_columnconfigure(0, weight=0, uniform="group1") 
-  frame_principal.grid_columnconfigure(1, weight=1, uniform="group1") 
-  frame_principal.grid_columnconfigure(2, weight=2, uniform="group1") 
-
-  
-  def crear_etiqueta(frameActivo, texto, tamaño_letra):
-    color_padre = frameActivo.cget('bg')
-    return tk.Label(frameActivo, text=texto, fg=colores["negro"], bg=color_padre, font=("Arial", tamaño_letra))
+def abrir_tablas(frame_principal, nombre_de_la_tabla): 
+  def crear_etiqueta(contenedor, texto, tamaño_letra):
+    color_padre = contenedor.cget('bg')
+    return tk.Label(contenedor, text=texto, fg=colores["negro"], bg=color_padre, font=("Arial", tamaño_letra))
 
   def crear_entrada(contenedor, ancho, tamaño_letra=10):
     return tk.Entry(contenedor, width=ancho, font=("Arial", tamaño_letra))
 
   def crear_botón(frameActivo, texto, comando, ancho):
+    ancho = len(texto) + 5 if ancho is None else ancho
     return tk.Button(frameActivo, text=texto, width=ancho, command=comando)
+
+  ventanaSecundaria = tk.Toplevel()
+  ventanaSecundaria.title(f"{nombre_de_la_tabla.upper()}")
+  ventanaSecundaria.geometry("800x800") # Puedes ajustar el tamaño
+  ventanaSecundaria.configure(bg=colores["blanco"])
+  ventanaSecundaria.resizable(width=False, height=False)
+
+  # Configuración del grid para los widgets dentro de la ventanaSecundaria
+  ventanaSecundaria.grid_columnconfigure(0, weight=0)
+  ventanaSecundaria.grid_columnconfigure(1, weight=1)
+  ventanaSecundaria.grid_columnconfigure(2, weight=2)
+  ventanaSecundaria.grid_rowconfigure(0, weight=1)
   
   # Diccionario que mapea los nombres de las tablas a sus campos
   campos_por_tabla = {
@@ -205,29 +193,33 @@ def abrir_tablas(frame_principal, nombre_de_la_tabla):
   }
 
   campos = campos_por_tabla.get(nombre_de_la_tabla, None)
+  if not campos:
+    return
+  
+  for i, (texto_etiqueta, _) in enumerate(campos):
+    crear_etiqueta(ventanaSecundaria, texto_etiqueta, 10).grid(row=i, column=0, sticky="w", padx=5, pady=5)
+    crear_entrada(ventanaSecundaria, 30).grid(row=i, column=1, sticky="ew", padx=5, pady=5)
 
-  for i, (texto, nombre_variable) in enumerate(campos):
-      crear_etiqueta(ventanaSecundaria, texto, 10).grid(row=i, column=0, sticky="w", padx=10, pady=5)
-      crear_entrada(ventanaSecundaria, 30).grid(row=i, column=1, padx=10, pady=5)
-
-  Lista_de_datos = tk.Listbox(frame_principal, width=60, height=15)
+  Lista_de_datos = tk.Listbox(ventanaSecundaria, width=60, height=15)
   Lista_de_datos.grid(row=0, column=2, rowspan=len(campos) + 5, padx=10, pady=10, sticky="nsew")
   
-  crear_etiqueta(ventanaSecundaria, "el * significa que es obligatorio seleccionar los datos", 8).grid(row=8, column=0, columnspan=2, pady=15)
+  crear_etiqueta(frame_principal, "el * significa que es obligatorio seleccionar los datos", 8).grid(row=5, column=1, columnspan=2, pady=15)
+  
+  fila_botones = len(campos) #Esta fila contiene la longitud de cada campo
 
-  botón_agregar = crear_botón(ventanaSecundaria, "Agregar", None, 15)
+  crear_botón(ventanaSecundaria, "Agregar", None, 10).grid(row=fila_botones, column=0, columnspan=2, pady=5, sticky="ew")
   # botón_agregar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
-  botón_modificar = crear_botón(ventanaSecundaria, "Modificar", None, 15)
+  crear_botón(ventanaSecundaria, "Modificar", None, 10).grid(row=fila_botones + 1, column=0, columnspan=2, pady=5, sticky="ew")
   # botón_modificar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
-  botón_eliminar = crear_botón(ventanaSecundaria, "Eliminar", None, 15)
+  crear_botón(ventanaSecundaria, "Eliminar", None, 10).grid(row=fila_botones + 2, column=0, columnspan=2, pady=5, sticky="ew")
   # botón_eliminar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
-  botón_ordenar = crear_botón(ventanaSecundaria, "Ordenar", None, 15)
+  crear_botón(ventanaSecundaria, "Ordenar", None, 10).grid(row=fila_botones + 3, column=0, columnspan=2, pady=5, sticky="ew")
   # botón_ordenar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
-  botón_exportar = crear_botón(ventanaSecundaria, "Exportar", None, 15)
+  crear_botón(ventanaSecundaria, "Exportar", None, 10).grid(row=fila_botones + 4, column=0, columnspan=2, pady=5, sticky="ew")
   # botón_exportar.bind("<Return>", ejecutar_acción_presionando_Enter)
   
 

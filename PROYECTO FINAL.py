@@ -151,7 +151,7 @@ def abrir_tablas(frame_principal, nombre_de_la_tabla):
 
   ventanaSecundaria = tk.Toplevel()
   ventanaSecundaria.title(f"{nombre_de_la_tabla.upper()}")
-  ventanaSecundaria.geometry("800x800") # Puedes ajustar el tamaño
+  ventanaSecundaria.geometry("800x800")
   ventanaSecundaria.configure(bg=colores["blanco"])
   ventanaSecundaria.resizable(width=False, height=False)
 
@@ -165,7 +165,8 @@ def abrir_tablas(frame_principal, nombre_de_la_tabla):
   campos_por_tabla = {
       "alumno": [
           ("Nombre *", "txBox_NombreAlumno"),
-          ("Fecha que nació *", "txBox_FechaNacimiento")
+          ("Fecha que nació *", "txBox_FechaNacimiento"),
+          ("Carrera *","txBox_NombreCarrera")
       ],
       "asistencia": [
           ("Estado *", "txBox_EstadoDeAsistencia"),
@@ -173,7 +174,7 @@ def abrir_tablas(frame_principal, nombre_de_la_tabla):
       ],
       "carrera": [
           ("Nombre *", "txBox_NombreCarrera"),
-          ("Duración *", "txBox_Duracion")
+          ("Duración *", "txBox_Duración")
       ],
       "materia": [
           ("Nombre *", "txBox_NombreMateria"),
@@ -188,7 +189,10 @@ def abrir_tablas(frame_principal, nombre_de_la_tabla):
       ],
       "nota": [
           ("Nota *", "txBox_Valor"),
-          ("Tipo de evaluación *", "txBox_Tipo")
+          ("Tipo de evaluación *", "txBox_Tipo"),
+          ("Fecha y Hora *", "txBox_Fecha"),
+          ("Nombre del estudiante *", "txBox_NombreAlumno"),
+          ("Nombre de la asignatura*", "txBox_NombreMateria"),
       ]
   }
 
@@ -203,8 +207,8 @@ def abrir_tablas(frame_principal, nombre_de_la_tabla):
   Lista_de_datos = tk.Listbox(ventanaSecundaria, width=60, height=15)
   Lista_de_datos.grid(row=0, column=2, rowspan=len(campos) + 5, padx=10, pady=10, sticky="nsew")
   
-  crear_etiqueta(frame_principal, "el * significa que es obligatorio seleccionar los datos", 8).grid(row=5, column=1, columnspan=2, pady=15)
-  
+  crear_etiqueta(frame_principal, "el * significa que es obligatorio seleccionar los datos", 8).grid(row=8, column=0, columnspan=2, padx=5,pady=15)
+
   fila_botones = len(campos) #Esta fila contiene la longitud de cada campo
 
   crear_botón(ventanaSecundaria, "Agregar", None, 10).grid(row=fila_botones, column=0, columnspan=2, pady=5, sticky="ew")

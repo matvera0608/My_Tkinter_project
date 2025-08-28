@@ -1,20 +1,9 @@
 import os
 import mysql.connector as MySql
 from mysql.connector import Error as error_sql
-from datetime import datetime, date as fecha, time as hora
-from tkinter import messagebox as mensajeTexto, filedialog as dialogo 
 import tkinter as tk
 from tkinter import ttk
-import re
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfbase import pdfmetrics as métricasPDF
-from reportlab.pdfbase.ttfonts import TTFont as fuente_TTFont
-
 from PIL import Image, ImageTk
-
-métricasPDF.registerFont(fuente_TTFont("Arial", "Arial.ttf"))
-
 
 # --- COLORES EN HEXADECIMALES ---
 colores = {
@@ -29,6 +18,17 @@ dirección_del_ícono = os.path.dirname(__file__)
 
 ruta_base = os.path.dirname(__file__)
 ruta_imagen = os.path.join(ruta_base, "imágenes")
+
+# --- FUNCIÓN PARA CARGAR IMÁGENES ---
+def cargar_imagen(nombre_imagen):
+  ruta = os.path.join(ruta_imagen, nombre_imagen)
+  if(not os.path.exists(ruta)):
+    print(f"Imagen no encontrada: {ruta}")
+    return None
+  imagen = Image.open(ruta)
+  imagen = imagen.resize((25, 25), Image.Resampling.LANCZOS)
+  return ImageTk.PhotoImage(imagen)
+
 
 #Esta es mi función para conectar a la base de datos,
 # es decir, contiene la cadena de conexión
@@ -54,6 +54,19 @@ def desconectar_base_de_datos(conexión):
 
 mi_ventana = tk.Tk()
 
+
+# --- FUNCIONES AUXILIARES PARA CREAR WIDGETS ---
+def crear_etiqueta(contenedor, texto, tamaño_letra):
+  # color_padre = contenedor.cget('bg')
+  return tk.Label(contenedor, text=texto, fg=colores["negro"], bg=colores["blanco"], font=("Arial", tamaño_letra))
+
+def crear_entrada(contenedor, ancho, tamaño_letra=10):
+  return tk.Entry(contenedor, width=ancho, font=("Arial", tamaño_letra))
+
+def crear_botón(frameActivo, texto, comando, ancho):
+  ancho = len(texto) + 5 if ancho is None else ancho
+  return tk.Button(frameActivo, text=texto, width=ancho, command=comando)
+
 # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
 def pantallaLogin():
   ventana = mi_ventana
@@ -61,7 +74,6 @@ def pantallaLogin():
   ventana.geometry("600x200")
   ventana.configure(bg=colores["blanco"])
   ventana.iconbitmap(ícono)
-  ventana.register("Arial", "Arial.ttf")
   ventana.resizable(width=False, height=False)
   ventana.grid_columnconfigure(0, weight=1)
   ventana.grid_rowconfigure(2, weight=1)
@@ -85,7 +97,7 @@ def pantallaLogin():
     if rol in rolesVálidos:
       mostrar_pestañas(ventana)
     else:
-      mensajeTexto.showerror("Error de Login", f"Los roles permitidos son: {', '.join(rolesVálidos).title()}. Ingresar bien los datos")
+      print("Error de Login", f"Los roles permitidos son: {', '.join(rolesVálidos).title()}. Ingresar bien los datos")
       return
 
   #Iniciar Sesión
@@ -114,6 +126,7 @@ def mostrar_pestañas(ventana):
   tablaProfesor = tk.Frame(notebook)
   tablaNota = tk.Frame(notebook)
 
+
   notebook.add(tablaAlumno, text="Alumno")
   notebook.add(tablaAsistencia, text="Asistencia")
   notebook.add(tablaCarrera, text="Carrera")
@@ -122,45 +135,44 @@ def mostrar_pestañas(ventana):
   notebook.add(tablaProfesor, text="Profesor")
   notebook.add(tablaNota, text="Nota")
   
-  # Este diccionario mapea el nombre de la pestaña a su widget Frame
-  frames_por_nombre = {
-      "Alumno": tablaAlumno,
-      "Asistencia": tablaAsistencia,
-      "Carrera": tablaCarrera,
-      "Materia": tablaMateria,
-      "Enseñanza": tablaMateria_Profesor,
-      "Profesor": tablaProfesor,
-      "Nota": tablaNota
-  }
-
-  notebook.bind("<<NotebookTabChanged>>", lambda event: abrir_tablas(frames_por_nombre[notebook.tab(notebook.select(), "text")], notebook.tab(notebook.select(), "text").lower()))
+  crear_etiqueta(notebook, "* Campos obligatorios, es decir, no puede estar vacíos", 10).pack(side="bottom", pady=5)
 
   
+  notebook.bind("<<NotebookTabChanged>>", lambda event: abrir_tablas(notebook.tab(notebook.select(), "text").lower()))
+
 #En esta función deseo meter la lógica de cada ABM, entries, labels, botones del CRUD y una listBox
-def abrir_tablas(frame_principal, nombre_de_la_tabla): 
-  def crear_etiqueta(contenedor, texto, tamaño_letra):
-    color_padre = contenedor.cget('bg')
-    return tk.Label(contenedor, text=texto, fg=colores["negro"], bg=color_padre, font=("Arial", tamaño_letra))
-
-  def crear_entrada(contenedor, ancho, tamaño_letra=10):
-    return tk.Entry(contenedor, width=ancho, font=("Arial", tamaño_letra))
-
-  def crear_botón(frameActivo, texto, comando, ancho):
-    ancho = len(texto) + 5 if ancho is None else ancho
-    return tk.Button(frameActivo, text=texto, width=ancho, command=comando)
-
+def abrir_tablas(nombre_de_la_tabla):
+  
+  íconos_por_tabla = {
+    "alumno": os.path.join(ruta_base, "imágenes", "alumno.ico"),
+    "asistencia": os.path.join(ruta_base, "imágenes", "asistencia.ico"),
+    "carrera": os.path.join(ruta_base, "imágenes", "carrera.ico"),
+    "materia": os.path.join(ruta_base, "imágenes", "materia.ico"),
+    "enseñanza": os.path.join(ruta_base, "imágenes", "enseñanza.ico"),
+    "profesor": os.path.join(ruta_base, "imágenes", "profesor.ico"),
+    "nota": os.path.join(ruta_base, "imágenes", "nota.ico")
+}
   ventanaSecundaria = tk.Toplevel()
   ventanaSecundaria.title(f"{nombre_de_la_tabla.upper()}")
   ventanaSecundaria.geometry("800x800")
   ventanaSecundaria.configure(bg=colores["blanco"])
   ventanaSecundaria.resizable(width=False, height=False)
-
+  
   # Configuración del grid para los widgets dentro de la ventanaSecundaria
   ventanaSecundaria.grid_columnconfigure(0, weight=0)
   ventanaSecundaria.grid_columnconfigure(1, weight=1)
   ventanaSecundaria.grid_columnconfigure(2, weight=2)
   ventanaSecundaria.grid_rowconfigure(0, weight=1)
   
+  ruta_ícono = íconos_por_tabla.get(nombre_de_la_tabla)
+  if ruta_ícono and os.path.exists(ruta_ícono):
+    try:
+        ventanaSecundaria.iconbitmap(ruta_ícono)
+    except tk.TclError:
+        print("Error de Ícono", f"No se pudo cargar el ícono: {ruta_ícono}. Asegúrate de que el archivo existe y es válido (.ico).")
+  elif ruta_ícono:
+      print("Advertencia de Ícono", f"El archivo de ícono no se encontró en la ruta: {ruta_ícono}.")
+
   # Diccionario que mapea los nombres de las tablas a sus campos
   campos_por_tabla = {
       "alumno": [
@@ -170,7 +182,8 @@ def abrir_tablas(frame_principal, nombre_de_la_tabla):
       ],
       "asistencia": [
           ("Estado *", "txBox_EstadoDeAsistencia"),
-          ("Fecha que asistió *", "txBox_FechaAsistencia")
+          ("Fecha que asistió *", "txBox_FechaAsistencia"),
+          ("Alumno que asistió*", "txBox_NombreAlumno")
       ],
       "carrera": [
           ("Nombre *", "txBox_NombreCarrera"),
@@ -207,8 +220,6 @@ def abrir_tablas(frame_principal, nombre_de_la_tabla):
   Lista_de_datos = tk.Listbox(ventanaSecundaria, width=60, height=15)
   Lista_de_datos.grid(row=0, column=2, rowspan=len(campos) + 5, padx=10, pady=10, sticky="nsew")
   
-  crear_etiqueta(frame_principal, "el * significa que es obligatorio seleccionar los datos", 8).grid(row=8, column=0, columnspan=2, padx=5,pady=15)
-
   fila_botones = len(campos) #Esta fila contiene la longitud de cada campo
 
   crear_botón(ventanaSecundaria, "Agregar", None, 10).grid(row=fila_botones, column=0, columnspan=2, pady=5, sticky="ew")
